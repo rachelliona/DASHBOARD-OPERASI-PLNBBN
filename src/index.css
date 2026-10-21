@@ -1,0 +1,5 @@
+@import "tailwindcss";
+body{background:#06142e;color:#e6edf7;font-family:Poppins,system-ui,sans-serif;margin:0}
+select,input{background:#0a1a3a;border:1px solid #1e3a6e;border-radius:6px;padding:4px 8px;color:#e6edf7}
+th{text-align:left;font-weight:500;color:#9fb3d1}
+@media print{.no-print{display:none!important}*{background:#fff!important;color:#000!important}}
