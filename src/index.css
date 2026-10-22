@@ -1,5 +1,8 @@
 @import "tailwindcss";
-body{background:#06142e;color:#e6edf7;font-family:Poppins,system-ui,sans-serif;margin:0}
-select,input{background:#0a1a3a;border:1px solid #1e3a6e;border-radius:6px;padding:4px 8px;color:#e6edf7}
+:root{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,"Segoe UI",Roboto,sans-serif;font-size:13px;font-variant-numeric:tabular-nums}
+body{background:#06142e;color:#e6edf7;margin:0}
+code,.mono{font-family:ui-monospace,"SF Mono",SFMono-Regular,Menlo,monospace}
+.num{font-family:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,"SF Pro Display",system-ui,sans-serif}
+select,input{background:#0a1a3a;border:1px solid #1e3a6e;border-radius:6px;padding:2px 6px;color:#e6edf7;font-size:12px}
 th{text-align:left;font-weight:500;color:#9fb3d1}
 @media print{.no-print{display:none!important}*{background:#fff!important;color:#000!important}}

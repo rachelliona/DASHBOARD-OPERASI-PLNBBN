@@ -16,8 +16,8 @@ export function parseIdNumber(v: unknown): number | null {
 }
 export function parseIdDate(v: unknown): string | null {
   const s = String(v ?? '').trim(); let y = 0, mo = 0, d = 0
-  let m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/)
-  if (m) { d = +m[1]; mo = +m[2]; y = +m[3] } else { m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); if (!m) return null; y = +m[1]; mo = +m[2]; d = +m[3] }
+  let m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2}|\d{4})(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?$/)
+  if (m) { d = +m[1]; mo = +m[2]; y = +m[3] < 100 ? 2000 + +m[3] : +m[3] } else { m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); if (!m) return null; y = +m[1]; mo = +m[2]; d = +m[3] }
   const dt = new Date(Date.UTC(y, mo - 1, d))
   return dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d ? dt.toISOString().slice(0, 10) : null
 }

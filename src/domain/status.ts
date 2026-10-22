@@ -9,7 +9,9 @@ export const STAGES = [
 ]
 export const norm = (s: unknown) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
 /** Pemetaan status -> tahapan (dapat dikonfigurasi). Nilai yang tidak dikenal TIDAK ditebak. */
-export const STATUS_ALIASES: Record<string, string> = Object.fromEntries(STAGES.map(s => [norm(s.label), s.key]))
+export const STATUSES = [{ key: 'terjadwal', label: 'Sudah Ada Jadwal Muat', color: '#94a3b8' }, ...STAGES]
+export const STATUS_ALIASES: Record<string, string> = { ...Object.fromEntries(STAGES.map(s => [norm(s.label), s.key])),
+  [norm('Sudah Ada Jadwal Muat')]: 'terjadwal', [norm('Proses Loading')]: 'loading', [norm('Selesai Muat/Sailing')]: 'sailing', [norm('Selesai Bongkar')]: 'unloading' }
 export const stageOf = (raw: unknown): string | null => STATUS_ALIASES[norm(raw)] ?? null
-export const stageLabel = (k: string | null) => STAGES.find(s => s.key === k)?.label ?? 'Belum Dipetakan'
+export const stageLabel = (k: string | null) => STATUSES.find(s => s.key === k)?.label ?? 'Belum Dipetakan'
 export const REGIONS = ['JAMALI', 'Sumatra', 'Kalimantan', 'Sulmapana 1', 'Sulmapana 2', 'PLTU IPP']

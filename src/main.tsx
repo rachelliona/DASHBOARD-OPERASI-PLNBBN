@@ -3,5 +3,6 @@ import { createRoot } from 'react-dom/client'
 import { HashRouter } from 'react-router-dom'
 import App from './App'
 import { StoreProvider } from './store'
+import { AuthProvider } from './auth'
 import './index.css'
-createRoot(document.getElementById('root')!).render(<React.StrictMode><HashRouter><StoreProvider><App /></StoreProvider></HashRouter></React.StrictMode>)
+createRoot(document.getElementById('root')!).render(<React.StrictMode><HashRouter><AuthProvider><StoreProvider><App /></StoreProvider></AuthProvider></HashRouter></React.StrictMode>)
