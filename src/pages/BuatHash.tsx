@@ -12,5 +12,5 @@ export default function BuatHash() {
     <textarea className="w-full h-28 text-xs" aria-label="Daftar akun" value={t} onChange={e => setT(e.target.value)} placeholder={'racel,kata-sandi-panjang-acak'} />
     <div className="my-2"><Btn disabled={busy || !t.trim()} onClick={run}>{busy ? 'Memproses…' : 'Buat Hash'}</Btn></div>
     {out && <textarea readOnly className="w-full h-28 text-xs mono" aria-label="Hasil hash" value={out} />}
-    <Link className="text-xs text-sky-400 underline" to="/">Kembali ke halaman masuk</Link></Card></div>
+    <Link className="text-xs text-[#e6b457] underline" to="/">Kembali ke halaman masuk</Link></Card></div>
 }

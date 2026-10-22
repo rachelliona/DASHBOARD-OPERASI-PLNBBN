@@ -4,11 +4,11 @@ import { useStore } from '../store'
 import { Btn, Card, Empty } from '../components/ui'
 import { DataTable, Col } from '../components/DataTable'
 import { STAGES, STATUSES, stageLabel } from '../domain/status'
-import { pct, plantActual } from '../domain/kpi'
+import { pct, plantActual, kebutuhan } from '../domain/kpi'
 import { fmtNum, fmtPct, fmtDate } from '../domain/format'
 import { KINDS } from '../domain/schema'
 const Detail = ({ r, labels, onClose }: { r: any; labels: Record<string, string>; onClose: () => void }) => (
-  <Card title="Detail" right={<button className="text-xs text-sky-400" onClick={onClose}>Tutup</button>}><dl className="grid grid-cols-2 gap-x-4 text-xs">{Object.entries(labels).map(([k, l]) => <div key={k} className="contents"><dt className="text-slate-400">{l}</dt><dd>{String(r[k] ?? 'Data belum tersedia')}</dd></div>)}</dl></Card>)
+  <Card title="Detail" right={<button className="text-xs text-[#e6b457]" onClick={onClose}>Tutup</button>}><dl className="grid grid-cols-2 gap-x-4 text-xs">{Object.entries(labels).map(([k, l]) => <div key={k} className="contents"><dt className="text-slate-400">{l}</dt><dd>{String(r[k] ?? 'Data belum tersedia')}</dd></div>)}</dl></Card>)
 const lab = (kind: string) => Object.fromEntries(KINDS[kind].fields.map(f => [f.key, f.label]))
 const shipCols: Col[] = [{ key: 'id', label: 'ID Shipment' }, { key: 'si', label: 'Nomor SI' }, { key: 'pltu', label: 'PLTU / IPP Tujuan' }, { key: 'asal', label: 'Asal' }, { key: 'mitraTambang', label: 'Mitra Tambang' }, { key: 'mitraTransport', label: 'Mitra Transport' }, { key: 'kapal', label: 'Kapal / Tongkang' }, { key: 'volume', label: 'Volume (MT)', fmt: v => fmtNum(v) }, { key: 'status', label: 'Status', fmt: (v, r) => v ? stageLabel(v) : (r.statusRaw ? `Belum Dipetakan (${r.statusRaw})` : '—') }, { key: 'eta', label: 'ETA', fmt: v => fmtDate(v) }]
 export function MonitoringShipment() {
@@ -20,12 +20,12 @@ export function MonitoringShipment() {
     {sel && <Detail r={sel} labels={{ ...lab('shipment'), statusRaw: 'Status asli (sumber)' }} onClose={() => setSel(null)} />}
     <p className="text-xs text-slate-500">Sumber: {ds.source} · diimpor {ds.at} · {ds.rejected.length} baris ditolak (lihat Sumber Data dan Kualitas Data).</p></>
 }
-const pltuCols: Col[] = [{ key: 'pltu', label: 'PLTU' }, { key: 'wilayah', label: 'Wilayah' }, { key: 'target', label: 'Target (MT)', fmt: v => fmtNum(v) }, { key: 'p', label: 'Pemenuhan (provisional)', fmt: v => fmtPct(v) }, ...STAGES.map(s => ({ key: s.key, label: `${s.label} (MT)`, fmt: (v: any) => fmtNum(v) })), { key: 'sumber', label: 'Sumber Tambang' }]
+const pltuCols: Col[] = [{ key: 'pltu', label: 'PLTU' }, { key: 'wilayah', label: 'Wilayah' }, { key: 'target', label: 'Konfirmasi (MT)', fmt: v => fmtNum(v) }, { key: 'carryOver', label: 'Carry Over (MT)', fmt: v => fmtNum(v) }, { key: 'p', label: 'Pemenuhan', fmt: v => fmtPct(v) }, ...STAGES.map(s => ({ key: s.key, label: `${s.label} (MT)`, fmt: (v: any) => fmtNum(v) })), { key: 'sumber', label: 'Sumber Tambang' }]
 export function MonitoringPltu() {
   const { kinds } = useStore(); const ds = kinds.plant; const [sel, setSel] = useState<any>(null)
   if (!ds) return <Empty hint="Impor dataset PLTU di" />
   const ships = kinds.shipment?.rows ?? []
-  return <><Card title="Monitoring Pasokan PLTU"><DataTable rows={ds.rows.map(r => ({ ...r, p: pct(plantActual(r), r.target) }))} cols={pltuCols} name="monitoring-pltu" onRow={setSel} /></Card>
+  return <><Card title="Monitoring Pasokan PLTU"><DataTable rows={ds.rows.map(r => ({ ...r, p: pct(plantActual(r), kebutuhan(r)) }))} cols={pltuCols} name="monitoring-pltu" onRow={setSel} /></Card>
     {sel && <><Detail r={sel} labels={lab('plant')} onClose={() => setSel(null)} />
       <Card title="Shipment Terkait">{!kinds.shipment ? <p className="text-xs">Dataset shipment belum diimpor.</p> : <DataTable rows={ships.filter(s => s.pltu === sel.pltu)} cols={shipCols} name="shipment-terkait" />}</Card></>}</>
 }
