@@ -7,7 +7,7 @@ export const distinctShipments = (rows: R[]) => new Set(rows.map(r => String(r.i
 export const duplicateIds = (rows: R[]) => rows.length - new Set(rows.map(r => String(r.id ?? '').trim())).size
 export const pct = (actual: number, target: number | null | undefined) => target && target > 0 ? (actual / target) * 100 : null
 /** Realisasi = Unloading (D/S). Pemenuhan = Unloading ÷ (Konfirmasi + Carry Over), mengikuti rumus Dashboard 1. */
-export const plantActual = (r: R) => r.unloading ?? 0
+export const plantActual = (r: R) => r.ds ?? r.unloading ?? 0
 export const kebutuhan = (r: R) => (r.target ?? 0) + (r.carryOver ?? 0)
 export function attention(rows: R[], threshold: number): (R & { p: number | null })[] {
   return rows.map(r => ({ ...r, p: pct(plantActual(r), kebutuhan(r)) }) as R & { p: number | null }).filter(r => r.p != null && r.p < threshold).sort((a, b) => a.p! - b.p!)

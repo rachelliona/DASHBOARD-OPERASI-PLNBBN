@@ -8,7 +8,7 @@ import { BULAN, aggregatePlants, groupBy, parseMonthly, totals } from '../domain
 import { pct, sum } from '../domain/kpi'
 import { fmtNum, fmtPct } from '../domain/format'
 import { TARGET_TAHUNAN } from '../config/sources'
-import { tone } from './Ringkasan'
+import { tone } from '../domain/view'
 const f = (v: any) => fmtNum(v)
 const gcols: Col[] = [{ key: 'nama', label: 'Nama' }, { key: 'n', label: 'Shipment' }, { key: 'konf', label: 'Konfirmasi (MT)', fmt: f }, { key: 'co', label: 'Carry Over (MT)', fmt: f }, { key: 'bl', label: 'Loading B/L (MT)', fmt: f }, { key: 'ds', label: 'Unloading D/S (MT)', fmt: f }]
 const pcols: Col[] = [{ key: 'pltu', label: 'PLTU' }, { key: 'wilayah', label: 'Wilayah' }, { key: 'target', label: 'Konfirmasi (MT)', fmt: f }, { key: 'carryOver', label: 'Carry Over (MT)', fmt: f }, { key: 'bl', label: 'Loading B/L (MT)', fmt: f }, { key: 'ds', label: 'Unloading D/S (MT)', fmt: f }, { key: 'p', label: 'Pemenuhan', fmt: v => fmtPct(v) }, { key: 'n', label: 'Shipment' }]

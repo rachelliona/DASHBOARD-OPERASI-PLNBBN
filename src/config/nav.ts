@@ -4,9 +4,9 @@ const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', '
 export const NAV: NavItem[] = [
   { label: 'Ringkasan', to: '/' },
   { label: 'Peta Shipment', to: '/peta' },
-  { label: 'Laporan', children: [{ label: 'Harian', to: '/laporan/harian' }, { label: 'Mingguan', to: '/laporan/mingguan', soon: true }, { label: 'Bulanan', to: '/laporan/bulanan', soon: true }] },
+  { label: 'Laporan Harian', to: '/laporan/harian' },
   { label: 'Monitoring', children: [
-    { label: 'Shipment', to: '/shipment' }, { label: 'Pasokan PLTU', to: '/pltu' },
+    { label: 'Dashboard Interaktif', to: '/dashboard' }, { label: 'Shipment', to: '/shipment' }, { label: 'Pasokan PLTU', to: '/pltu' },
     { label: 'Realisasi', children: [{ label: 'Ringkasan Realisasi', to: '/realisasi' }, { label: 'Per Bulan', children: BULAN.map(b => ({ label: b, to: '/realisasi/' + b })) },
       sheet('Realisasi PLTU'), sheet('Realisasi Mitra Tambang'), sheet('Realisasi Mitra Transport'),
       { label: 'Rekap (data mentah)', children: [sheet('Per PLTU Rekap'), sheet('Per IPP Rekap'), sheet('Data running (SUM)'), sheet('Data running (QTY)')] }] },

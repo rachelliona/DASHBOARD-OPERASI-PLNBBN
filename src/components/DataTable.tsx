@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { ReactNode, useMemo, useState } from 'react'
 import { useReactTable, getCoreRowModel, getSortedRowModel, getFilteredRowModel, getPaginationRowModel, flexRender, ColumnDef, SortingState } from '@tanstack/react-table'
 import { Btn } from './ui'
 import { downloadCsv } from '../domain/csv'
-export type Col = { key: string; label: string; fmt?: (v: any, r: any) => string }
+export type Col = { key: string; label: string; fmt?: (v: any, r: any) => ReactNode }
 export function DataTable({ rows, cols, name, onRow }: { rows: any[]; cols: Col[]; name: string; onRow?: (r: any) => void }) {
   const [sorting, setSorting] = useState<SortingState>([]); const [q, setQ] = useState('')
   const columns = useMemo<ColumnDef<any>[]>(() => cols.map(c => ({ id: c.key, accessorFn: (r: any) => r[c.key], header: c.label, cell: i => c.fmt ? c.fmt(i.getValue(), i.row.original) : String(i.getValue() ?? '—') })), [cols])

@@ -9,7 +9,7 @@ const REGION_BY = new Map(Object.entries(REGION_OF).flatMap(([r, a]) => a.map(n 
 /** "Adipala (PC) LRC" -> "Adipala"; memakai nama baku Master Data Pembangkit bila cocok. */
 export const plantName = (raw: string) => { const c = raw.replace(/\s*-\s*transhipment.*$/i, '').replace(/\s*\([^)]*\)/g, '').replace(/\b(LRC|MRC)\b/gi, '').replace(/\s+/g, ' ').trim(); return CANON.get(norm(c)) ?? c }
 export const regionOf = (n: string) => REGION_BY.get(norm(n)) ?? null
-export type Ship = { id: string; plant: string; konf: 'carry' | 'bulan' | 'lain'; jumlah: number | null; tbbg: string; status: string; stage: string | null; si: string; mitraReal: string; sumber: string; jetty: string; transport: string; bl: number | null; ds: number | null; vol: number }
+export type Ship = { id: string; plant: string; konf: 'carry' | 'bulan' | 'lain'; jumlah: number | null; tbbg: string; status: string; stage: string | null; si: string; mitraReal: string; sumber: string; jetty: string; transport: string; moda: string; bl: number | null; ds: number | null; vol: number }
 const NEED = ['PLTU', 'Konfirmasi', 'Jumlah', 'Status', 'B/L', 'D/S']
 /** Baris sheet bulanan -> shipment. Dilewati: judul kelompok, Subtotal, baris kosong/#N/A (tanpa Jumlah dan B/L). */
 export function parseMonthly(t: Tbl, bulan: string) {
@@ -23,7 +23,7 @@ export function parseMonthly(t: Tbl, bulan: string) {
     const status = (r['Status'] ?? '').trim(), stage = stageOf(status), tbbg = (r['TB/BG'] ?? '').trim(), kr = (r['Konfirmasi'] ?? '').trim(), si = (r['No. SI'] ?? '').trim()
     const vol = stage === 'unloading' ? ds ?? bl ?? jumlah ?? 0 : stage === 'sailing' || stage === 'tiba' || stage === 'bongkar' ? bl ?? jumlah ?? 0 : jumlah ?? bl ?? 0
     ships.push({ id: si ? `${si} · ${tbbg.split(';')[0].trim()}` : `${bulan}#${i + 1}`, plant: plantName(name), konf: /carry/i.test(kr) ? 'carry' : norm(kr) === norm(bulan) ? 'bulan' : 'lain', jumlah, tbbg, status, stage, si,
-      mitraReal: (r['Mitra Real.'] ?? '').trim(), sumber: (r['Sumber Tambang'] ?? '').trim(), jetty: (r['Jetty'] ?? '').trim(), transport: (r['Mitra Transport'] ?? '').trim(), bl, ds, vol })
+      mitraReal: (r['Mitra Real.'] ?? '').trim(), sumber: (r['Sumber Tambang'] ?? '').trim(), jetty: (r['Jetty'] ?? '').trim(), transport: (r['Mitra Transport'] ?? '').trim(), moda: (r['Moda'] ?? '').trim(), bl, ds, vol })
   })
   return { ships, sub, skipped, missing }
 }
@@ -35,7 +35,7 @@ export function aggregatePlants(ships: Ship[]) {
   for (const s of ships) { const a = get(s.plant); a.n++; if (s.konf === 'bulan') a.target += s.jumlah ?? 0; if (s.konf === 'carry') a.carryOver += s.jumlah ?? 0; a[s.stage ?? 'lain'] += s.vol; a.bl += s.bl ?? 0; a.ds += s.ds ?? 0; if (s.mitraReal) a.sumberSet.add(s.mitraReal) }
   return [...m.values()].map(({ sumberSet, ...a }) => ({ ...a, sumber: [...sumberSet].join(', ') || null, keterangan: null }))
 }
-export const toShipRows = (ships: Ship[]) => ships.map(s => ({ id: s.id, si: s.si || null, pltu: s.plant, wilayah: regionOf(s.plant), asal: s.jetty || null, mitraTambang: s.sumber || null, mitraTransport: s.transport || null, kapal: s.tbbg || null, volume: s.vol, status: s.stage, statusRaw: s.status || null, eta: null, keterangan: null }))
+export const toShipRows = (ships: Ship[]) => ships.map(s => ({ id: s.id, si: s.si || null, pltu: s.plant, wilayah: regionOf(s.plant), asal: s.jetty || null, mitraTambang: s.sumber || null, mitraTransport: s.transport || null, mitra: s.mitraReal || null, moda: s.moda || null, konf: s.konf, jumlah: s.jumlah, kapal: s.tbbg || null, volume: s.vol, status: s.stage, statusRaw: s.status || null, eta: null, keterangan: null }))
 export function groupBy(ships: Ship[], key: (s: Ship) => string) {
   const m = new Map<string, any>()
   for (const s of ships) { const k = key(s) || '—'; const a = m.get(k) ?? { nama: k, n: 0, konf: 0, co: 0, bl: 0, ds: 0 }; a.n++; if (s.konf === 'bulan') a.konf += s.jumlah ?? 0; if (s.konf === 'carry') a.co += s.jumlah ?? 0; a.bl += s.bl ?? 0; a.ds += s.ds ?? 0; m.set(k, a) }
