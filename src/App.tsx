@@ -5,6 +5,7 @@ import Ringkasan from './pages/Ringkasan'
 import Laporan from './pages/Laporan'
 import Peta from './pages/Peta'
 import Dashboard from './pages/Dashboard'
+import Linimasa from './pages/Linimasa'
 import { MonitoringShipment, MonitoringPltu, SheetPage } from './pages/Monitoring'
 import { RealisasiBulan, RealisasiRingkasan } from './pages/Realisasi'
 import Sumber from './pages/Sumber'
@@ -36,7 +37,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Ringkasan />} /><Route path="/peta" element={<Peta />} />
         <Route path="/laporan" element={<Navigate to="/laporan/harian" replace />} /><Route path="/laporan/harian" element={<Laporan />} />
-        <Route path="/dashboard" element={<Dashboard />} /><Route path="/shipment" element={<MonitoringShipment />} /><Route path="/pltu" element={<MonitoringPltu />} />
+        <Route path="/linimasa" element={<Linimasa />} /><Route path="/dashboard" element={<Dashboard />} /><Route path="/shipment" element={<MonitoringShipment />} /><Route path="/pltu" element={<MonitoringPltu />} />
         <Route path="/realisasi" element={<RealisasiRingkasan />} /><Route path="/realisasi/:bulan" element={<RealisasiBulan />} />
         <Route path="/sheet/:name" element={<SheetPage />} />
         <Route path="/sumber-data" element={<Sumber />} /><Route path="/pengaturan" element={<Pengaturan />} />

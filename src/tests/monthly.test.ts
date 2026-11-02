@@ -20,3 +20,17 @@ describe('sheet bulanan', () => {
   it('nama PLTU & wilayah', () => { expect(plantName('Sanggau (Stoker) - Transhipment Pontianak')).toBe('Sanggau'); expect(plantName('Tj Redeb / Berau (Stoker)')).toBe('Tj. Redeb / Berau'); expect(plantName('Paiton (PJB)')).toBe('Paiton'); expect(regionOf('Kupang')).toBe('Sulmapana 2') })
   it('kolom hilang dilaporkan', () => { expect(parseMonthly({ headers: ['PLTU'], rows: [] }, 'Oktober').missing).toContain('B/L') })
 })
+import { parseDT, parseSI, stepDays, aggregateYtd, pctl } from '../domain/monthly'
+describe('tanggal & tahap', () => {
+  it('format tanggal sheet', () => { expect(parseDT('11/12/25 13:15')).toBe(Date.UTC(2025, 11, 11, 13, 15)); expect(parseDT('02/01/2026')).toBe(Date.UTC(2026, 0, 2)); expect(parseDT('25/01/2614:35')).toBe(Date.UTC(2026, 0, 25, 14, 35)); expect(parseDT('31/12/1015')).toBeNull(); expect(parseDT('abc')).toBeNull() })
+  it('Tgl. SI tanpa tahun', () => { const ref = Date.UTC(2026, 0, 3); expect(parseSI('28/11', ref)).toBe(Date.UTC(2025, 10, 28)); expect(parseSI('02/01', ref)).toBe(Date.UTC(2026, 0, 2)); expect(parseSI('12/10', null)).toBeNull() })
+  it('lama tahap dalam hari; urutan terbalik = null', () => {
+    const d = (x: number) => Date.UTC(2026, 0, x); const r = stepDays([d(1), d(2), d(2), d(3), d(3), d(5), d(10), null, null, null])
+    expect(r[0]).toBe(1); expect(r[5]).toBe(5); expect(r[6]).toBeNull(); expect(stepDays([d(5), d(2), null, null, null, null, null, null, null, null])[0]).toBeNull()
+  })
+  it('persentil & rekap tahunan', () => { expect(pctl([1, 2, 3, 4], 0.5)).toBe(2.5); expect(pctl([], 0.5)).toBeNull() })
+  it('rekap tahun per PLTU', () => {
+    const t = parseCsv('PLTU,Konfirmasi,Jumlah,Status,B/L,D/S\nPaiton (PJB),Januari,7.500,Selesai Bongkar,"7.438,28","7.431,17"\nPaiton (PJB),Februari,7.500,,,\nPLTU,Konfirmasi,Jumlah,Status,B/L,D/S\nTOTAL,,15.000,,,\n')
+    const y = aggregateYtd(parseMonthly(t, 'Januari').ships); expect(y).toHaveLength(1); expect(y[0].keb).toBe(15000); expect(y[0].ds).toBeCloseTo(7431.17, 2); expect(y[0].bln[0].j).toBe(7500); expect(y[0].p).toBeCloseTo(49.54, 1)
+  })
+})

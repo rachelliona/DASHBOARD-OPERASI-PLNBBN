@@ -9,7 +9,7 @@ import { useAuth } from './auth'
 export type Row = Record<string, any>
 export type DS = { rows: Row[]; rejected: Rejected[]; source: string; at: string; headers?: string[]; headerRow?: number; errorCells?: number }
 export type Stat = { state: string; msg?: string; at?: string }
-type St = { kinds: Record<string, DS>; raw: Record<string, DS>; status: Record<string, Stat>; threshold: number; intervalSec: number; bulanAktif: string; monthly: ReturnType<typeof parseMonthly> | null
+type St = { kinds: Record<string, DS>; raw: Record<string, DS>; status: Record<string, Stat>; threshold: number; intervalSec: number; bulanAktif: string; monthly: ReturnType<typeof parseMonthly> | null; all: ReturnType<typeof parseMonthly> | null
   fetchSheet: (name: string) => Promise<void>; setKind: (k: string, d: DS) => void; setRaw: (n: string, d: DS) => void; setStatus: (n: string, s: Stat) => void; setThreshold: (n: number) => void; setIntervalSec: (n: number) => void; clear: () => void }
 const Ctx = createContext<St>(null as any)
 export const useStore = () => useContext(Ctx)
@@ -22,6 +22,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const bulanAktif = BULAN[new Date(Date.now() + 7 * 36e5).getUTCMonth()]
   const d = raw[bulanAktif]
   const monthly = useMemo(() => d?.headers ? parseMonthly({ headers: d.headers, rows: d.rows }, bulanAktif) : null, [d])
+  const dAll = raw['ALL Shipment']
+  const all = useMemo(() => dAll?.headers ? parseMonthly({ headers: dAll.headers, rows: dAll.rows }, 'Januari') : null, [dAll])
   const kinds = useMemo(() => {
     const k: Record<string, DS> = { lokasi: { rows: LOKASI_ROWS, rejected: [], source: 'Master Data Pembangkit (konfigurasi)', at: '—' } }
     if (monthly && d && !monthly.missing.length) { const src = `Sheet ${bulanAktif} (otomatis)`; k.plant = { rows: aggregatePlants(monthly.ships), rejected: [], source: src, at: d.at }; k.shipment = { rows: toShipRows(monthly.ships), rejected: [], source: src, at: d.at } }
@@ -37,7 +39,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const refreshRef = useRef(refreshAll); refreshRef.current = refreshAll
   useEffect(() => { if (user) fetchSheet(bulanAktif) }, [user])
   useEffect(() => { const tick = () => { if (document.visibilityState === 'visible') refreshRef.current() }; const id = setInterval(tick, intervalSec * 1000); document.addEventListener('visibilitychange', tick); return () => { clearInterval(id); document.removeEventListener('visibilitychange', tick) } }, [intervalSec])
-  return <Ctx.Provider value={{ fetchSheet, kinds, raw, status, threshold, intervalSec, bulanAktif, monthly,
+  return <Ctx.Provider value={{ fetchSheet, kinds, raw, status, threshold, intervalSec, bulanAktif, monthly, all,
     setIntervalSec: (n: number) => { localStorage.setItem('pln-interval', String(n)); setI(n) },
     setKind: (k, x) => setK(p => ({ ...p, [k]: x })), setRaw: (n, x) => setR(p => ({ ...p, [n]: x })), setStatus: (n, s) => setS(p => ({ ...p, [n]: s })),
     setThreshold: n => { localStorage.setItem('pln-threshold', String(n)); setT(n) }, clear: () => { setK({}); setR({}); setS({}) } }}>{children}</Ctx.Provider>
