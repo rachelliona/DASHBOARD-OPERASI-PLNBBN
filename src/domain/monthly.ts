@@ -9,7 +9,7 @@ const REGION_BY = new Map(Object.entries(REGION_OF).flatMap(([r, a]) => a.map(n 
 /** "Adipala (PC) LRC" -> "Adipala"; memakai nama baku Master Data Pembangkit bila cocok. */
 export const plantName = (raw: string) => { const c = raw.replace(/\s*-\s*transhipment.*$/i, '').replace(/\s*\([^)]*\)/g, '').replace(/\b(LRC|MRC)\b/gi, '').replace(/\s+/g, ' ').trim(); return CANON.get(norm(c)) ?? c }
 export const regionOf = (n: string) => REGION_BY.get(norm(n)) ?? null
-export type Ship = { id: string; plant: string; konf: 'carry' | 'bulan' | 'lain'; jumlah: number | null; tbbg: string; status: string; stage: string | null; si: string; mitraReal: string; sumber: string; jetty: string; transport: string; moda: string; konfRaw: string; eta: number | null; etaTxt: string; ms: (number | null)[]; anom: boolean; bl: number | null; ds: number | null; vol: number }
+export type Ship = { id: string; plant: string; konf: 'carry' | 'bulan' | 'lain'; jumlah: number | null; tbbg: string; status: string; stage: string | null; si: string; mitraReal: string; sumber: string; jetty: string; transport: string; moda: string; konfRaw: string; eta: number | null; etaTxt: string; ms: (number | null)[]; anom: boolean; bl: number | null; ds: number | null; vol: number; note?: string }
 export function parseDT(v: unknown): number | null {
   const m = String(v ?? '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})\s*(?:(\d{1,2}):(\d{2}))?$/); if (!m) return null
   const y = +m[3] < 100 ? 2000 + +m[3] : +m[3], mo = +m[2], d = +m[1]; if (y < 2025 || y > 2027 || mo < 1 || mo > 12 || d < 1 || d > 31) return null
@@ -50,7 +50,7 @@ export function parseMonthly(t: Tbl, bulan: string) {
     const vol = stage === 'unloading' ? ds ?? bl ?? jumlah ?? 0 : stage === 'sailing' || stage === 'tiba' || stage === 'bongkar' ? bl ?? jumlah ?? 0 : jumlah ?? bl ?? 0
     const g = (k: string) => r[H[k]] ?? ''; const ms: (number | null)[] = [null, ...MS_KEYS.slice(1).map(k => parseDT(g(k)))]; ms[0] = parseSI(g('tglsi'), ms.slice(1).find(x => x != null) ?? null)
     ships.push({ id: si ? `${si} · ${tbbg.split(';')[0].trim()}` : `${bulan}#${i + 1}`, plant: plantName(name), konf: /carry/i.test(kr) ? 'carry' : norm(kr) === norm(bulan) ? 'bulan' : 'lain', jumlah, tbbg, status, stage, si,
-      mitraReal: (r['Mitra Real.'] ?? '').trim(), sumber: (r['Sumber Tambang'] ?? '').trim(), jetty: (r['Jetty'] ?? '').trim(), transport: (r['Mitra Transport'] ?? '').trim(), moda: (r['Moda'] ?? '').trim(), konfRaw: kr, eta: parseEta(String(g('tgl')), kr, ms), etaTxt: String(g('tgl')).trim(), ms, anom: !!(bl && ds && Math.abs(ds - bl) / bl > 0.05), bl, ds, vol })
+      mitraReal: (r['Mitra Real.'] ?? '').trim(), sumber: (r['Sumber Tambang'] ?? '').trim(), jetty: (r['Jetty'] ?? '').trim(), transport: (r['Mitra Transport'] ?? '').trim(), moda: (r['Moda'] ?? '').trim(), konfRaw: kr, eta: parseEta(String(g('tgl')), kr, ms), etaTxt: String(g('tgl')).trim(), ms, anom: !!(bl && ds && Math.abs(ds - bl) / bl > 0.05), bl, ds, vol, note: [tbbg, ...t.headers.filter(h => /polis|keterang|catatan|remark/i.test(h)).map(h => (r[h] ?? '').trim())].filter(Boolean).join(' | ') })
   })
   return { ships, sub, skipped, missing }
 }
