@@ -41,9 +41,9 @@ export function MonitoringPltu() {
       <Card title="Shipment Terkait">{!kinds.shipment ? <p className="text-xs">Dataset shipment belum tersedia.</p> : <DataTable rows={ships.filter(s => s.pltu === sel.pltu)} cols={shipCols} name="shipment-terkait" />}</Card></>}</>
 }
 export function SheetPage() {
-  const { name = '' } = useParams(); const { raw, status, fetchSheet } = useStore(); const d = raw[name]; const st = status[name]
+  const { name = '' } = useParams(); const { raw, status, fetchSheet, asOf } = useStore(); const d = raw[name]; const st = status[name]
   useEffect(() => { if (!raw[name] && !status[name]) fetchSheet(name) }, [name])
-  return <><div className="flex items-center gap-2 mb-2 no-print"><h2 className="font-semibold">{name}</h2><Btn onClick={() => fetchSheet(name)}>Perbarui Data</Btn><span className="text-xs text-slate-400">{st?.state ?? ''}{st?.at ? ` · ${st.at}` : ''}</span></div>
+  return <>{asOf && <Card><p className="text-xs text-amber-300">Data mentah sheet hanya tersedia untuk tanggal langsung. Saat ini kamu melihat keadaan {fmtDate(asOf)}; pilih "Langsung" di bagian atas untuk membuka sheet ini.</p></Card>}<div className="flex items-center gap-2 mb-2 no-print"><h2 className="font-semibold">{name}</h2><Btn onClick={() => fetchSheet(name)}>Perbarui Data</Btn><span className="text-xs text-slate-400">{st?.state ?? ''}{st?.at ? ` · ${st.at}` : ''}</span></div>
     {st?.msg && <p className="text-xs text-amber-300 mb-2">{st.msg}.{d ? ' Menampilkan data terakhir yang berhasil dimuat.' : ''}</p>}
     {!d ? (st?.state === 'Gagal Diakses' ? <Empty text="Gagal Mengambil Data" hint="Klik Perbarui Data, atau impor CSV di" /> : <Card><p className="text-xs">Memuat Data…</p></Card>)
       : <Card title={`${fmtNum(d.rows.length)} baris`}><p className="text-xs text-slate-400 mb-1">Baris judul kolom: {d.headerRow}. Sel error Sheets dianggap kosong: {d.errorCells}. Baris subtotal dan judul kelompok dari sheet tampil apa adanya. Satuan dan definisi kolom mengikuti sheet asli.</p>

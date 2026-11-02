@@ -34,3 +34,13 @@ describe('tanggal & tahap', () => {
     const y = aggregateYtd(parseMonthly(t, 'Januari').ships); expect(y).toHaveLength(1); expect(y[0].keb).toBe(15000); expect(y[0].ds).toBeCloseTo(7431.17, 2); expect(y[0].bln[0].j).toBe(7500); expect(y[0].p).toBeCloseTo(49.54, 1)
   })
 })
+import { buildSnapshot, sheetsNeeded } from '../domain/snapshot'
+describe('snapshot harian', () => {
+  const t = parseCsv('PLTU,Konfirmasi,Jumlah,Status,B/L,D/S\nPaiton (PJB),Oktober,7.500,Selesai Bongkar,"7.438,28","7.431,17"\n')
+  it('memuat ALL Shipment dan bulan Januari s.d. bulan berjalan', () => {
+    const now = new Date('2026-10-28T23:30:00Z')  // 29 Okt 06.30 WIB
+    const s = buildSnapshot(() => t, now, '29 Oktober 2026 pukul 06.30 WIB')
+    expect(s.date).toBe('2026-10-29'); expect(s.bulan).toBe('Oktober'); expect(Object.keys(s.months)).toHaveLength(10); expect(s.all.ships).toHaveLength(1); expect(sheetsNeeded(now)).toHaveLength(11)
+    expect(JSON.parse(JSON.stringify(s)).all.ships[0].plant).toBe('Paiton')
+  })
+})

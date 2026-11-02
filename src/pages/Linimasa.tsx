@@ -7,8 +7,8 @@ import { STEPS, pctl, regionOf, stepDays } from '../domain/monthly'
 import { fmtNum } from '../domain/format'
 const flat = (d: (number | null)[]) => Object.fromEntries(d.map((x, i) => ['s' + i, x]))
 export default function Linimasa() {
-  const { all, raw, status, fetchSheet } = useStore(); const [reg, setReg] = useState(''); const [st, setSt] = useState(''); const [late, setLate] = useState(false)
-  useEffect(() => { if (!raw['ALL Shipment'] && !status['ALL Shipment']) fetchSheet('ALL Shipment') }, [])
+  const { all, raw, status, fetchSheet, asOf } = useStore(); const [reg, setReg] = useState(''); const [st, setSt] = useState(''); const [late, setLate] = useState(false)
+  useEffect(() => { if (!asOf && !raw['ALL Shipment'] && !status['ALL Shipment']) fetchSheet('ALL Shipment') }, [asOf])
   const data = useMemo(() => {
     if (!all) return null
     const rows = all.ships.map(s => { const d = stepDays(s.ms); const tot = s.ms[0] != null && s.ms[9] != null && s.ms[9] >= s.ms[0] ? (s.ms[9] - s.ms[0]) / 864e5 : null; return { id: s.id, pltu: s.plant, wilayah: regionOf(s.plant), si: s.si, kapal: s.tbbg.split(';')[0], mitra: s.mitraReal, status: s.stage, d, tot, ...flat(d) } }).filter(r => r.d.some(x => x != null))

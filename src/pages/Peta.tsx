@@ -11,9 +11,9 @@ import { tone } from '../domain/view'
 import { BULAN, aggregateYtd } from '../domain/monthly'
 const MODES: Record<string, string> = { wilayah: 'Wilayah', pemenuhan: 'Pemenuhan', status: 'Status dominan' }
 export default function Peta() {
-  const { kinds, all, raw, status, fetchSheet } = useStore(); const plants = kinds.plant?.rows ?? [], ships = kinds.shipment?.rows ?? [], lok = kinds.lokasi?.rows ?? []
+  const { kinds, all, raw, status, fetchSheet, asOf } = useStore(); const plants = kinds.plant?.rows ?? [], ships = kinds.shipment?.rows ?? [], lok = kinds.lokasi?.rows ?? []
   const [view, setView] = useState<'existing' | 'rekap'>('existing'); const [reg, setReg] = useState(''); const [mode, setMode] = useState('wilayah'); const [on, setOn] = useState<string[]>(STATUSES.map(s => s.key)); const [only, setOnly] = useState(true); const [sel, setSel] = useState('')
-  useEffect(() => { if (view === 'rekap' && !raw['ALL Shipment'] && !status['ALL Shipment']) fetchSheet('ALL Shipment') }, [view])
+  useEffect(() => { if (!asOf && view === 'rekap' && !raw['ALL Shipment'] && !status['ALL Shipment']) fetchSheet('ALL Shipment') }, [view, asOf])
   const ytd = useMemo(() => all ? aggregateYtd(all.ships) : null, [all])
   const loc = useMemo(() => new Map(lok.map(l => [norm(l.nama), l])), [lok])
   if (!plants.length && view === 'existing') return <Empty />

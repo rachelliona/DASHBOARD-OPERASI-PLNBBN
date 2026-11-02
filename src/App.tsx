@@ -1,45 +1,52 @@
 import { useState } from 'react'
 import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Activity, ChevronDown, ChevronRight, Database, FileText, LayoutDashboard, LogOut, Map as MapIcon, Users, Zap } from 'lucide-react'
 import { useStore } from './store'
 import Ringkasan from './pages/Ringkasan'
 import Laporan from './pages/Laporan'
 import Peta from './pages/Peta'
 import Dashboard from './pages/Dashboard'
 import Linimasa from './pages/Linimasa'
+import Eta from './pages/Eta'
 import { MonitoringShipment, MonitoringPltu, SheetPage } from './pages/Monitoring'
 import { RealisasiBulan, RealisasiRingkasan } from './pages/Realisasi'
 import Sumber from './pages/Sumber'
 import Pengaturan from './pages/Pengaturan'
 import Login from './pages/Login'
 import BuatHash from './pages/BuatHash'
+import DateSelector from './components/DateSelector'
 import { useAuth } from './auth'
-import { Card } from './components/ui'
 import { NAV, NavItem } from './config/nav'
-const Segera = ({ title, why }: { title: string; why: string }) => <Card title={title}><p className="text-xs text-slate-400">Belum tersedia. {why}</p></Card>
+import { fmtDate } from './domain/format'
+const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: FileText, activity: Activity, users: Users, db: Database }
 function Item({ item, depth }: { item: NavItem; depth: number }) {
   const { pathname } = useLocation()
   const has = (it: NavItem): boolean => it.to ? decodeURI(pathname) === decodeURI(it.to) : !!it.children?.some(has)
-  const [open, setOpen] = useState(() => has(item))
-  const pad = { paddingLeft: 8 + depth * 12 }
-  if (item.to) return <NavLink to={item.to} end style={pad} className={({ isActive }) => 'block rounded py-1 pr-2 text-xs ' + (isActive ? 'bg-white/10 text-[#e6b457]' : 'hover:bg-white/5')}>{item.label}{item.soon && <span className="ml-1 text-[10px] text-amber-300">segera</span>}</NavLink>
-  return <div><button style={pad} onClick={() => setOpen(!open)} className="w-full text-left rounded py-1 pr-2 text-xs font-semibold hover:bg-white/5">{open ? '▾' : '▸'} {item.label}</button>{open && item.children!.map(c => <Item key={c.label} item={c} depth={depth + 1} />)}</div>
+  const [open, setOpen] = useState(() => has(item)); const Ic = item.icon ? ICON[item.icon] : null; const pad = { paddingLeft: 10 + depth * 12 }
+  const lab = <>{Ic && <Ic size={14} className="shrink-0" />}<span className="truncate">{item.label}</span></>
+  if (item.to) return <NavLink to={item.to} end style={pad} className={({ isActive }) => 'navitem flex items-center gap-2 rounded-lg py-1.5 pr-2 text-xs mb-0.5 ' + (isActive ? 'active' : 'text-slate-300 hover:bg-white/5')}>{lab}{item.soon && <span className="ml-1 text-[10px] text-amber-300">segera</span>}</NavLink>
+  return <div><button style={pad} onClick={() => setOpen(!open)} className="w-full flex items-center gap-2 text-left rounded-lg py-1.5 pr-2 text-xs font-semibold text-slate-200 hover:bg-white/5 mb-0.5">{lab}<span className="ml-auto text-slate-500">{open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}</span></button>{open && <div className="ml-2 border-l border-white/5">{item.children!.map(c => <Item key={c.label} item={c} depth={depth + 1} />)}</div>}</div>
 }
 export default function App() {
-  const { kinds, raw, intervalSec } = useStore(); const { user, logout } = useAuth(); const { pathname } = useLocation()
+  const { kinds, raw, intervalSec, asOf } = useStore(); const { user, logout } = useAuth(); const { pathname } = useLocation()
   if (pathname === '/buat-hash') return <BuatHash />
   if (!user) return <Login />
-  const last = [...Object.values(kinds), ...Object.values(raw)].map(d => d.at).slice(-1)[0]
+  const last = [...Object.values(kinds), ...Object.values(raw)].map(d => d.at).filter(a => a !== '—').slice(-1)[0]
   return <div className="flex min-h-screen">
-    <nav className="no-print w-52 shrink-0 bg-[#12141a] p-2 border-r border-white/10 overflow-y-auto max-h-screen sticky top-0"><div className="font-bold text-sm mb-2 px-2">PLN Batubara Niaga</div>{NAV.map(i => <Item key={i.label} item={i} depth={0} />)}</nav>
-    <main className="flex-1 p-3 min-w-0">
-      <header className="mb-3"><h1 className="text-base font-bold">Dashboard Operasi PLN Batubara Niaga</h1><p className="text-xs text-slate-400">Monitoring Pasokan PLTU, Realisasi, dan Shipment Terintegrasi</p>
-        <p className="text-[11px] text-slate-500 no-print">{last ? `Pembaruan terakhir: ${last}` : 'Belum ada data dimuat'} · Pembaruan otomatis tiap {intervalSec} dtk untuk sheet yang dibuka · Masuk sebagai {user.nama} <button className="underline" onClick={logout}>Keluar</button></p></header>
-      <Routes>
+    <nav className="no-print sidebar w-56 shrink-0 p-3 overflow-y-auto max-h-screen sticky top-0">
+      <div className="flex items-center gap-2.5 px-1 mb-4"><span className="logo"><Zap size={16} strokeWidth={2.5} /></span><div><div className="font-bold text-[13px] leading-tight">PLN Batubara Niaga</div><div className="text-[10px] text-slate-500">Dashboard Operasi</div></div></div>
+      {NAV.map(i => <Item key={i.label} item={i} depth={0} />)}</nav>
+    <main className="flex-1 min-w-0">
+      <header className="topbar no-print px-4 py-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+        <div className="mr-auto"><h1 className="text-sm font-bold leading-tight">Dashboard Operasi PLN Batubara Niaga</h1><p className="text-[11px] text-slate-500">Monitoring Pasokan PLTU, Realisasi, dan Shipment Terintegrasi</p></div>
+        <DateSelector />
+        {asOf ? <span className="badge past">◷ Data per {fmtDate(asOf)}</span> : <span className="badge live"><i className="pulse" />Langsung · {last ?? 'memuat…'} · tiap {intervalSec} dtk</span>}
+        <span className="text-xs text-slate-400">{user.nama}</span><button onClick={logout} className="flex items-center gap-1 text-xs text-slate-400 hover:text-white"><LogOut size={13} />Keluar</button></header>
+      <div className="p-4 page"><Routes>
         <Route path="/" element={<Ringkasan />} /><Route path="/peta" element={<Peta />} />
         <Route path="/laporan" element={<Navigate to="/laporan/harian" replace />} /><Route path="/laporan/harian" element={<Laporan />} />
-        <Route path="/linimasa" element={<Linimasa />} /><Route path="/dashboard" element={<Dashboard />} /><Route path="/shipment" element={<MonitoringShipment />} /><Route path="/pltu" element={<MonitoringPltu />} />
+        <Route path="/eta" element={<Eta />} /><Route path="/linimasa" element={<Linimasa />} /><Route path="/dashboard" element={<Dashboard />} /><Route path="/shipment" element={<MonitoringShipment />} /><Route path="/pltu" element={<MonitoringPltu />} />
         <Route path="/realisasi" element={<RealisasiRingkasan />} /><Route path="/realisasi/:bulan" element={<RealisasiBulan />} />
-        <Route path="/sheet/:name" element={<SheetPage />} />
-        <Route path="/sumber-data" element={<Sumber />} /><Route path="/pengaturan" element={<Pengaturan />} />
-      </Routes></main></div>
+        <Route path="/sheet/:name" element={<SheetPage />} /><Route path="/sumber-data" element={<Sumber />} /><Route path="/pengaturan" element={<Pengaturan />} />
+      </Routes></div></main></div>
 }

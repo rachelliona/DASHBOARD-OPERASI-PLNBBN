@@ -9,7 +9,7 @@ const REGION_BY = new Map(Object.entries(REGION_OF).flatMap(([r, a]) => a.map(n 
 /** "Adipala (PC) LRC" -> "Adipala"; memakai nama baku Master Data Pembangkit bila cocok. */
 export const plantName = (raw: string) => { const c = raw.replace(/\s*-\s*transhipment.*$/i, '').replace(/\s*\([^)]*\)/g, '').replace(/\b(LRC|MRC)\b/gi, '').replace(/\s+/g, ' ').trim(); return CANON.get(norm(c)) ?? c }
 export const regionOf = (n: string) => REGION_BY.get(norm(n)) ?? null
-export type Ship = { id: string; plant: string; konf: 'carry' | 'bulan' | 'lain'; jumlah: number | null; tbbg: string; status: string; stage: string | null; si: string; mitraReal: string; sumber: string; jetty: string; transport: string; moda: string; konfRaw: string; ms: (number | null)[]; anom: boolean; bl: number | null; ds: number | null; vol: number }
+export type Ship = { id: string; plant: string; konf: 'carry' | 'bulan' | 'lain'; jumlah: number | null; tbbg: string; status: string; stage: string | null; si: string; mitraReal: string; sumber: string; jetty: string; transport: string; moda: string; konfRaw: string; eta: number | null; etaTxt: string; ms: (number | null)[]; anom: boolean; bl: number | null; ds: number | null; vol: number }
 export function parseDT(v: unknown): number | null {
   const m = String(v ?? '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})\s*(?:(\d{1,2}):(\d{2}))?$/); if (!m) return null
   const y = +m[3] < 100 ? 2000 + +m[3] : +m[3], mo = +m[2], d = +m[1]; if (y < 2025 || y > 2027 || mo < 1 || mo > 12 || d < 1 || d > 31) return null
@@ -24,6 +24,16 @@ export function parseSI(v: unknown, ref: number | null): number | null {
 export const STEPS = ['SI → TA POL', 'TA POL → Sandar muat', 'Sandar → Mulai muat', 'Durasi muat', 'Selesai muat → Berlayar', 'Pelayaran', 'TA PLTU → Sandar bongkar', 'Sandar → Mulai bongkar', 'Durasi bongkar']
 /** Lama tiap tahap dalam hari; null bila salah satu tanggal kosong atau urutannya terbalik (data tidak wajar). */
 export const stepDays = (ms: (number | null)[]) => STEPS.map((_, i) => { const a = ms[i], b = ms[i + 1]; return a != null && b != null && b >= a ? (b - a) / 864e5 : null })
+/** ETA Rakor = kolom "Tgl." (hari dalam bulan konfirmasi, mis. 13; atau dd/mm). "Nov" (hanya bulan) tidak menjadi tanggal. Tahun mengikuti milestone pertama shipment. */
+export function parseEta(tgl: string, konfRaw: string, ms: (number | null)[]): number | null {
+  const t = tgl.trim(); let mo = BULAN.findIndex(b => norm(b) === norm(konfRaw)), day = 0
+  const a = t.match(/^(\d{1,2})\s*(?:[-–]\s*\d{1,2})?$/), b = t.match(/^(\d{1,2})[\/.](\d{1,2})$/)
+  if (b) { day = +b[1]; mo = +b[2] - 1 } else if (a) day = +a[1]; else return null
+  if (mo < 0 || mo > 11 || day < 1 || day > 31) return null
+  const ref = ms.find((x, i) => i > 0 && x != null) ?? null; let y = 2026
+  if (ref != null) { const r = new Date(ref); y = r.getUTCFullYear(); const rm = r.getUTCMonth(); if (mo > rm + 6) y--; else if (mo < rm - 6) y++ }
+  const v = Date.UTC(y, mo, day); return new Date(v).getUTCMonth() === mo ? v : null
+}
 const MS_KEYS = ['tglsi', 'tapol', 'berthing', 'commenceloading', 'completeloading', 'sailingtime', 'tapltu', 'berthing2', 'commenceunloading', 'completeunloading']
 const NEED = ['PLTU', 'Konfirmasi', 'Jumlah', 'Status', 'B/L', 'D/S']
 /** Baris sheet bulanan -> shipment. Dilewati: judul kelompok, Subtotal, baris kosong/#N/A (tanpa Jumlah dan B/L). */
@@ -40,7 +50,7 @@ export function parseMonthly(t: Tbl, bulan: string) {
     const vol = stage === 'unloading' ? ds ?? bl ?? jumlah ?? 0 : stage === 'sailing' || stage === 'tiba' || stage === 'bongkar' ? bl ?? jumlah ?? 0 : jumlah ?? bl ?? 0
     const g = (k: string) => r[H[k]] ?? ''; const ms: (number | null)[] = [null, ...MS_KEYS.slice(1).map(k => parseDT(g(k)))]; ms[0] = parseSI(g('tglsi'), ms.slice(1).find(x => x != null) ?? null)
     ships.push({ id: si ? `${si} · ${tbbg.split(';')[0].trim()}` : `${bulan}#${i + 1}`, plant: plantName(name), konf: /carry/i.test(kr) ? 'carry' : norm(kr) === norm(bulan) ? 'bulan' : 'lain', jumlah, tbbg, status, stage, si,
-      mitraReal: (r['Mitra Real.'] ?? '').trim(), sumber: (r['Sumber Tambang'] ?? '').trim(), jetty: (r['Jetty'] ?? '').trim(), transport: (r['Mitra Transport'] ?? '').trim(), moda: (r['Moda'] ?? '').trim(), konfRaw: kr, ms, anom: !!(bl && ds && Math.abs(ds - bl) / bl > 0.05), bl, ds, vol })
+      mitraReal: (r['Mitra Real.'] ?? '').trim(), sumber: (r['Sumber Tambang'] ?? '').trim(), jetty: (r['Jetty'] ?? '').trim(), transport: (r['Mitra Transport'] ?? '').trim(), moda: (r['Moda'] ?? '').trim(), konfRaw: kr, eta: parseEta(String(g('tgl')), kr, ms), etaTxt: String(g('tgl')).trim(), ms, anom: !!(bl && ds && Math.abs(ds - bl) / bl > 0.05), bl, ds, vol })
   })
   return { ships, sub, skipped, missing }
 }
