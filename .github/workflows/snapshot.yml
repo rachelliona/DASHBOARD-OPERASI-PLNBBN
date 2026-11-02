@@ -1,0 +1,34 @@
+name: Snapshot Harian
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: snapshot
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - name: Siapkan cabang data
+        run: |
+          URL="https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          if git ls-remote --exit-code --heads "$URL" data >/dev/null 2>&1; then
+            git clone --depth 1 --branch data "$URL" data-branch
+          else
+            mkdir data-branch && cd data-branch && git init -q -b data && git remote add origin "$URL"
+          fi
+      - run: npx tsx scripts/snapshot.ts data-branch/snapshots
+      - name: Simpan snapshot
+        run: |
+          cd data-branch
+          git config user.name "snapshot-bot" && git config user.email "snapshot-bot@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "Snapshot $(date -u +%F)"
+          git push origin data
