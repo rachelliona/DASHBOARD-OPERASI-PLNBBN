@@ -35,7 +35,7 @@ export default function Peta() {
       <label><input type="checkbox" checked={only} onChange={e => setOnly(e.target.checked)} /> hanya PLTU bershipment</label></div>
     {view === 'existing' && <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2 text-[11px]">{STATUSES.filter(s => s.key !== 'carryOver').map(s => <label key={s.key}><input type="checkbox" checked={on.includes(s.key)} onChange={() => toggle(s.key)} /> <span style={{ color: s.color }}>■</span> {s.label}</label>)}</div>}
     <div className="grid lg:grid-cols-[1fr_300px] gap-3"><div>
-      <div style={{ height: 540 }} className="rounded-xl overflow-hidden border border-white/10"><MapContainer bounds={[[-11.5, 94], [6.5, 141.5]]} className="dark-tiles" style={{ height: '100%', width: '100%' }}>
+      <div className="h-[62vh] min-h-[360px] md:h-[540px] rounded-xl overflow-hidden border border-white/10"><MapContainer bounds={[[-11.5, 94], [6.5, 141.5]]} className="dark-tiles" style={{ height: '100%', width: '100%' }}>
         <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
         {located.map(r => <CircleMarker key={r.pltu} center={[r.l.lat, r.l.lon]} radius={r.v ? Math.max(5, Math.min(22, 5 + Math.sqrt(r.v) / (view === 'rekap' ? 30 : 12))) : 4} pathOptions={{ color: sel === r.pltu ? '#fff' : color(r), weight: sel === r.pltu ? 3 : 1.5, fillColor: color(r), fillOpacity: r.v ? 0.55 : 0.25 }} eventHandlers={{ click: () => setSel(r.pltu) }}>
           <Tooltip>{r.pltu} · {fmtPct(r.pp)} · {view === 'rekap' ? r.n : r.sh.length} shipment</Tooltip></CircleMarker>)}</MapContainer></div>
