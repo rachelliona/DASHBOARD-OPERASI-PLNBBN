@@ -19,9 +19,9 @@ export default function Dashboard() {
   const charts: { dim: string; title: string; data: any[]; color: (n: string) => string; label?: (n: string) => string }[] = [
     { dim: 'wilayah', title: 'Volume per Wilayah', data: agg('wilayah', s => s.wilayah ?? 'Tanpa wilayah'), color: n => REGION_COLOR[n] ?? '#9ca3af' },
     { dim: 'status', title: 'Volume per Tahapan', data: agg('status', s => s.status ?? 'tanpa'), color: n => STATUSES.find(x => x.key === n)?.color ?? '#6b7280', label: n => n === 'tanpa' ? 'Tanpa status' : stageLabel(n) },
-    { dim: 'mitra', title: 'Volume per Mitra', data: agg('mitra', s => s.mitra ?? '—'), color: () => '#e6b457' },
-    { dim: 'sumber', title: 'Volume per Sumber Tambang', data: agg('sumber', s => s.mitraTambang ?? '—', 8), color: () => '#a78bfa' },
-    { dim: 'konf', title: 'Konfirmasi vs Carry Over', data: agg('konf', s => s.konf), color: n => n === 'carry' ? '#fb7185' : '#34d399', label: n => KONF[n] ?? n }]
+    { dim: 'mitra', title: 'Volume per Mitra', data: agg('mitra', s => s.mitra ?? '—'), color: () => '#94a3b8' },
+    { dim: 'sumber', title: 'Volume per Sumber Tambang', data: agg('sumber', s => s.mitraTambang ?? '—', 8), color: () => '#cbd5e1' },
+    { dim: 'konf', title: 'Konfirmasi vs Carry Over', data: agg('konf', s => s.konf), color: n => n === 'carry' ? '#ef4444' : n === 'bulan' ? '#e6b457' : '#94a3b8', label: n => KONF[n] ?? n }]
   return <>
     <div className="mb-2"><h2 className="text-sm font-semibold">Dashboard Interaktif — {bulanAktif} 2026</h2><p className="text-[11px] text-slate-500">Klik batang pada grafik mana pun untuk menyaring semua grafik; klik lagi untuk melepas.</p></div>
     <div className="flex flex-wrap gap-1.5 mb-3 min-h-[24px]">{Object.entries(f).map(([k, v]) => <button key={k} onClick={() => flip(k, v)} className="rounded-full border border-[#e6b457] px-2.5 py-0.5 text-xs text-[#e6b457]">{k === 'status' ? stageLabel(v) : k === 'konf' ? KONF[v] : v} ✕</button>)}{Object.keys(f).length === 0 && <span className="text-[11px] text-slate-500 self-center">Belum ada penyaring aktif</span>}</div>

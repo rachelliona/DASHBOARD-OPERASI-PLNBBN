@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { BarChart, Bar as RBar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts'
 import { useStore } from '../store'
-import { Bar, Btn, Card, Empty, Kpi } from '../components/ui'
+import { Bar, Btn, Card, Empty, Kpi, RegionChip } from '../components/ui'
 import { DataTable, Col } from '../components/DataTable'
 import { STAGES, REGIONS, norm } from '../domain/status'
 import { pct, plantActual, kebutuhan, sum } from '../domain/kpi'
@@ -25,16 +25,16 @@ export default function Laporan() {
   return <>
     <div className="mb-3"><h2 className="text-sm font-bold tracking-wide">UPDATE MONITORING PASOKAN PLTU — PT PLN BATUBARA NIAGA</h2>
       <p className="text-xs" style={{ color: '#e6b457' }}>UPDATE {fmtUpdate(ds.at)} · Satuan: MT · Sumber: {ds.source}</p></div>
-    <div className="flex flex-wrap gap-1.5 mb-2 no-print">{REGIONS.map(g => <button key={g} onClick={() => setReg(g)} className="rounded-full border px-3 py-1 text-xs" style={{ borderColor: REGION_COLOR[g], background: reg === g ? REGION_COLOR[g] : 'transparent', color: reg === g ? '#15130d' : REGION_COLOR[g], fontWeight: reg === g ? 600 : 400 }}>{g}</button>)}</div>
+    <div className="chips flex flex-wrap gap-1.5 mb-2 no-print">{REGIONS.map(g => <RegionChip key={g} label={g} color={REGION_COLOR[g]} on={reg === g} onClick={() => setReg(g)} />)}</div>
     <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
-      <Kpi label="Konfirmasi" value={fmtNum(T.t)} unit="MT" accent={col} /><Kpi label="Carry Over" value={fmtNum(T.c)} unit="MT" accent="#fb7185" /><Kpi label="Complete Loading (B/L)" value={fmtNum(T.bl)} unit="MT" accent="#38bdf8" />
-      <Kpi label="Complete Unloading (D/S)" value={fmtNum(T.ds)} unit="MT" accent="#34d399" /><div className="rounded-xl border border-white/10 bg-[#171a21] p-3" style={{ borderTop: `2px solid ${tone(P)}` }}><div className="text-[11px] text-slate-400">Pemenuhan {reg}</div><div className="text-lg font-bold num" style={{ color: tone(P) }}>{fmtPct(P)}</div><Bar pct={P} color={tone(P)} /></div></div>
-    <div className="flex flex-wrap items-center gap-2 mb-2 text-xs no-print">
+      <Kpi label="Konfirmasi" value={fmtNum(T.t)} unit="MT" accent={col} /><Kpi label="Carry Over" value={fmtNum(T.c)} unit="MT" accent="#ef4444" /><Kpi label="Complete Loading (B/L)" value={fmtNum(T.bl)} unit="MT" accent="#38bdf8" />
+      <Kpi label="Complete Unloading (D/S)" value={fmtNum(T.ds)} unit="MT" accent="#22c55e" /><div className="rounded-xl border border-white/10 bg-[#171a21] p-3" style={{ borderTop: `2px solid ${tone(P)}` }}><div className="text-[11px] text-slate-400">Pemenuhan {reg}</div><div className="text-lg font-bold num" style={{ color: tone(P) }}>{fmtPct(P)}</div><Bar pct={P} color={tone(P)} /></div></div>
+    <div className="chips flex flex-wrap items-center gap-2 mb-2 text-xs no-print">
       {[['terjadwal', 'terjadwal'], ['loading', 'loading'], ['sailing', 'sailing'], ['tiba', 'sandar'], ['bongkar', 'bongkar']].map(([k, l]) => <span key={k} className="rounded-md border border-white/10 px-2 py-0.5">{l}: <b>{sh.filter(x => x.wilayah === reg && x.status === k).length}</b></span>)}
-      <span className="mx-1 text-slate-600">|</span><input aria-label="Cari PLTU" placeholder="Cari PLTU…" value={q} onChange={e => setQ(e.target.value)} />
+      </div><div className="flex flex-wrap items-center gap-2 mb-2 text-xs no-print"><input aria-label="Cari PLTU" placeholder="Cari PLTU…" value={q} onChange={e => setQ(e.target.value)} />
       <select aria-label="Urutkan" value={sort} onChange={e => setSort(e.target.value)}><option value="urut">Urutan laporan</option><option value="rendah">Pemenuhan terendah</option><option value="tinggi">Pemenuhan tertinggi</option><option value="besar">Kebutuhan terbesar</option></select>
       <Btn onClick={() => setMode(mode === 'grafik' ? 'tabel' : 'grafik')}>Tampilan {mode === 'grafik' ? 'Tabel' : 'Grafik'}</Btn><Btn onClick={() => window.print()}>Ekspor ke PDF</Btn></div>
-    <div className="flex flex-wrap gap-1.5 mb-2 no-print"><span className="text-[11px] text-slate-400 self-center">Tahapan:</span>
+    <div className="chips flex flex-wrap gap-1.5 mb-2 no-print"><span className="text-[11px] text-slate-400 self-center">Tahapan:</span>
       {[{ key: '', label: 'Semua', color: '#9aa3b2' }, ...STAGES].map(s => <button key={s.key} onClick={() => setStage(stage === s.key ? '' : s.key)} className="rounded-full border px-2.5 py-0.5 text-xs" style={{ borderColor: s.color, background: stage === s.key ? s.color : 'transparent', color: stage === s.key ? '#15130d' : s.color }}>{s.label}</button>)}</div>
     {rows.length === 0 ? <Card><p className="text-xs">Data Belum Tersedia untuk filter ini.</p></Card> : mode === 'grafik'
       ? <Card title={stage ? `Volume ${STAGES.find(s => s.key === stage)?.label} — ${reg}` : `Pemenuhan Pasokan — ${reg}`}>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { BarChart, Bar as RBar, XAxis, YAxis, PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { useStore } from '../store'
-import { Bar, Card, Empty, Kpi } from '../components/ui'
+import { Bar, Card, Empty, Kpi, RegionChip } from '../components/ui'
 import { DataTable, Col } from '../components/DataTable'
 import { REGIONS, STATUSES, stageLabel } from '../domain/status'
 import { sum, pct, attention, kebutuhan, plantActual, KPI_DEFS } from '../domain/kpi'
@@ -21,9 +21,9 @@ export default function Ringkasan() {
   const chip = (on: boolean, c: string) => ({ borderColor: c, background: on ? c : 'transparent', color: on ? '#15130d' : c })
   return <>
     <div className="mb-2"><h2 className="text-sm font-semibold">Ringkasan Pasokan — {bulanAktif} 2026</h2><p className="text-[11px] text-slate-500">Sumber: {kinds.plant.source} · diperbarui {kinds.plant.at} · klik wilayah, tahapan, atau batang grafik untuk menyaring</p></div>
-    <div className="flex flex-wrap gap-1.5 mb-3">{[{ r: '', c: '#9aa3b2' }, ...REGIONS.map(r => ({ r, c: REGION_COLOR[r] }))].map(g => <button key={g.r} onClick={() => { setReg(reg === g.r ? '' : g.r); setPl('') }} className="rounded-full border px-3 py-1 text-xs" style={chip(reg === g.r, g.c)}>{g.r || 'Semua wilayah'}</button>)}</div>
+    <div className="chips flex flex-wrap gap-1.5 mb-3">{[{ r: '', c: undefined as string | undefined }, ...REGIONS.map(r => ({ r, c: REGION_COLOR[r] as string | undefined }))].map(g => <RegionChip key={g.r} label={g.r || 'Semua wilayah'} color={g.c} on={reg === g.r} onClick={() => { setReg(reg === g.r ? '' : g.r); setPl('') }} />)}</div>
     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2 mb-3">
-      <Kpi label="Konfirmasi Bulan Ini" value={fmtNum(target)} unit="MT" accent="#e6b457" tip={KPI_DEFS.target} /><Kpi label="Carry Over" value={fmtNum(co)} unit="MT" accent="#fb7185" />
+      <Kpi label="Konfirmasi Bulan Ini" value={fmtNum(target)} unit="MT" accent="#e6b457" tip={KPI_DEFS.target} /><Kpi label="Carry Over" value={fmtNum(co)} unit="MT" accent="#ef4444" />
       <Kpi label="Kebutuhan (Konfirmasi + Carry Over)" value={fmtNum(keb)} unit="MT" accent="#a78bfa" /><Kpi label="Complete Loading (B/L)" value={fmtNum(bl)} unit="MT" note={`${fmtPct(pct(bl, keb))} dari kebutuhan`} accent="#38bdf8" />
       <Kpi label="Complete Unloading (D/S)" value={fmtNum(ds)} unit="MT" note={`${fmtPct(pct(ds, keb))} dari kebutuhan`} accent="#34d399" />
       <div title={KPI_DEFS.pemenuhan} className="rounded-xl border border-white/10 bg-[#171a21] p-3" style={{ borderTop: `2px solid ${tone(P)}` }}><div className="text-[11px] text-slate-400">Persentase Pemenuhan</div><div className="text-lg font-bold num" style={{ color: tone(P) }}>{fmtPct(P)}</div><Bar pct={P} color={tone(P)} /></div></div>
@@ -38,7 +38,7 @@ export default function Ringkasan() {
       <Card title="Komposisi Volume per Tahapan"><div style={{ height: 230 }}><ResponsiveContainer><PieChart><Pie data={pipe.filter(s => s.vol > 0)} dataKey="vol" nameKey="label" innerRadius="55%" outerRadius="88%" paddingAngle={2} onClick={(d: any) => setSt(st === (d.key ?? d.payload?.key) ? '' : (d.key ?? d.payload?.key))}>
         {pipe.filter(s => s.vol > 0).map(s => <Cell key={s.key} fill={s.color} fillOpacity={st && st !== s.key ? 0.3 : 1} stroke="none" />)}</Pie><Tooltip formatter={(v: any, n: any) => [fmtNum(v) + ' MT', n]} contentStyle={{ background: '#171a21', border: '1px solid #2a2f3a' }} /></PieChart></ResponsiveContainer></div></Card></div>
     <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-2 mb-3">{regs.map(g => <button key={g.r} onClick={() => { setReg(reg === g.r ? '' : g.r); setPl('') }} className="text-left rounded-xl border bg-[#171a21] p-3 hover:bg-white/5" style={{ borderColor: reg === g.r ? REGION_COLOR[g.r] : 'rgba(255,255,255,.1)' }}>
-      <div className="flex justify-between text-xs"><b style={{ color: REGION_COLOR[g.r] }}>{g.r}</b><span className="num font-semibold" style={{ color: tone(g.p) }}>{fmtPct(g.p)}</span></div><div className="my-1.5"><Bar pct={g.p} color={REGION_COLOR[g.r]} /></div>
+      <div className="flex justify-between text-xs"><b className="inline-flex items-center gap-1.5"><i style={{ width: 8, height: 8, borderRadius: 99, background: REGION_COLOR[g.r] }} />{g.r}</b><span className="num font-semibold" style={{ color: tone(g.p) }}>{fmtPct(g.p)}</span></div><div className="my-1.5"><Bar pct={g.p} color={REGION_COLOR[g.r]} /></div>
       <div className="text-[11px] text-slate-400">Konfirmasi {fmtNum(g.t)} · CO {fmtNum(g.c)} · D/S {fmtNum(g.u)} MT · {g.n} shipment</div></button>)}</div>
     {(st || pl) && <Card title={`Shipment ${st ? stageLabel(st) : 'semua status'}${pl ? ' — ' + pl : ''}${reg ? ' — ' + reg : ''} (${list.length})`} right={<button className="text-xs text-[#e6b457]" onClick={() => { setSt(''); setPl('') }}>Hapus pilihan</button>}><DataTable rows={list} cols={scols} name="ringkasan-shipment" /></Card>}
     <Card title="PLTU Perlu Perhatian" right={<span className="text-[11px] text-slate-400">pemenuhan di bawah {threshold}% (ambang di Pengaturan)</span>}>

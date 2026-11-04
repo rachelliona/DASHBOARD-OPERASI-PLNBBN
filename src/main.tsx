@@ -6,3 +6,4 @@ import { StoreProvider } from './store'
 import { AuthProvider } from './auth'
 import './index.css'
 createRoot(document.getElementById('root')!).render(<React.StrictMode><HashRouter><AuthProvider><StoreProvider><App /></StoreProvider></AuthProvider></HashRouter></React.StrictMode>)
+if ('serviceWorker' in navigator && import.meta.env.PROD && (location.protocol === 'https:' || location.hostname === 'localhost')) window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => { /* tanpa offline cache: aplikasi tetap jalan */ }) })

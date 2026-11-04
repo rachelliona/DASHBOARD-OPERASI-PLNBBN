@@ -7,4 +7,5 @@ export const REGION_OF: Record<string, string[]> = {
   'Sulmapana 2': ['Batam', 'Tidore Ternate', 'Timor', 'Takalar', 'Sulut 1', 'Sumbawa Barat', 'Sofifi', 'Palu 3', 'Lombok FTP 2', 'Kupang'],
   'PLTU IPP': ['Lestari Banten Energi', 'Cilacap', 'Meulaboh 3-4', 'Jeneponto', 'Kaltim-4', 'Embalut', 'Paiton Energy Company', 'Bengkulu', 'Celukan Bawang', 'Kalbar 1', 'LED', 'Jawa 7'],
 }
-export const REGION_COLOR: Record<string, string> = { JAMALI: '#e6b457', Sumatra: '#34d399', Kalimantan: '#fb7185', 'Sulmapana 1': '#a78bfa', 'Sulmapana 2': '#38bdf8', 'PLTU IPP': '#fb923c' }
+export const REGION_COLOR: Record<string, string> = { JAMALI: '#fde047', Sumatra: '#2dd4bf', Kalimantan: '#f472b6', 'Sulmapana 1': '#a3e635', 'Sulmapana 2': '#d6b38a', 'PLTU IPP': '#e5e7eb' }
+/** Palet wilayah sengaja berbeda keluarga warna dari palet tahapan (status.ts): wilayah = kuning-teal-pink-lime-pasir-perak; tahapan = merah-biru langit-oranye-indigo-ungu-hijau. Chip wilayah juga netral dengan titik warna agar tidak tertukar. */

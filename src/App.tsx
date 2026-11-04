@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import { Activity, ChevronDown, ChevronRight, Database, FileText, LayoutDashboard, LogOut, Map as MapIcon, Menu, Users, X, Zap } from 'lucide-react'
+import { Activity, Download, Search, ChevronDown, ChevronRight, Database, FileText, LayoutDashboard, LogOut, Map as MapIcon, Menu, Users, X, Zap } from 'lucide-react'
 import { useStore } from './store'
 import Ringkasan from './pages/Ringkasan'
 import Laporan from './pages/Laporan'
@@ -15,6 +15,7 @@ import Pengaturan from './pages/Pengaturan'
 import Login from './pages/Login'
 import BuatHash from './pages/BuatHash'
 import DateSelector from './components/DateSelector'
+import Palette from './components/Palette'
 import { useAuth } from './auth'
 import { NAV, NavItem } from './config/nav'
 import { fmtDate } from './domain/format'
@@ -29,7 +30,8 @@ function Item({ item, depth }: { item: NavItem; depth: number }) {
   return <div><button style={pad} onClick={() => setOpen(!open)} className="w-full flex items-center gap-2 text-left rounded-lg py-1.5 pr-2 text-xs font-semibold text-slate-200 hover:bg-white/5 mb-0.5">{lab}<span className="ml-auto text-slate-500">{open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}</span></button>{open && <div className="ml-2 border-l border-white/5">{item.children!.map(c => <Item key={c.label} item={c} depth={depth + 1} />)}</div>}</div>
 }
 export default function App() {
-  const { kinds, raw, intervalSec, asOf } = useStore(); const { user, logout } = useAuth(); const { pathname } = useLocation(); const [drawer, setDrawer] = useState(false)
+  const { kinds, raw, intervalSec, asOf } = useStore(); const { user, logout } = useAuth(); const { pathname } = useLocation(); const [drawer, setDrawer] = useState(false); const [pal, setPal] = useState(false); const [inst, setInst] = useState<any>(null)
+  useEffect(() => { const k = (e: KeyboardEvent) => { const t = e.target as HTMLElement; const typing = /INPUT|TEXTAREA|SELECT/.test(t?.tagName ?? ''); if ((e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey)) || (e.key === '/' && !typing)) { e.preventDefault(); setPal(p => !p) } }; const b = (e: Event) => { e.preventDefault(); setInst(e) }; window.addEventListener('keydown', k); window.addEventListener('beforeinstallprompt', b); return () => { window.removeEventListener('keydown', k); window.removeEventListener('beforeinstallprompt', b) } }, [])
   useEffect(() => { setDrawer(false); window.scrollTo(0, 0) }, [pathname])
   if (pathname === '/buat-hash') return <BuatHash />
   if (!user) return <Login />
@@ -39,11 +41,14 @@ export default function App() {
     <nav className={'no-print sidebar shrink-0 p-3 overflow-y-auto fixed inset-y-0 left-0 z-50 w-72 transition-transform duration-300 lg:sticky lg:top-0 lg:z-auto lg:w-56 lg:max-h-screen lg:translate-x-0 ' + (drawer ? 'translate-x-0' : '-translate-x-full')}>
       <div className="flex items-center gap-2.5 px-1 mb-4"><span className="logo"><Zap size={16} strokeWidth={2.5} /></span><div><div className="font-bold text-[13px] leading-tight">PLN Batubara Niaga</div><div className="text-[10px] text-slate-500">Dashboard Operasi</div></div><button aria-label="Tutup menu" className="ml-auto p-2 lg:hidden" onClick={() => setDrawer(false)}><X size={18} /></button></div>
       {NAV.map(i => <Item key={i.label} item={i} depth={0} />)}
+      {inst && <button onClick={async () => { inst.prompt(); await inst.userChoice; setInst(null) }} className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl border border-[#e6b457]/50 bg-[#e6b457]/10 py-2 text-xs text-[#f2c76b]"><Download size={14} />Pasang sebagai aplikasi</button>}
       <div className="lg:hidden mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-slate-400"><span>{user.nama}</span><button onClick={logout} className="flex items-center gap-1 p-1"><LogOut size={14} />Keluar</button></div></nav>
     <main className="flex-1 min-w-0">
       <header className="topbar no-print px-3 lg:px-5 py-2 flex flex-wrap items-center gap-x-4 gap-y-2">
         <button aria-label="Buka menu" className="lg:hidden -ml-1 p-2 rounded-lg hover:bg-white/10" onClick={() => setDrawer(true)}><Menu size={20} /></button>
         <div className="mr-auto min-w-0"><h1 className="text-sm font-bold leading-tight truncate"><span className="lg:hidden">Dashboard Operasi PLN BBN</span><span className="hidden lg:inline">Dashboard Operasi PLN Batubara Niaga</span></h1><p className="hidden lg:block text-[11px] text-slate-500">Monitoring Pasokan PLTU, Realisasi, dan Shipment Terintegrasi</p></div>
+        <button aria-label="Cari (Ctrl+K)" onClick={() => setPal(true)} className="hidden lg:flex items-center gap-2 rounded-lg border border-white/12 bg-white/5 px-3 py-1.5 text-xs text-slate-400 hover:text-white"><Search size={13} />Cari…<kbd className="ml-3 text-[10px] border border-white/15 rounded px-1">Ctrl K</kbd></button>
+        <button aria-label="Cari" onClick={() => setPal(true)} className="lg:hidden p-2 rounded-lg hover:bg-white/10"><Search size={19} /></button>
         <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto no-scrollbar"><DateSelector />
         {asOf ? <span className="badge past">◷ Data per {fmtDate(asOf)}</span> : <span className="badge live"><i className="pulse" />Langsung · {last ?? 'memuat…'}<span className="hidden md:inline"> · tiap {intervalSec} dtk</span></span>}</div>
         <span className="hidden lg:inline text-xs text-slate-400">{user.nama}</span><button onClick={logout} className="hidden lg:flex items-center gap-1 text-xs text-slate-400 hover:text-white"><LogOut size={13} />Keluar</button></header>
@@ -54,5 +59,6 @@ export default function App() {
         <Route path="/realisasi" element={<RealisasiRingkasan />} /><Route path="/realisasi/:bulan" element={<RealisasiBulan />} />
         <Route path="/sheet/:name" element={<SheetPage />} /><Route path="/sumber-data" element={<Sumber />} /><Route path="/pengaturan" element={<Pengaturan />} />
       </Routes></div></main>
+    <Palette open={pal} onClose={() => setPal(false)} />
     <nav className="no-print tabbar lg:hidden" aria-label="Menu utama">{TABS.map(([to, l, Ic]) => <NavLink key={to} to={to} end className={({ isActive }) => 'tab' + (isActive ? ' active' : '')}><Ic size={19} /><span>{l}</span></NavLink>)}<button className="tab" onClick={() => setDrawer(true)}><Menu size={19} /><span>Menu</span></button></nav></div>
 }

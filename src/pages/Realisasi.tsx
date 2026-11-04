@@ -23,7 +23,7 @@ export function RealisasiBulan() {
   return <>
     <div className="flex justify-between items-baseline mb-2"><h2 className="text-sm font-semibold">Realisasi {bulan} 2026</h2><span className="text-[11px] text-slate-500">diperbarui {m.at} · <Link className="text-[#e6b457]" to={`/sheet/${bulan}`}>data mentah</Link></span></div>
     <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
-      <Kpi label="Konfirmasi" value={fmtNum(t.konf)} unit="MT" accent="#e6b457" /><Kpi label="Carry Over" value={fmtNum(t.co)} unit="MT" accent="#fb7185" />
+      <Kpi label="Konfirmasi" value={fmtNum(t.konf)} unit="MT" accent="#e6b457" /><Kpi label="Carry Over" value={fmtNum(t.co)} unit="MT" accent="#ef4444" />
       <Kpi label="Complete Loading (B/L)" value={fmtNum(t.bl)} unit="MT" note={fmtPct(pct(t.bl, keb))} accent="#38bdf8" /><Kpi label="Complete Unloading (D/S)" value={fmtNum(t.ds)} unit="MT" note={fmtPct(pct(t.ds, keb))} accent="#34d399" />
       <Kpi label="Shipment" value={fmtNum(t.n)} note={`${m.skipped} baris kosong dilewati`} accent="#a78bfa" /></div>
     <Card title="Per PLTU"><DataTable rows={plants} cols={pcols} name={`realisasi-pltu-${bulan}`} /></Card>
