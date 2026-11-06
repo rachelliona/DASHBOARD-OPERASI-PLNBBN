@@ -1,5 +1,5 @@
 import { fmtNum } from './format'
-export const tone = (p: number | null) => p == null ? '#6b7280' : p >= 85 ? '#34d399' : p >= 60 ? '#fbbf24' : '#fb7185'
+export const tone = (p: number | null) => p == null ? '#6b7280' : p >= 85 ? '#34d399' : p >= 60 ? '#22d3ee' : '#60a5fa'
 /** "22 Oktober 2026 pukul 15.23 WIB" -> "22 OKTOBER 2026, 15.23 WIB" */
 export const fmtUpdate = (at: string) => at.replace(' pukul ', ', ').toUpperCase()
 /** Gaya kolom "Sumber Tambang" laporan harian: BIB (6 tongkang 300ft; 45,1rb MT) */
