@@ -12,13 +12,25 @@ export const CAUSE = [
   'sandar → mulai bongkar (kesiapan unloader/peralatan bongkar, area penimbunan penuh, inspeksi)',
   'durasi bongkar (laju bongkar, kerusakan alat, area penimbunan, cuaca)',
 ]
+export const SOLUSI = [
+  'Koordinasikan jadwal mobilisasi tugboat/tongkang dengan mitra transport sejak SI terbit; pastikan kapal sudah ditetapkan dan dokumen keberangkatan siap.',
+  'Konfirmasi slot sandar dengan pengelola jetty muat; siapkan jetty/jadwal cadangan bila antrean panjang; pantau prakiraan cuaca pelabuhan muat.',
+  'Pastikan stok batubara dan dokumen muat (surveyor, izin) siap sebelum kapal sandar; koordinasikan kesiapan stockpile dengan mitra tambang.',
+  'Tinjau laju muat dan ketersediaan alat loading; minta mitra tambang menambah alat/shift atau menyiapkan stok dekat jetty.',
+  'Percepat penerbitan dokumen (B/L, surveyor, clearance) dan izin berlayar; cek kendala cuaca atau pandu.',
+  'Pantau posisi dan kecepatan kapal bersama mitra pelayaran; bila tertunda cuaca, perbarui ETA ke PLTU agar jadwal bongkar disesuaikan.',
+  'Koordinasikan slot dermaga dan antrean bongkar dengan PLTU; atur ulang urutan kapal dan sesuaikan jadwal kapal berikutnya.',
+  'Pastikan unloader/alat bongkar, tenaga bongkar, dan area penimbunan PLTU siap sebelum kapal sandar.',
+  'Tinjau laju bongkar dan kondisi alat; cek kapasitas penimbunan PLTU; koordinasikan tambahan alat atau shift bongkar.',
+]
+export const TAG_SOLUSI: Record<string, string> = { 'Dibatalkan': 'Konfirmasi status pembatalan dan alokasikan ulang volumenya ke shipment lain.', 'Dialihkan / rekonfirmasi': 'Pastikan tujuan baru dan ETA sudah diperbarui di sheet dan dibahas di Rakor.', 'Kendala RKAB / izin': 'Percepat pengurusan izin/kuota bersama mitra terkait; eskalasi bila mengganggu jadwal muat.', 'Cuaca': 'Pantau prakiraan cuaca, perbarui ETA, dan siapkan jadwal cadangan.', 'Antrean': 'Koordinasikan slot sandar dengan pengelola jetty/dermaga.', 'Kendala teknis': 'Minta laporan perbaikan dan estimasi pulih dari pihak terkait.', 'Produksi / stok': 'Konfirmasi kesiapan stok/produksi tambang dan tanggal siap muat.', 'Jadwal digeser': 'Catat alasan pergeseran dan sinkronkan dengan ETA Rakor berikutnya.' }
 export const stepStats = (list: { ms: (number | null)[] }[], stepDays: (ms: (number | null)[]) => (number | null)[]): Stat[] => {
   const cols: number[][] = STEPS.map(() => []); for (const s of list) stepDays(s.ms).forEach((d, i) => { if (d != null) cols[i].push(d) })
   return cols.map(c => { const a = [...c].sort((x, y) => x - y); return { med: pctl(a, .5), p75: pctl(a, .75), n: a.length } })
 }
 export const TAGS: [string, RegExp][] = [['Dibatalkan', /batal|cancel/i], ['Dialihkan / rekonfirmasi', /alih|rekonfirm|re-?konfirm|pindah|ganti\s*(pltu|tujuan)/i], ['Kendala RKAB / izin', /rkab|izin|perizinan|kuota/i], ['Cuaca', /cuaca|gelombang|ombak|angin|badai|hujan/i], ['Antrean', /antri|antre|queue|menunggu\s*(sandar|jetty|dermaga)/i], ['Kendala teknis', /rusak|kerusakan|breakdown|trouble|gangguan|bocor|mesin|unloader/i], ['Produksi / stok', /produksi|stok|stock|pasokan\s*tambang|belum\s*siap/i], ['Jadwal digeser', /geser|mundur|reschedul|jadwal\s*ulang|tunda|delay/i]]
 export const noteTags = (note: string) => TAGS.filter(([, r]) => r.test(note)).map(([t]) => t)
-export type Analisis = { slow: { i: number; days: number; med: number; over: number }[]; running: { i: number; days: number; p75: number } | null; tags: string[]; utama: number | null; teks: string }
+export type Analisis = { masalah: string; solusi: string[]; sev: 'tinggi' | 'sedang' | 'rendah'; slow: { i: number; days: number; med: number; over: number }[]; running: { i: number; days: number; p75: number } | null; tags: string[]; utama: number | null; teks: string }
 const f1 = (n: number) => (Math.round(n * 10) / 10).toString().replace('.', ',')
 /** d = stepDays(ms). Tahap "lambat" = melebihi median ≥ 1 hari; tahap yang sedang berjalan dinilai terhadap P75. ref = hari ini (ms UTC). */
 export function analisis(ms: (number | null)[], d: (number | null)[], stats: Stat[], note: string, ref: number, delay: number | null): Analisis {
@@ -36,7 +48,18 @@ export function analisis(ms: (number | null)[], d: (number | null)[], stats: Sta
   if (running) bag.push(`Tahap berjalan ${STEPS[running.i]} sudah ${f1(running.days)} hari (P75 ${f1(running.p75)} hari) — dugaan: ${CAUSE[running.i]}.`)
   if (tags.length) bag.push(`Catatan sheet menyebut: ${tags.join(', ')}.`)
   if (!bag.length || (!slow.length && !running && !tags.length)) bag.push('Tidak ada tahap yang menonjol dari tanggal milestone; kemungkinan ETA Rakor sejak awal terlalu optimistis atau tanggal milestone belum lengkap.')
-  return { slow, running, tags, utama, teks: bag.join(' ') }
+  const nm = (i: number) => STEPS[i]
+  const mas: string[] = []
+  if (slow.length) mas.push(`Tahap "${nm(slow[0].i)}" memakan ${f1(slow[0].days)} hari, ${f1(slow[0].over)} hari lebih lama dari kebiasaan (median ${f1(slow[0].med)} hari)`)
+  if (slow.length > 1) mas.push(`tahap "${nm(slow[1].i)}" juga lebih lama ${f1(slow[1].over)} hari`)
+  if (running) mas.push(`tahap "${nm(running.i)}" sedang berjalan ${f1(running.days)} hari, melewati batas wajar ${f1(running.p75)} hari`)
+  if (tags.length) mas.push(`catatan sheet menyebut ${tags.join(', ').toLowerCase()}`)
+  const masalah = mas.length ? mas.join('; ') + '.' : 'Tidak ada tahap yang menonjol dari tanggal milestone; kemungkinan ETA Rakor terlalu optimistis atau tanggal milestone belum lengkap.'
+  const sol: string[] = []; if (utama != null) sol.push(SOLUSI[utama]); for (const t of tags) if (TAG_SOLUSI[t]) sol.push(TAG_SOLUSI[t])
+  if (running && running.i !== utama) sol.push(SOLUSI[running.i])
+  if (!sol.length) sol.push('Tinjau ulang ETA Rakor yang diajukan dan lengkapi tanggal milestone di sheet agar penyebab keterlambatan bisa terlihat.')
+  const sev = delay != null && delay >= 7 ? 'tinggi' : delay != null && delay >= 3 ? 'sedang' : slow.length && slow[0].over >= 5 ? 'tinggi' : 'rendah'
+  return { masalah, solusi: [...new Set(sol)], sev, slow, running, tags, utama, teks: bag.join(' ') }
 }
 /** Ringkasan bukti yang dikirim ke AI: hanya data dari sheet, tanpa data pribadi. */
 export const evidence = (s: { id: string; plant: string; tbbg: string; mitraReal: string; jetty: string; stage: string | null; note?: string }, delay: number, a: Analisis, d: (number | null)[], stats: Stat[]) => ({

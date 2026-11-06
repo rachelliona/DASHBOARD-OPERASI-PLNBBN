@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { stepDays } from '../domain/monthly'
-import { analisis, noteTags, parseAiJson, stepStats } from '../domain/sebab'
+import { analisis, noteTags, parseAiJson, stepStats, SOLUSI } from '../domain/sebab'
 const D = (d: number, h = 0) => Date.UTC(2026, 9, d, h)
 const mk = (gaps: number[]) => { const ms: (number | null)[] = [D(1)]; let t = D(1); for (const g of gaps) { t += g * 864e5; ms.push(t) } while (ms.length < 10) ms.push(null); return ms }
 describe('analisis keterlambatan', () => {
@@ -21,5 +21,13 @@ describe('analisis keterlambatan', () => {
   it('parseAiJson toleran pagar kode dan membuang entri rusak', () => {
     const r = parseAiJson('Berikut:\n```json\n{"hasil":[{"id":"a","t":" Antrean bongkar ","k":"sedang"},{"id":"b"},{"id":"c","t":"x","k":"aneh"}]}\n```')
     expect(r).toEqual([{ id: 'a', t: 'Antrean bongkar', k: 'sedang' }, { id: 'c', t: 'x', k: 'rendah' }]); expect(parseAiJson('bukan json')).toEqual([])
+  })
+  it('masalah dan solusi: tahap dominan + tag catatan menghasilkan kalimat dan tindakan', () => {
+    const ms = mk([1, 1, 1, 1, 1, 7, 1, 1, 1]); const a = analisis(ms, stepDays(ms), stats, 'kapal antri sandar, cuaca buruk', D(20), 8)
+    expect(a.masalah).toContain('"Pelayaran" memakan 7 hari'); expect(a.masalah).toContain('antrean'); expect(a.solusi[0]).toBe(SOLUSI[5]); expect(a.solusi.length).toBeGreaterThanOrEqual(3); expect(a.sev).toBe('tinggi')
+  })
+  it('tanpa bukti: masalah netral dan solusi meninjau ulang ETA', () => {
+    const ms = mk([1, 1, 1, 1, 1, 3, 1, 1, 1]); const a = analisis(ms, stepDays(ms), stats, '', D(20), 1)
+    expect(a.masalah).toContain('Tidak ada tahap yang menonjol'); expect(a.solusi[0]).toContain('Tinjau ulang ETA Rakor'); expect(a.sev).toBe('rendah')
   })
 })
