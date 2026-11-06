@@ -174,3 +174,26 @@ body::after{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;
 @media (prefers-reduced-motion:reduce){.mega-panel{animation:none}.mega-tile,.mega-card{transition:none}}
 .mega-panel{background:#0d1016!important}
 .megabar{background:#0b0e13!important}
+/* ===== peta multi-tampilan ===== */
+.vsw{display:flex;gap:6px;overflow-x:auto;padding:4px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);width:fit-content;max-width:100%}
+.vsw-b{display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:12px;font-size:13px;font-weight:600;color:#aab3c2;white-space:nowrap;border:1px solid transparent;transition:all .2s}
+.vsw-b:hover{color:#fff;background:rgba(255,255,255,.06)}
+.vsw-b.on{color:#15130d;background:linear-gradient(160deg,#f2c76b,#e6b457);box-shadow:0 0 20px -4px rgba(230,180,87,.6)}
+.map3d{background:radial-gradient(900px 500px at 50% 35%,#0f2a3d 0%,#08121c 55%,#05080d 100%)}
+.map3d .ctl{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;background:rgba(8,12,20,.7);border:1px solid rgba(255,255,255,.2);color:#cbd5e1;backdrop-filter:blur(6px)}
+.map3d .ctl.on{color:#15130d;background:#e6b457;border-color:#e6b457}
+.lane{background:#0a0d13}.lane-land,.lane-sea{position:absolute;top:0;bottom:0}
+.lane-land{background:repeating-linear-gradient(135deg,rgba(214,179,138,.07) 0 6px,rgba(214,179,138,.02) 6px 12px)}
+.lane-sea{background:linear-gradient(180deg,rgba(14,116,144,.22),rgba(2,132,199,.12));overflow:hidden}
+.lane-sea::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(100deg,transparent 0 22px,rgba(125,211,252,.12) 22px 24px,transparent 24px 46px);animation:wave 6s linear infinite}
+@keyframes wave{to{background-position:92px 0}}
+.lane-flow{position:absolute;left:0;right:0;top:50%;height:2px;background:repeating-linear-gradient(90deg,rgba(230,180,87,.55) 0 8px,transparent 8px 18px);background-size:18px 2px;animation:flowd 1s linear infinite;opacity:.55}
+@keyframes flowd{to{background-position:18px 0}}
+.ship{position:absolute;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;background:transparent;border:0;padding:2px;cursor:pointer;filter:drop-shadow(0 0 6px currentColor);transition:transform .2s}
+.ship:hover,.ship:focus-visible,.ship-on{transform:translateX(-50%) scale(1.35);z-index:5;outline:none}
+.ship-on{filter:drop-shadow(0 0 10px #fff)}
+.ship-sail{animation:sail 5s ease-in-out infinite alternate}.ship-bob{animation:bob 2.6s ease-in-out infinite}
+@keyframes sail{from{margin-left:-16px;margin-top:0}to{margin-left:16px;margin-top:-4px}}
+@keyframes bob{0%,100%{margin-top:0}50%{margin-top:-5px}}
+.ship-lbl{font-size:8px;color:#cbd5e1;white-space:nowrap;margin-top:1px}
+@media (prefers-reduced-motion:reduce){.ship-sail,.ship-bob,.lane-sea::after,.lane-flow{animation:none}}

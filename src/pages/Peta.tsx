@@ -9,24 +9,33 @@ import { fmtNum, fmtPct } from '../domain/format'
 import { REGION_COLOR } from '../config/regions'
 import { tone } from '../domain/view'
 import { BULAN, aggregateYtd } from '../domain/monthly'
+import { Box, Grid2x2, Map as MapIc, Waves } from 'lucide-react'
+import Map3D from '../components/map/Map3D'
+import FlowLanes from '../components/map/FlowLanes'
+import RegionView from '../components/map/RegionView'
+type VW = 'd3' | 'jalur' | 'region' | 'klasik'
+const VIEWS: [VW, string, any][] = [['d3', 'Peta 3D', Box], ['jalur', 'Jalur Laut–Darat', Waves], ['region', 'Per Region', Grid2x2], ['klasik', 'Peta Klasik', MapIc]]
 const MODES: Record<string, string> = { wilayah: 'Wilayah', pemenuhan: 'Pemenuhan', status: 'Status dominan' }
 export default function Peta() {
   const { kinds, all, raw, status, fetchSheet, asOf } = useStore(); const plants = kinds.plant?.rows ?? [], ships = kinds.shipment?.rows ?? [], lok = kinds.lokasi?.rows ?? []
-  const [view, setView] = useState<'existing' | 'rekap'>('existing'); const [reg, setReg] = useState(''); const [mode, setMode] = useState('wilayah'); const [on, setOn] = useState<string[]>(STATUSES.map(s => s.key)); const [only, setOnly] = useState(true); const [sel, setSel] = useState('')
+  const [view, setView] = useState<'existing' | 'rekap'>('existing'); const [reg, setReg] = useState(''); const [mode, setMode] = useState('wilayah'); const [on, setOn] = useState<string[]>(STATUSES.map(s => s.key)); const [only, setOnly] = useState(true); const [sel, setSel] = useState(''); const [vw, setVw] = useState<VW>('d3')
   useEffect(() => { if (!asOf && view === 'rekap' && !raw['ALL Shipment'] && !status['ALL Shipment']) fetchSheet('ALL Shipment') }, [view, asOf])
   const ytd = useMemo(() => all ? aggregateYtd(all.ships) : null, [all])
   const loc = useMemo(() => new Map(lok.map(l => [norm(l.nama), l])), [lok])
   if (!plants.length && view === 'existing') return <Empty />
   const m = view === 'rekap' && mode === 'status' ? 'wilayah' : mode
-  const rows: any[] = view === 'rekap' ? (ytd ?? []).filter(p => (!reg || p.wilayah === reg) && (!only || p.n > 0)).map(p => ({ ...p, v: p.ds, pp: p.p, sh: [] as any[], l: loc.get(norm(p.pltu)) })) : plants.filter(p => (!reg || p.wilayah === reg) && (!only || p.n > 0)).map(p => {
+  const rows: any[] = view === 'rekap' ? (ytd ?? []).filter(p => (!reg || p.wilayah === reg) && (!only || p.n > 0)).map(p => ({ ...p, act: p.ds, v: p.ds, pp: p.p, sh: [] as any[], l: loc.get(norm(p.pltu)) })) : plants.filter(p => (!reg || p.wilayah === reg) && (!only || p.n > 0)).map(p => {
     const sh = ships.filter(s => s.pltu === p.pltu && on.includes(s.status ?? '')); const vol: Record<string, number> = {}; sh.forEach(s => { vol[s.status] = (vol[s.status] ?? 0) + (s.volume ?? 0) })
-    return { ...p, sh, v: sh.reduce((a, s) => a + (s.volume ?? 0), 0), dom: Object.entries(vol).sort((a, b) => b[1] - a[1])[0]?.[0], pp: pct(plantActual(p), kebutuhan(p)), l: loc.get(norm(p.pltu)) } as Record<string, any>
+    return { ...p, keb: kebutuhan(p), act: plantActual(p), sh, v: sh.reduce((a, s) => a + (s.volume ?? 0), 0), dom: Object.entries(vol).sort((a, b) => b[1] - a[1])[0]?.[0], pp: pct(plantActual(p), kebutuhan(p)), l: loc.get(norm(p.pltu)) } as Record<string, any>
   }) as any[]
   const color = (r: any) => !r.v ? '#6b7280' : m === 'wilayah' ? REGION_COLOR[r.wilayah] ?? '#9ca3af' : m === 'pemenuhan' ? tone(r.pp) : STATUSES.find(s => s.key === r.dom)?.color ?? '#9ca3af'
   const located = rows.filter(r => r.l), unlocated = rows.filter(r => !r.l); const cur = rows.find(r => r.pltu === sel)
   const legend = m === 'wilayah' ? REGIONS.map(r => [r, REGION_COLOR[r]]) : m === 'pemenuhan' ? [['≥ 85%', '#34d399'], ['60–85%', '#fbbf24'], ['< 60%', '#fb7185'], ['tanpa data', '#6b7280']] : STATUSES.filter(s => s.key !== 'carryOver').map(s => [s.label, s.color])
+  const pick = (p: string) => { setSel(p); if (window.innerWidth < 1024) setTimeout(() => document.getElementById('panel-detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80) }
+  const pw = new Map(plants.map(p => [p.pltu, p.wilayah])); const flowShips = ships.filter(x => on.includes(x.status ?? '')).map(x => ({ ...x, wilayah: x.wilayah ?? pw.get(x.pltu) }))
   const toggle = (k: string) => setOn(p => p.includes(k) ? p.filter(x => x !== k) : [...p, k])
   return <>
+    <div className="vsw mb-3" role="tablist" aria-label="Pilih tampilan peta">{VIEWS.map(([k, l, I]) => <button key={k} role="tab" aria-selected={vw === k} onClick={() => setVw(k)} className={'vsw-b' + (vw === k ? ' on' : '')}><I size={16} /><span>{l}</span></button>)}</div>
     <div className="flex gap-2 mb-2">{([['existing', 'Shipment Berjalan'], ['rekap', 'Rekap Tahun Berjalan']] as const).map(([k, l]) => <button key={k} onClick={() => { setView(k); setSel('') }} className="rounded-full border px-3 py-1 text-xs" style={{ borderColor: '#e6b457', background: view === k ? '#e6b457' : 'transparent', color: view === k ? '#15130d' : '#e6b457', fontWeight: view === k ? 600 : 400 }}>{l}</button>)}</div>
     {view === 'rekap' && !all && <p className="text-xs text-slate-400 mb-2">{status['ALL Shipment']?.state === 'Gagal Diakses' ? 'Gagal Mengambil Data ALL Shipment.' : 'Memuat Data… (sheet ALL Shipment cukup besar)'}</p>}
     <div className="flex flex-wrap items-center gap-2 mb-2 text-xs">
@@ -34,12 +43,15 @@ export default function Peta() {
       <span className="text-slate-400">Warna:</span>{Object.keys(MODES).filter(k => view === 'existing' || k !== 'status').map(k => <button key={k} onClick={() => setMode(k)} className={'rounded-full border px-2.5 py-0.5 ' + (m === k ? 'bg-white/10 border-[#e6b457] text-[#e6b457]' : 'border-white/20')}>{MODES[k]}</button>)}
       <label><input type="checkbox" checked={only} onChange={e => setOnly(e.target.checked)} /> hanya PLTU bershipment</label></div>
     {view === 'existing' && <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2 text-[11px]">{STATUSES.filter(s => s.key !== 'carryOver').map(s => <label key={s.key}><input type="checkbox" checked={on.includes(s.key)} onChange={() => toggle(s.key)} /> <span style={{ color: s.color }}>■</span> {s.label}</label>)}</div>}
-    <div className="grid lg:grid-cols-[1fr_300px] gap-3"><div>
-      <div className="h-[62vh] min-h-[360px] md:h-[540px] rounded-xl overflow-hidden border border-white/10"><MapContainer bounds={[[-11.5, 94], [6.5, 141.5]]} className="dark-tiles" style={{ height: '100%', width: '100%' }}>
+    <div className="grid lg:grid-cols-[minmax(0,1fr)_300px] gap-3"><div className="min-w-0">
+      {vw === 'd3' && <Map3D rows={rows} color={color} sel={sel} onSel={pick} showShips={view === 'existing'} reg={reg} />}
+      {vw === 'jalur' && <FlowLanes ships={flowShips} reg={reg} sel={sel} onSel={pick} />}
+      {vw === 'region' && <RegionView rows={rows} color={color} sel={sel} onSel={pick} onFocus={r => { setReg(r); setVw('d3') }} />}
+      {vw === 'klasik' &&       <div className="h-[62vh] min-h-[360px] md:h-[540px] rounded-xl overflow-hidden border border-white/10"><MapContainer bounds={[[-11.5, 94], [6.5, 141.5]]} className="dark-tiles" style={{ height: '100%', width: '100%' }}>
         <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
         {located.map(r => <CircleMarker key={r.pltu} center={[r.l.lat, r.l.lon]} radius={r.v ? Math.max(5, Math.min(22, 5 + Math.sqrt(r.v) / (view === 'rekap' ? 30 : 12))) : 4} pathOptions={{ color: sel === r.pltu ? '#fff' : color(r), weight: sel === r.pltu ? 3 : 1.5, fillColor: color(r), fillOpacity: r.v ? 0.55 : 0.25 }} eventHandlers={{ click: () => { setSel(r.pltu); if (window.innerWidth < 1024) setTimeout(() => document.getElementById('panel-detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80) } }}>
-          <Tooltip>{r.pltu} · {fmtPct(r.pp)} · {view === 'rekap' ? r.n : r.sh.length} shipment</Tooltip></CircleMarker>)}</MapContainer></div>
-      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[11px]">{legend.map(([l, c]) => <span key={l}><span style={{ color: c }}>●</span> {l}</span>)}<span className="text-slate-500">· ukuran lingkaran = volume · basemap OpenStreetMap · tidak ada posisi kapal waktu nyata dan rute belum digambar (koordinat jetty belum tersedia)</span></div></div>
+          <Tooltip>{r.pltu} · {fmtPct(r.pp)} · {view === 'rekap' ? r.n : r.sh.length} shipment</Tooltip></CircleMarker>)}</MapContainer></div>}
+      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[11px]">{legend.map(([l, c]) => <span key={l}><span style={{ color: c }}>●</span> {l}</span>)}<span className="text-slate-500">{vw === 'd3' ? '· tinggi balok = volume · kapal digambar ilustratif menuju PLTU (bukan posisi GPS nyata)' : vw === 'jalur' ? '· memakai shipment berjalan; mode Rekap tidak berlaku' : vw === 'region' ? '· ukuran titik = volume' : '· ukuran lingkaran = volume · basemap OpenStreetMap · tidak ada posisi kapal waktu nyata dan rute belum digambar (koordinat jetty belum tersedia)'}</span></div></div>
     <div><div id="panel-detail" className="scroll-mt-20"></div><Card title="Panel Detail">{!cur ? <p className="text-xs text-slate-400">Klik lingkaran PLTU pada peta.</p> : <div className="text-xs"><b className="text-sm">{cur.pltu}</b><div style={{ color: REGION_COLOR[cur.wilayah] }}>{cur.wilayah ?? 'Tanpa wilayah'}</div>
       <div className="mt-2 flex justify-between"><span>Pemenuhan</span><b style={{ color: tone(cur.pp) }}>{fmtPct(cur.pp)}</b></div><Bar pct={cur.pp} color={tone(cur.pp)} />
       <div className="mt-1 text-slate-400">Kebutuhan {fmtNum(view === 'rekap' ? cur.keb : kebutuhan(cur))} · D/S {fmtNum(cur.ds)} MT{view === 'rekap' ? ` · B/L ${fmtNum(cur.bl)} MT · ${cur.n} shipment` : ''}</div>
