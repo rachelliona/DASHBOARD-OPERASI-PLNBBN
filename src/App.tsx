@@ -16,6 +16,7 @@ import Login from './pages/Login'
 import BuatHash from './pages/BuatHash'
 import DateSelector from './components/DateSelector'
 import Palette from './components/Palette'
+import Megabar from './components/Megabar'
 import { useAuth } from './auth'
 import { NAV, NavItem } from './config/nav'
 import { fmtDate } from './domain/format'
@@ -59,6 +60,7 @@ export default function App() {
         <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto no-scrollbar"><DateSelector />
         {asOf ? <span className="badge past">◷ Data per {fmtDate(asOf)}</span> : <span className="badge live"><i className="pulse" />Langsung · {last ?? 'memuat…'}<span className="hidden md:inline"> · tiap {intervalSec} dtk</span></span>}</div>
         </header>
+      <Megabar />
       <div key={pathname} className="route-bar no-print" />
       <div key={'p' + pathname} className="p-3 md:p-4 lg:p-6 page page-in pb-24 lg:pb-8"><Routes>
         <Route path="/" element={<Ringkasan />} /><Route path="/peta" element={<Peta />} />

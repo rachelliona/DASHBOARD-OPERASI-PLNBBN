@@ -151,3 +151,26 @@ body::after{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;
 .login-card button{min-height:52px;font-size:16px}
 .login-card .grid{gap:18px}
 @media (max-width:767px){.login-card{padding:28px 22px!important}.login-card h1{font-size:1.5rem}}
+/* ===== mega-menu atas (desktop): ikon di atas label, panel saat disorot ===== */
+.megabar{position:sticky;top:61px;z-index:29;background:linear-gradient(180deg,rgba(10,12,17,.86),rgba(10,12,17,.7));backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.07)}
+.mega-row{display:flex;gap:6px;padding:8px 20px;overflow-x:auto}
+.mega-tile{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:96px;padding:8px 14px;border-radius:14px;font-size:11.5px;font-weight:600;color:#aab3c2;border:1px solid transparent;background:transparent;cursor:pointer;transition:color .2s,background .2s,box-shadow .2s,transform .2s}
+.mega-tile svg{transition:transform .25s,color .2s}
+.mega-tile:hover{color:#fff;background:rgba(255,255,255,.06);transform:translateY(-1px)}.mega-tile:hover svg{transform:scale(1.12);color:#f2c76b}
+.mega-tile.active{color:#fff;background:linear-gradient(160deg,rgba(230,180,87,.32),rgba(200,60,50,.22));border-color:rgba(230,180,87,.5);box-shadow:0 0 22px -6px rgba(230,180,87,.6),inset 0 1px 0 rgba(255,255,255,.18)}.mega-tile.active svg{color:#ffd98a}
+.mega-panel{position:absolute;left:0;right:0;top:100%;background:linear-gradient(180deg,rgba(14,17,24,.97),rgba(10,12,17,.97));border-bottom:1px solid rgba(230,180,87,.25);box-shadow:0 30px 60px -20px #000;animation:megain .18s ease-out}
+@keyframes megain{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.mega-in{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px;padding:18px 24px 22px;max-height:70vh;overflow:auto}
+.mega-sec h4{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#e6b457;margin-bottom:10px}
+.mega-cards{display:grid;gap:6px}
+.mega-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;font-size:13px;color:#d5dbe6;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.03);transition:all .2s}
+.mega-card svg{color:#8b95a7;transition:color .2s}
+.mega-card:hover{background:rgba(230,180,87,.12);border-color:rgba(230,180,87,.45);color:#fff;transform:translateX(3px)}.mega-card:hover svg{color:#f2c76b}
+.mega-card.active{background:rgba(230,180,87,.18);border-color:rgba(230,180,87,.6);color:#fff}
+.mega-chips{display:flex;flex-wrap:wrap;gap:6px}
+.mega-chip{padding:5px 11px;border-radius:99px;font-size:12px;color:#cbd2de;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);transition:all .18s}
+.mega-chip:hover{background:rgba(230,180,87,.14);border-color:rgba(230,180,87,.5);color:#fff}.mega-chip.active{background:rgba(230,180,87,.22);border-color:#e6b457;color:#fff}
+.mega-sub{font-size:11px;color:#8b95a7;margin-bottom:5px}
+@media (prefers-reduced-motion:reduce){.mega-panel{animation:none}.mega-tile,.mega-card{transition:none}}
+.mega-panel{background:#0d1016!important}
+.megabar{background:#0b0e13!important}
