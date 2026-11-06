@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom'
 import { useStore } from '../store'
 import { fmtNum, parseIdNumber } from '../domain/format'
 export const Card = ({ title, children, right }: { title?: string; children: ReactNode; right?: ReactNode }) => (
-  <section className="rounded-xl border border-white/10 bg-[#171a21] p-3 mb-3">{(title || right) && <div className="flex justify-between items-center mb-2"><h2 className="font-semibold text-xs tracking-wide">{title}</h2>{right}</div>}{children}</section>)
+  <section className="gcard">{(title || right) && <div className="flex justify-between items-center mb-3 gap-2"><h2 className="gcard-t">{title}</h2>{right}</div>}{children}</section>)
+export const PageHead = ({ icon: I, title, sub, right, color = '#60a5fa' }: { icon?: any; title: string; sub?: ReactNode; right?: ReactNode; color?: string }) => (
+  <header className="phead" style={{ ['--c' as any]: color }}>{I && <span className="phead-ic"><I size={20} /></span>}<div className="min-w-0 flex-1"><h1>{title}</h1>{sub && <p>{sub}</p>}</div>{right && <div className="phead-r">{right}</div>}</header>)
 export const Empty = ({ text = 'Data Belum Tersedia', hint }: { text?: string; hint?: string }) => {
   const { status, bulanAktif, asOf, snapState } = useStore(); const s = asOf ? snapState : status[bulanAktif]?.state; const dflt = text === 'Data Belum Tersedia'
   const loading = dflt && (asOf ? s.startsWith('Memuat') : (!s || s.startsWith('Memuat'))); const failed = dflt && (asOf ? s.startsWith('Gagal') : s === 'Gagal Diakses')
@@ -26,5 +28,5 @@ export const RegionChip = ({ label, color, on, onClick }: { label: string; color
   <button onClick={onClick} aria-pressed={on} className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs" style={{ borderColor: on ? '#f1f5f9' : 'rgba(255,255,255,.22)', background: on ? '#f1f5f9' : 'rgba(255,255,255,.03)', color: on ? '#0f1217' : '#e5e9f0', fontWeight: on ? 600 : 400 }}>
     {color && <i style={{ width: 8, height: 8, borderRadius: 99, background: color, boxShadow: on ? '0 0 0 1.5px #0f1217' : 'none' }} />}{label}</button>)
 export const Skeleton = ({ rows = 3 }: { rows?: number }) => <div className="space-y-3" aria-busy="true" aria-label="Memuat data"><div className="grid grid-cols-2 md:grid-cols-4 gap-2">{[0, 1, 2, 3].map(i => <div key={i} className="skel h-[78px] rounded-2xl" />)}</div>{Array.from({ length: rows }, (_, i) => <div key={i} className="skel h-24 rounded-2xl" />)}</div>
-export const Btn = (p: React.ButtonHTMLAttributes<HTMLButtonElement>) => <button {...p} className={'rounded-md bg-[#d9a441] hover:bg-[#e6b457] text-[#15130d] font-medium disabled:opacity-40 px-2.5 py-1 text-xs ' + (p.className ?? '')} />
-export const Bar = ({ pct, color }: { pct: number | null; color: string }) => <div className="h-1.5 rounded bg-white/10 overflow-hidden"><div style={{ width: `${Math.min(100, Math.max(0, pct ?? 0))}%`, background: `linear-gradient(90deg, ${color}99, ${color})`, animation: 'grow .9s cubic-bezier(.2,.8,.2,1) both' }} className="h-full rounded" /></div>
+export const Btn = (p: React.ButtonHTMLAttributes<HTMLButtonElement>) => <button {...p} className={'btn rounded-lg font-medium disabled:opacity-40 px-3 py-1 text-xs ' + (p.className ?? '')} />
+export const Bar = ({ pct, color }: { pct: number | null; color: string }) => <div className="h-2 rounded-full bg-white/10 overflow-hidden"><div style={{ width: `${Math.min(100, Math.max(0, pct ?? 0))}%`, background: `linear-gradient(90deg, ${color}66, ${color})`, boxShadow: `0 0 10px ${color}77`, animation: 'grow .9s cubic-bezier(.2,.8,.2,1) both' }} className="h-full rounded-full" /></div>

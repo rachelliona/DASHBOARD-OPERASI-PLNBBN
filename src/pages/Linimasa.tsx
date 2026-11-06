@@ -1,7 +1,9 @@
+import { GitBranch } from 'lucide-react'
+import { TIP } from '../components/chartTheme'
 import { useEffect, useMemo, useState } from 'react'
 import { BarChart, Bar as RBar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { useStore } from '../store'
-import { Card, Empty, Kpi } from '../components/ui'
+import { Card, Empty, Kpi, PageHead } from '../components/ui'
 import { DataTable, Col } from '../components/DataTable'
 import { REGIONS, STATUSES, stageLabel } from '../domain/status'
 import { STEPS, pctl, regionOf, stepDays } from '../domain/monthly'
@@ -35,7 +37,7 @@ export default function Linimasa() {
       <div className="rounded-lg px-2 py-1" style={{ background: 'rgba(52,211,153,.12)', borderLeft: '3px solid #34d399', color: '#a7f3d0' }}><b className="text-[10px] uppercase tracking-wider text-[#34d399]">Solusi </b>{r.an.solusi[0]}</div></div>
       : <span className="text-emerald-300">{r.d.every((x: any) => x == null) ? '—' : '✓ Normal'}</span> }]
   return <>
-    <div className="mb-2"><h2 className="text-sm font-semibold">Linimasa & Keterlambatan Shipment</h2><p className="text-[11px] text-slate-500">Sumber: sheet ALL Shipment (semua shipment tahun berjalan) · lama tiap tahap dalam hari, dihitung dari tanggal milestone di sheet</p></div>
+    <PageHead icon={GitBranch} color="#fbbf24" title="Linimasa & Keterlambatan Shipment" sub={<>Sumber: sheet ALL Shipment (semua shipment tahun berjalan) · lama tiap tahap dalam hari, dihitung dari tanggal milestone di sheet</>} />
     <Card><p className="text-xs text-slate-300">Penanda warna memakai pembanding statistik, bukan SLA: <span className="text-[#34d399]">hijau</span> ≤ median, <span className="text-[#fbbf24]">kuning</span> ≤ persentil ke-75, <span className="text-[#fb7185]">merah</span> lebih lama dari persentil ke-75 untuk tahap yang sama. Perbandingan dengan ETA Rakor ada di menu <b>ETA Rakor &amp; Keterlambatan</b>. Klik baris mana pun untuk melihat masalah dan solusinya.</p></Card>
     <section className="hero" style={{ ['--hc' as any]: '#fbbf24' }}>
       <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2"><h2 className="font-bold text-sm">Sorotan Linimasa — tahap mana yang menahan shipment &amp; apa solusinya</h2><span className="text-[11px] text-slate-400">dibanding kebiasaan seluruh shipment (P75), bukan SLA</span></div>
@@ -43,13 +45,13 @@ export default function Linimasa() {
         <div className="grid lg:grid-cols-2 gap-3 mb-3">
           <div><div className="text-[11px] uppercase tracking-wider text-slate-400 mb-1">Jumlah shipment yang melewati P75 per tahap — klik batang untuk menyaring tabel</div>
             <div style={{ height: data.over.length * 30 + 24 }}><ResponsiveContainer><BarChart layout="vertical" data={data.over} margin={{ top: 0, right: 24, left: 0, bottom: 0 }}><XAxis type="number" allowDecimals={false} stroke="#b4bccb" fontSize={10} /><YAxis type="category" dataKey="nama" width={typeof window !== "undefined" && window.innerWidth < 768 ? 122 : 150} stroke="#b4bccb" fontSize={typeof window !== "undefined" && window.innerWidth < 768 ? 10 : 11} interval={0} />
-              <Tooltip formatter={(v: any, _n: any, p: any) => [`${v} dari ${p.payload.tot} shipment`, 'Melewati P75']} contentStyle={{ background: '#171a21', border: '1px solid #2a2f3a' }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-              <RBar dataKey="n" barSize={16} radius={[0, 4, 4, 0]} cursor="pointer" onClick={(d: any) => setStg(stg === d.i ? null : d.i)}>{data.over.map(b => <Cell key={b.i} fill="#fbbf24" fillOpacity={stg != null && stg !== b.i ? 0.3 : 1} />)}</RBar></BarChart></ResponsiveContainer></div>
+              <Tooltip formatter={(v: any, _n: any, p: any) => [`${v} dari ${p.payload.tot} shipment`, 'Melewati P75']} {...TIP} />
+              <RBar dataKey="n" barSize={16} radius={[0, 8, 8, 0]} cursor="pointer" onClick={(d: any) => setStg(stg === d.i ? null : d.i)}>{data.over.map(b => <Cell key={b.i} fill="#fbbf24" fillOpacity={stg != null && stg !== b.i ? 0.3 : 1} />)}</RBar></BarChart></ResponsiveContainer></div>
             {stg != null && <button className="text-xs text-[#f2c76b] underline" onClick={() => setStg(null)}>Lepas penyaring tahap: {STEPS[stg]}</button>}</div>
           <div className="grid gap-2 content-start"><div className="hl hl-masalah"><div className="hl-t">Masalah dominan</div><p>Tahap <b>{dom.nama}</b> paling sering melewati batas wajar: {dom.n} dari {dom.tot} shipment (median {data.stats[dom.i].med == null ? '—' : fmtNum(data.stats[dom.i].med!, 1)} hari, P75 {fmtNum(data.stats[dom.i].p75!, 1)} hari). Biasanya terkait: {CAUSE[dom.i]}.</p></div>
             <div className="hl hl-solusi"><div className="hl-t">Solusi prioritas</div><p>{SOLUSI[dom.i]}</p></div></div></div>
         {data.worst.length > 0 && <><div className="text-[11px] uppercase tracking-wider text-slate-400 mb-1">Shipment yang paling menonjol lambat</div>
-          <div className="grid gap-3">{data.worst.map(r => <div key={r.id} className="rounded-2xl border border-white/10 bg-black/20 p-3"><button className="w-full text-left mb-2 flex flex-wrap items-center gap-x-3 gap-y-1" onClick={() => setSel(r)}><b className="text-sm">{r.pltu}</b><span className="text-xs text-slate-300">SI {r.si || '—'} · {r.kapal || '—'} · {stageLabel(r.status)}</span></button><AnalisisBox a={r.an} /></div>)}</div></>}</>}
+          <div className="grid gap-3">{data.worst.map(r => <div key={r.id} style={{ ['--c' as any]: '#fbbf24' }} className="pcard !p-3"><button className="w-full text-left mb-2 flex flex-wrap items-center gap-x-3 gap-y-1" onClick={() => setSel(r)}><b className="text-sm">{r.pltu}</b><span className="text-xs text-slate-300">SI {r.si || '—'} · {r.kapal || '—'} · {stageLabel(r.status)}</span></button><AnalisisBox a={r.an} /></div>)}</div></>}</>}
     </section>
     <div className="hscroll grid grid-cols-2 md:grid-cols-5 xl:grid-cols-9 gap-2 mb-3">{STEPS.map((l, i) => <Kpi key={l} label={l} value={data.stats[i].med == null ? '—' : fmtNum(data.stats[i].med!, 1)} unit="hari" note={`P75 ${data.stats[i].p75 == null ? '—' : fmtNum(data.stats[i].p75!, 1)} · n=${data.stats[i].n}`} accent="#e6b457" tip="Median lama tahap" />)}</div>
     <div className="flex flex-wrap items-center gap-2 mb-2 text-xs no-print"><select aria-label="Filter wilayah" value={reg} onChange={e => setReg(e.target.value)}><option value="">Semua wilayah</option>{REGIONS.map(r => <option key={r}>{r}</option>)}</select>

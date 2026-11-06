@@ -1,6 +1,7 @@
+import { Database } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useStore } from '../store'
-import { Btn, Card } from '../components/ui'
+import { Btn, Card, PageHead } from '../components/ui'
 import { SOURCES } from '../config/sources'
 import { parseCsv, Parsed } from '../domain/csv'
 import { KINDS, applyMapping } from '../domain/schema'
@@ -23,6 +24,7 @@ export default function Sumber() {
   const fetchSrc = (s: typeof SOURCES[0]) => fetchSheet(s.name)
   const sh = kinds.shipment?.rows ?? []; const unmappedStatus = sh.filter(r => r.statusRaw && !r.status).length
   return <>
+    <PageHead icon={Database} color="#94a3b8" title="Sumber Data dan Kualitas Data" sub="Status sheet, impor CSV lokal, dan baris yang ditolak" />
     <Card title="Impor CSV Lokal">
       <div className="flex flex-wrap gap-2 items-center mb-2"><input type="file" accept=".csv,text/csv" aria-label="Pilih file CSV" onChange={e => onFile(e.target.files?.[0])} />
         <select aria-label="Tujuan impor" value={target} onChange={e => setTarget(e.target.value)}>{Object.entries(KINDS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}{SOURCES.map(s => <option key={s.name} value={'raw:' + s.name}>Data mentah — {s.name}</option>)}</select></div>
