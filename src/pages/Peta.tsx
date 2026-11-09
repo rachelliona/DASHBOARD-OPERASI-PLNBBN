@@ -30,7 +30,7 @@ export default function Peta() {
   }) as any[]
   const color = (r: any) => !r.v ? '#6b7280' : m === 'wilayah' ? REGION_COLOR[r.wilayah] ?? '#9ca3af' : m === 'pemenuhan' ? tone(r.pp) : STATUSES.find(s => s.key === r.dom)?.color ?? '#9ca3af'
   const located = rows.filter(r => r.l), unlocated = rows.filter(r => !r.l); const cur = rows.find(r => r.pltu === sel)
-  const legend = m === 'wilayah' ? REGIONS.map(r => [r, REGION_COLOR[r]]) : m === 'pemenuhan' ? [['≥ 85%', '#34d399'], ['60–85%', '#22d3ee'], ['< 60%', '#60a5fa'], ['tanpa data', '#6b7280']] : STATUSES.filter(s => s.key !== 'carryOver').map(s => [s.label, s.color])
+  const legend = m === 'wilayah' ? REGIONS.map(r => [r, REGION_COLOR[r]]) : m === 'pemenuhan' ? [['≥ 100%', '#86efac'], ['85–100%', '#34d399'], ['60–85%', '#2dd4bf'], ['30–60%', '#22d3ee'], ['< 30%', '#60a5fa'], ['tanpa data', '#6b7280']] : STATUSES.filter(s => s.key !== 'carryOver').map(s => [s.label, s.color])
   const pick = (p: string) => { setSel(p); if (window.innerWidth < 1024) setTimeout(() => document.getElementById('panel-detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80) }
   const pw = new Map(plants.map(p => [p.pltu, p.wilayah])); const flowShips = ships.filter(x => on.includes(x.status ?? '')).map(x => ({ ...x, wilayah: x.wilayah ?? pw.get(x.pltu) }))
   const toggle = (k: string) => setOn(p => p.includes(k) ? p.filter(x => x !== k) : [...p, k])

@@ -5,5 +5,5 @@ describe('tampilan', () => {
   it('teks sumber tambang', () => {
     expect(sumberText([{ mitra: 'BIB', moda: '300 ft', volume: 7500 }, { mitra: 'BIB', moda: '300 ft', volume: 7600 }, { mitra: 'ATM', moda: 'Vessel', volume: 33000 }])).toBe('BIB (2 tongkang 300ft; 15,1rb MT), ATM (1 vessel; 33rb MT)')
   })
-  it('warna pemenuhan', () => { expect(tone(90)).toBe('#34d399'); expect(tone(70)).toBe('#22d3ee'); expect(tone(10)).toBe('#60a5fa'); expect(tone(null)).toBe('#6b7280') })
+  it('warna pemenuhan', () => { expect(tone(90)).toBe('#34d399'); expect(tone(70)).toBe('#2dd4bf'); expect(tone(40)).toBe('#22d3ee'); expect(tone(10)).toBe('#60a5fa'); expect(tone(105)).toBe('#86efac'); expect(tone(null)).toBe('#6b7280') })
 })
