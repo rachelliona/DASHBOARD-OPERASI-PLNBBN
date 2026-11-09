@@ -11,6 +11,7 @@ import { pct, plantActual, kebutuhan, sum } from '../domain/kpi'
 import { fmtNum, fmtPct } from '../domain/format'
 import { fmtUpdate, sumberText, tone } from '../domain/view'
 import { REGION_COLOR } from '../config/regions'
+import LaporanSlide from './LaporanSlide'
 const SEG = [...STAGES, { key: 'terjadwal', label: 'Sudah Ada Jadwal Muat', color: '#94a3b8' }, { key: 'lain', label: 'Belum ada status', color: '#64748b' }]
 const ACTIVE = ['loading', 'sailing', 'tiba', 'bongkar']; const ROW = 30; const M = { top: 5, right: 64, left: 0, bottom: 5 }
 const SORTS: Record<string, (a: any, b: any) => number> = { urut: () => 0, rendah: (a, b) => (a.p ?? -1) - (b.p ?? -1), tinggi: (a, b) => (b.p ?? -1) - (a.p ?? -1), besar: (a, b) => b.keb - a.keb }
@@ -19,10 +20,12 @@ export default function Laporan() {
   useEffect(() => { if (!asOf && b !== bulanAktif && BULAN.includes(b) && !raw[b] && !status[b]) fetchSheet(b) }, [b, asOf])
   const mm = months[b]; const alt = b !== bulanAktif && mm && !mm.missing.length
   const ds = useMemo(() => alt ? { rows: aggregatePlants(mm.ships), source: `Sheet ${b}`, at: mm.at } as any : kinds.plant, [alt, mm, kinds.plant]); const sh = useMemo(() => alt ? toShipRows(mm.ships) as any[] : kinds.shipment?.rows ?? [], [alt, mm, kinds.shipment])
-  const [reg, setReg] = useState(REGIONS[0]); const [q, setQ] = useState(''); const [stage, setStage] = useState(''); const [mode, setMode] = useState<'grafik' | 'tabel'>('grafik'); const [sort, setSort] = useState('urut')
+  const [view, setView] = useState<'slide' | 'interaktif'>('slide'); const [reg, setReg] = useState(REGIONS[0]); const [q, setQ] = useState(''); const [stage, setStage] = useState(''); const [mode, setMode] = useState<'grafik' | 'tabel'>('grafik'); const [sort, setSort] = useState('urut')
   const bulanBar = <div className="chips flex flex-wrap gap-1.5 mb-3 no-print"><span className="text-[11px] text-slate-400 self-center">Bulan:</span>{BULAN.map(x => { const ok = !!months[x] && !months[x].missing.length; return <button key={x} disabled={!ok && x !== bulanAktif && !!asOf} onClick={() => setBln(x === bulanAktif ? '' : x)} className={'fchip' + (b === x ? ' on' : '')} style={{ ['--c' as any]: ok || x === bulanAktif ? '#34d399' : '#64748b' }}>{x}</button> })}</div>
   if (!ds) return <Empty />
   if (b !== bulanAktif && !alt) return <>{bulanBar}<Card><p className="text-xs">{asOf ? 'Data Belum Tersedia pada tanggal ini.' : status[b]?.state === 'Gagal Diakses' ? 'Gagal Mengambil Data' : 'Memuat Data…'}</p></Card></>
+  const viewBar = <div className="flex gap-1.5 mb-3 no-print">{([['slide', 'Laporan (Slide)'], ['interaktif', 'Tampilan Interaktif']] as const).map(([k, l]) => <button key={k} onClick={() => setView(k)} className={'fchip' + (view === k ? ' on' : '')} style={{ ['--c' as any]: '#e6b457' }}>{l}</button>)}</div>
+  if (view === 'slide') return <>{bulanBar}{viewBar}<LaporanSlide b={b} ds={ds} sh={sh} months={months} /></>
   const inStage = (x: any) => stage === 'carryOver' ? x.konf === 'carry' : stage ? x.status === stage : ACTIVE.includes(x.status)
   const regionRows = ds.rows.filter(r => r.wilayah === reg); const col = REGION_COLOR[reg]
   const rows = regionRows.filter(r => (!q || norm(r.pltu).includes(norm(q))) && (!stage || (r[stage] ?? 0) > 0)).map(r => ({ ...r, keb: kebutuhan(r), p: pct(plantActual(r), kebutuhan(r)), sumberTxt: sumberText(sh.filter(x => x.pltu === r.pltu && inStage(x))), z: 0 }) as Record<string, any>).map(r => ({ ...r, tot: (stage ? [stage] : SEG.map(g => g.key)).reduce((a, k) => a + (r[k] ?? 0), 0) })).sort(SORTS[sort])
@@ -33,7 +36,7 @@ export default function Laporan() {
     ...SEG.filter(s => keys.includes(s.key) && s.key !== 'carryOver').map(s => ({ key: s.key, label: `${s.label} (MT)`, fmt: (v: any) => fmtNum(v) })), { key: 'sumberTxt', label: 'Sumber Tambang' }]
   return <>
     <PageHead icon={FileBarChart} color="#e6b457" title={`UPDATE MONITORING PASOKAN PLTU — ${b.toUpperCase()} 2026`} sub={`PT PLN BATUBARA NIAGA · UPDATE ${fmtUpdate(ds.at)} · Satuan: MT · Sumber: ${ds.source}`} />
-    {bulanBar}
+    {bulanBar}{viewBar}
     <div className="chips flex flex-wrap gap-1.5 mb-2 no-print">{REGIONS.map(g => <RegionChip key={g} label={g} color={REGION_COLOR[g]} on={reg === g} onClick={() => setReg(g)} />)}</div>
     <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
       <Kpi label="Konfirmasi" value={fmtNum(T.t)} unit="MT" accent={col} /><Kpi label="Carry Over" value={fmtNum(T.c)} unit="MT" accent="#ef4444" /><Kpi label="Complete Loading (B/L)" value={fmtNum(T.bl)} unit="MT" accent="#38bdf8" />
@@ -50,7 +53,7 @@ export default function Laporan() {
         <div className="flex gap-3 overflow-x-auto"><div style={{ width: 150, flexShrink: 0 }}><div className="text-[11px] text-slate-400 mb-1">Persentase pemenuhan</div>
           <ResponsiveContainer width="100%" height={H}><BarChart layout="vertical" data={rows} margin={M}><XAxis type="number" domain={[0, 100]} ticks={[0, 50, 100]} stroke="#9aa3b2" fontSize={10} tickFormatter={v => v + '%'} /><YAxis type="category" dataKey="pltu" hide />
             <Tooltip formatter={(v: any, _n: any, x: any) => [fmtPct(x.payload.p), 'Pemenuhan']} labelFormatter={(_l: any, x: any) => x?.[0]?.payload?.pltu} {...TIP} />
-            <RBar dataKey={(r: any) => Math.min(100, r.p ?? 0)} background={{ fill: 'rgba(255,255,255,0.06)' }} barSize={14} radius={[0, 8, 8, 0]}>{rows.map((r, i) => <Cell key={i} fill={tone(r.p)} />)}<LabelList dataKey="p" position="right" formatter={(v: any) => v == null ? '—' : fmtNum(v, 0) + '%'} fill="#e8e6e1" fontSize={10} /></RBar></BarChart></ResponsiveContainer></div>
+            <RBar dataKey={(r: any) => Math.min(100, r.p ?? 0)} background={{ fill: 'rgba(128,140,160,.16)' }} barSize={14} radius={[0, 8, 8, 0]}>{rows.map((r, i) => <Cell key={i} fill={tone(r.p)} />)}<LabelList dataKey="p" position="right" formatter={(v: any) => v == null ? '—' : fmtNum(v, 0) + '%'} fill="#e8e6e1" fontSize={10} /></RBar></BarChart></ResponsiveContainer></div>
           <div className="flex-1" style={{ minWidth: 420 }}><div className="text-[11px] text-slate-400 mb-1">Volume per tahapan (MT){stage ? ' — hanya tahapan terpilih' : ''}</div>
             <ResponsiveContainer width="100%" height={H}><BarChart layout="vertical" data={rows} margin={M}><XAxis type="number" stroke="#9aa3b2" fontSize={10} tickFormatter={v => fmtNum(v / 1000) + 'rb'} /><YAxis type="category" dataKey="pltu" width={160} stroke="#9aa3b2" fontSize={11} interval={0} />
               <Tooltip formatter={(v: any, n: any) => [fmtNum(v) + ' MT', n]} {...TIP} />

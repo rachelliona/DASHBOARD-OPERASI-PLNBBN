@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTheme } from '../theme'
 import { MapContainer, TileLayer, CircleMarker, Tooltip } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useStore } from '../store'
@@ -17,6 +18,7 @@ type VW = 'd3' | 'jalur' | 'region' | 'klasik'
 const VIEWS: [VW, string, any][] = [['d3', 'Peta 3D', Box], ['jalur', 'Jalur Laut–Darat', Waves], ['region', 'Per Region', Grid2x2], ['klasik', 'Peta Klasik', MapIc]]
 const MODES: Record<string, string> = { wilayah: 'Wilayah', pemenuhan: 'Pemenuhan', status: 'Status dominan' }
 export default function Peta() {
+  const th = useTheme()
   const { kinds, all, raw, status, fetchSheet, asOf } = useStore(); const plants = kinds.plant?.rows ?? [], ships = kinds.shipment?.rows ?? [], lok = kinds.lokasi?.rows ?? []
   const [view, setView] = useState<'existing' | 'rekap'>('existing'); const [reg, setReg] = useState(''); const [mode, setMode] = useState('wilayah'); const [on, setOn] = useState<string[]>(STATUSES.map(s => s.key)); const [only, setOnly] = useState(true); const [sel, setSel] = useState(''); const [vw, setVw] = useState<VW>('d3')
   useEffect(() => { if (!asOf && view === 'rekap' && !raw['ALL Shipment'] && !status['ALL Shipment']) fetchSheet('ALL Shipment') }, [view, asOf])
@@ -47,7 +49,7 @@ export default function Peta() {
       {vw === 'd3' && <Map3D rows={rows} color={color} sel={sel} onSel={pick} showShips={view === 'existing'} reg={reg} />}
       {vw === 'jalur' && <FlowLanes ships={flowShips} reg={reg} sel={sel} onSel={pick} />}
       {vw === 'region' && <RegionView rows={rows} color={color} sel={sel} onSel={pick} onFocus={r => { setReg(r); setVw('d3') }} />}
-      {vw === 'klasik' &&       <div className="h-[62vh] min-h-[360px] md:h-[540px] rounded-xl overflow-hidden border border-white/10"><MapContainer bounds={[[-11.5, 94], [6.5, 141.5]]} className="dark-tiles" style={{ height: '100%', width: '100%' }}>
+      {vw === 'klasik' &&       <div className="h-[62vh] min-h-[360px] md:h-[540px] rounded-xl overflow-hidden border border-white/10"><MapContainer bounds={[[-11.5, 94], [6.5, 141.5]]} className={th === 'dark' ? 'dark-tiles' : ''} style={{ height: '100%', width: '100%' }}>
         <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
         {located.map(r => <CircleMarker key={r.pltu} center={[r.l.lat, r.l.lon]} radius={r.v ? Math.max(5, Math.min(22, 5 + Math.sqrt(r.v) / (view === 'rekap' ? 30 : 12))) : 4} pathOptions={{ color: sel === r.pltu ? '#fff' : color(r), weight: sel === r.pltu ? 3 : 1.5, fillColor: color(r), fillOpacity: r.v ? 0.55 : 0.25 }} eventHandlers={{ click: () => { setSel(r.pltu); if (window.innerWidth < 1024) setTimeout(() => document.getElementById('panel-detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80) } }}>
           <Tooltip>{r.pltu} · {fmtPct(r.pp)} · {view === 'rekap' ? r.n : r.sh.length} shipment</Tooltip></CircleMarker>)}</MapContainer></div>}

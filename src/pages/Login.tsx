@@ -10,7 +10,7 @@ export default function Login() {
   /** Isian otomatis (bukan ketikan/tempel) pada password -> langsung masuk, sekali per pasangan isian. */
   const onPw = (e: React.ChangeEvent<HTMLInputElement>) => { setPw(e.target.value); const t = (e.nativeEvent as InputEvent).inputType; if ((!t || t === 'insertReplacementText') && e.target.value && (idRef.current?.value ?? '') && tried.current !== (idRef.current!.value + '\n' + e.target.value)) setTimeout(submit, 200) }
   return <div className="min-h-screen login-bg flex flex-col items-center justify-center p-6 relative" style={{ background: 'radial-gradient(700px 500px at 15% 5%,rgba(230,180,87,.22),transparent 60%),radial-gradient(600px 500px at 90% 95%,rgba(167,139,250,.18),transparent 60%),#0c0f14' }}>
-    <div className="logo-plate login-logo login-corner"><img src={import.meta.env.BASE_URL + 'logo-dark.png'} alt="PLN Batubara Niaga" className="logo-full" /></div>
+    <div className="logo-plate login-logo login-corner"><img src={import.meta.env.BASE_URL + 'logo-dark.png'} alt="PLN Batubara Niaga" className="logo-full lg-d" /><img src={import.meta.env.BASE_URL + 'logo-light.png'} alt="PLN Batubara Niaga" className="logo-full lg-l" /></div>
     <div className="w-full max-w-xl login-card">
       <div className="text-center mb-6"><h1 className="text-3xl font-bold leading-tight num">Dashboard Operasi<br />PLN Batubara Niaga</h1><p className="text-sm text-slate-400 mt-3">Monitoring Pasokan PLTU, Realisasi, dan Shipment Terintegrasi</p></div>
       <h2 className="text-lg font-bold mb-1">Masuk</h2><p className="text-xs text-slate-400 mb-5">Gunakan User ID dan password yang terdaftar.</p>

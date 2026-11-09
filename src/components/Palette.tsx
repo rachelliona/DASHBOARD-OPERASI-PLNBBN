@@ -23,7 +23,7 @@ export default function Palette({ open, onClose }: { open: boolean; onClose: () 
   const go = (r?: R) => { if (!r) return; nav(r.to); onClose() }
   const Ic = { p: FileText, l: Building2, s: Ship }
   return <div className="no-print fixed inset-0 z-[60] flex items-start justify-center p-3 pt-[10vh] bg-black/65 backdrop-blur-sm" onClick={onClose} role="dialog" aria-modal="true" aria-label="Pencarian cepat">
-    <div className="w-full max-w-xl rounded-2xl border border-white/15 bg-[#12151b] shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+    <div className="w-full max-w-xl rounded-2xl border border-white/15 bg-[var(--s1)] shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
       <div className="flex items-center gap-2 px-3 border-b border-white/10"><Search size={16} className="text-slate-400" />
         <input ref={ref} value={q} onChange={e => setQ(e.target.value)} placeholder="Cari halaman, PLTU, No. SI, atau kapal…" aria-label="Cari" className="flex-1 !border-0 !bg-transparent !py-3 text-sm"
           onKeyDown={e => { if (e.key === 'ArrowDown') { e.preventDefault(); setI(Math.min(res.length - 1, i + 1)) } else if (e.key === 'ArrowUp') { e.preventDefault(); setI(Math.max(0, i - 1)) } else if (e.key === 'Enter') go(res[i]); else if (e.key === 'Escape') onClose() }} />

@@ -20,9 +20,13 @@ import Megabar from './components/Megabar'
 import { useAuth } from './auth'
 import { NAV, NavItem } from './config/nav'
 import { fmtDate } from './domain/format'
+import { setTheme, useTheme } from './theme'
+import { Moon, Sun } from 'lucide-react'
 const TABS: [string, string, any][] = [['/', 'Ringkasan', LayoutDashboard], ['/peta', 'Peta', MapIcon], ['/laporan/harian', 'Laporan', FileText], ['/dashboard', 'Interaktif', Activity]]
 const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: FileText, activity: Activity, users: Users, db: Database }
-const LOGO = import.meta.env.BASE_URL + 'logo-dark.png', MARK = import.meta.env.BASE_URL + 'logo-mark-dark.png'
+const B = import.meta.env.BASE_URL
+const Img = ({ mark, cls }: { mark?: boolean; cls: string }) => <><img src={B + (mark ? 'logo-mark-dark.png' : 'logo-dark.png')} alt="PLN Batubara Niaga" className={cls + ' lg-d'} /><img src={B + (mark ? 'logo-mark-light.png' : 'logo-light.png')} alt="PLN Batubara Niaga" className={cls + ' lg-l'} /></>
+function ThemeBtn() { const t = useTheme(); const light = t === 'light'; return <button aria-label={light ? 'Ganti ke mode gelap' : 'Ganti ke mode terang'} title={light ? 'Mode gelap' : 'Mode terang'} onClick={() => setTheme(light ? 'dark' : 'light')} className="theme-btn">{light ? <Moon size={16} /> : <Sun size={16} />}<span className="hidden xl:inline text-[11px]">{light ? 'Gelap' : 'Terang'}</span></button> }
 function Item({ item, depth, rail, onExpand }: { item: NavItem; depth: number; rail?: boolean; onExpand?: () => void }) {
   const { pathname } = useLocation()
   const has = (it: NavItem): boolean => it.to ? decodeURI(pathname) === decodeURI(it.to) : !!it.children?.some(has)
@@ -44,7 +48,7 @@ export default function App() {
   return <div className="flex min-h-screen">
     {drawer && <div className="no-print fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setDrawer(false)} />}
     <nav data-rail={rail} className={'no-print sidebar shrink-0 p-3 overflow-y-auto fixed inset-y-0 left-0 z-50 w-[19rem] transition-[transform,width] duration-300 lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:translate-x-0 ' + (rail ? 'lg:w-[84px]' : 'lg:w-[17rem]') + (drawer ? ' translate-x-0' : ' -translate-x-full')}>
-      <div className="side-head"><div className="logo-plate"><img src={LOGO} alt="PLN Batubara Niaga" className="logo-full" /><img src={MARK} alt="PLN Batubara Niaga" className="logo-mark" /></div>
+      <div className="side-head"><div className="logo-plate"><Img cls="logo-full" /><Img mark cls="logo-mark" /></div>
         <button aria-label="Tutup menu" className="absolute right-2 top-2 p-2 lg:hidden" onClick={() => setDrawer(false)}><X size={18} /></button></div>
       <div className="side-cap lbl"><i />Dashboard Operasi</div>
       {NAV.map(i => <Item key={i.label} item={i} depth={0} rail={rail} onExpand={() => toggleRail(false)} />)}
@@ -54,9 +58,10 @@ export default function App() {
     <main className="flex-1 min-w-0">
       <header className="topbar no-print px-3 lg:px-5 py-2 flex flex-wrap items-center gap-x-4 gap-y-2">
         <button aria-label="Buka menu" className="lg:hidden -ml-1 p-2 rounded-lg hover:bg-white/10" onClick={() => setDrawer(true)}><Menu size={20} /></button>
-        <img src={MARK} alt="" className="lg:hidden h-8 w-auto" /><div className="mr-auto min-w-0"><h1 className="text-sm font-bold leading-tight truncate"><span className="lg:hidden">Dashboard Operasi PLN BBN</span><span className="hidden lg:inline">Dashboard Operasi PLN Batubara Niaga</span></h1><p className="hidden lg:block text-[11px] text-slate-500">Monitoring Pasokan PLTU, Realisasi, dan Shipment Terintegrasi</p></div>
+        <Img mark cls="lg:hidden h-8 w-auto" /><div className="mr-auto min-w-0"><h1 className="text-sm font-bold leading-tight truncate"><span className="lg:hidden">Dashboard Operasi PLN BBN</span><span className="hidden lg:inline">Dashboard Operasi PLN Batubara Niaga</span></h1><p className="hidden lg:block text-[11px] text-slate-500">Monitoring Pasokan PLTU, Realisasi, dan Shipment Terintegrasi</p></div>
         <button aria-label="Cari (Ctrl+K)" onClick={() => setPal(true)} className="hidden lg:flex items-center gap-2 rounded-lg border border-white/12 bg-white/5 px-3 py-1.5 text-xs text-slate-400 hover:text-white"><Search size={13} />Cari…<kbd className="ml-3 text-[10px] border border-white/15 rounded px-1">Ctrl K</kbd></button>
         <button aria-label="Cari" onClick={() => setPal(true)} className="lg:hidden p-2 rounded-lg hover:bg-white/10"><Search size={19} /></button>
+        <ThemeBtn />
         <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto no-scrollbar"><DateSelector />
         {asOf ? <span className="badge past">◷ Data per {fmtDate(asOf)}</span> : <span className="badge live"><i className="pulse" />Langsung · {last ?? 'memuat…'}<span className="hidden md:inline"> · tiap {intervalSec} dtk</span></span>}</div>
         </header>

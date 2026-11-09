@@ -18,10 +18,10 @@ export function Gauge({ value, color, label }: { value: number | null; color: st
   const m = useMounted(), shown = useCountUp(value), R = 78, C = 2 * Math.PI * R, pct = Math.max(0, Math.min(100, value ?? 0))
   return <div className="gauge" role="img" aria-label={`${label} ${value == null ? 'tidak tersedia' : value.toFixed(1) + ' persen'}`}>
     <svg viewBox="0 0 200 200"><defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#60a5fa" /><stop offset="1" stopColor={color} /></linearGradient><filter id="gl" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4" /></filter></defs>
-      <circle className="g-spin" cx="100" cy="100" r="94" fill="none" stroke="rgba(255,255,255,.14)" strokeWidth="1" strokeDasharray="2 7" />
-      <circle cx="100" cy="100" r={R} fill="none" stroke="rgba(255,255,255,.07)" strokeWidth="14" />
+      <circle className="g-spin" cx="100" cy="100" r="94" fill="none" style={{ stroke: 'rgba(var(--ink),.14)' }} strokeWidth="1" strokeDasharray="2 7" />
+      <circle cx="100" cy="100" r={R} fill="none" style={{ stroke: 'rgba(var(--ink),.07)' }} strokeWidth="14" />
       <circle cx="100" cy="100" r={R} fill="none" stroke="url(#gg)" strokeWidth="14" strokeLinecap="round" transform="rotate(-90 100 100)" strokeDasharray={C} strokeDashoffset={m ? C * (1 - pct / 100) : C} style={{ transition: 'stroke-dashoffset 1.4s cubic-bezier(.2,.8,.2,1)', filter: 'drop-shadow(0 0 8px ' + color + ')' }} />
-      {[0, 25, 50, 75].map(t => { const a = (t / 100) * 2 * Math.PI - Math.PI / 2; return <line key={t} x1={100 + 62 * Math.cos(a)} y1={100 + 62 * Math.sin(a)} x2={100 + 66 * Math.cos(a)} y2={100 + 66 * Math.sin(a)} stroke="rgba(255,255,255,.25)" /> })}</svg>
+      {[0, 25, 50, 75].map(t => { const a = (t / 100) * 2 * Math.PI - Math.PI / 2; return <line key={t} x1={100 + 62 * Math.cos(a)} y1={100 + 62 * Math.sin(a)} x2={100 + 66 * Math.cos(a)} y2={100 + 66 * Math.sin(a)} style={{ stroke: 'rgba(var(--ink),.25)' }} /> })}</svg>
     <div className="g-in"><div className="g-num num" style={{ color }}>{value == null ? '—' : shown.toFixed(1).replace('.', ',')}<span>%</span></div><div className="g-lbl">{label}</div></div></div>
 }
 /** Batang tumpuk: lintasan = kebutuhan, arsir = sudah muat (B/L), isi = sudah bongkar (D/S). */
@@ -37,8 +37,8 @@ export function Donut({ data, active, onPick, fmt }: { data: { key: string; labe
   const segs = data.filter(d => d.vol > 0).map(d => { const l = Math.max(2, (d.vol / Math.max(1, total)) * C - gap), s = acc; acc += (d.vol / Math.max(1, total)) * C; return { ...d, l, s } })
   return <div className="donut">
     <div className="donut-svg"><svg viewBox="0 0 220 220" role="img" aria-label="Komposisi volume per tahapan">
-      <circle className="g-spin" cx="110" cy="110" r="104" fill="none" stroke="rgba(255,255,255,.14)" strokeDasharray="2 7" />
-      <circle cx="110" cy="110" r={R} fill="none" stroke="rgba(255,255,255,.05)" strokeWidth="26" />
+      <circle className="g-spin" cx="110" cy="110" r="104" fill="none" style={{ stroke: 'rgba(var(--ink),.14)' }} strokeDasharray="2 7" />
+      <circle cx="110" cy="110" r={R} fill="none" style={{ stroke: 'rgba(var(--ink),.05)' }} strokeWidth="26" />
       <g transform="rotate(-90 110 110)">{segs.map(g => { const on = (hov || active) === g.key, dim = (hov || active) && !on
         return <circle key={g.key} cx="110" cy="110" r={R} fill="none" stroke={g.color} strokeLinecap="round" strokeWidth={on ? 32 : 24} strokeDasharray={m ? `${g.l} ${C - g.l}` : `0 ${C}`} strokeDashoffset={-g.s - gap / 2}
           style={{ transition: 'stroke-dasharray 1.2s cubic-bezier(.2,.8,.2,1), stroke-width .2s, opacity .2s', opacity: dim ? 0.3 : 1, filter: on ? `drop-shadow(0 0 10px ${g.color})` : undefined, cursor: 'pointer' }}
@@ -54,6 +54,6 @@ export function StatTile({ icon: I, label, value, unit, share, shareLabel, color
   const n = useCountUp(value), m = useMounted(), R = 19, C = 2 * Math.PI * R, p = Math.max(0, Math.min(100, share ?? 0))
   return <div className="stile" title={tip} style={{ ['--c' as any]: color }}><I className="stile-wm" size={86} aria-hidden />
     <div className="flex items-start gap-3"><div className="stile-ic"><I size={18} /></div><div className="min-w-0 flex-1"><div className="text-[11px] text-slate-300 leading-tight">{label}</div><div className="stile-v num">{Math.round(n).toLocaleString('id-ID')}<small>{unit}</small></div></div>
-      <svg width="48" height="48" viewBox="0 0 48 48" className="shrink-0" aria-label={`${shareLabel} ${p.toFixed(0)} persen`}><circle cx="24" cy="24" r={R} fill="none" stroke="rgba(255,255,255,.1)" strokeWidth="5" /><circle cx="24" cy="24" r={R} fill="none" stroke={color} strokeWidth="5" strokeLinecap="round" transform="rotate(-90 24 24)" strokeDasharray={C} strokeDashoffset={m ? C * (1 - Math.min(1, p / 100)) : C} style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1)', filter: `drop-shadow(0 0 4px ${color})` }} /><text x="24" y="27.5" textAnchor="middle" fontSize="10" fontWeight="700" fill="#fff">{share == null ? '—' : p.toFixed(0) + '%'}</text></svg></div>
+      <svg width="48" height="48" viewBox="0 0 48 48" className="shrink-0" aria-label={`${shareLabel} ${p.toFixed(0)} persen`}><circle cx="24" cy="24" r={R} fill="none" style={{ stroke: 'rgba(var(--ink),.1)' }} strokeWidth="5" /><circle cx="24" cy="24" r={R} fill="none" stroke={color} strokeWidth="5" strokeLinecap="round" transform="rotate(-90 24 24)" strokeDasharray={C} strokeDashoffset={m ? C * (1 - Math.min(1, p / 100)) : C} style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1)', filter: `drop-shadow(0 0 4px ${color})` }} /><text x="24" y="27.5" textAnchor="middle" fontSize="10" fontWeight="700" fill="#fff">{share == null ? '—' : p.toFixed(0) + '%'}</text></svg></div>
     <div className="text-[10px] text-slate-400 mt-1.5">{shareLabel}</div></div>
 }

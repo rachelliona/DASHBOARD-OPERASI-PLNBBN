@@ -17,7 +17,7 @@ function Mini({ pts, color, sel, hov, setHov, onSel }: { pts: any[]; color: (r: 
   if (!g) return <div className="h-[150px] grid place-items-center text-[11px] text-slate-500">Belum ada koordinat PLTU</div>
   const X = (lon: number) => ((lon - g.x0) / g.w) * 360, Y = (lat: number) => (1 - (lat - g.y0) / g.h) * 200
   const maxV = Math.max(1, ...pts.map(r => r.v ?? 0))
-  return <svg viewBox="0 0 360 200" className="w-full rounded-lg bg-[#0a1620]" role="img" aria-label="Peta mini wilayah">
+  return <svg viewBox="0 0 360 200" className="w-full rounded-lg bg-[var(--s0)]" role="img" aria-label="Peta mini wilayah">
     <defs><pattern id="gd" width="30" height="30" patternUnits="userSpaceOnUse"><path d="M30 0H0V30" fill="none" stroke="rgba(120,190,255,.08)" /></pattern></defs><rect width="360" height="200" fill="url(#gd)" />
     {g.polys.map((p, i) => <path key={i} d={'M' + p.map(([a, b]) => X(a).toFixed(1) + ',' + Y(b).toFixed(1)).join('L') + 'Z'} fill="#1b5753" stroke="rgba(167,243,232,.6)" strokeWidth=".8" />)}
     {pts.map(r => { const rad = 4 + 11 * Math.sqrt((r.v ?? 0) / maxV), on = sel === r.pltu || hov === r.pltu; return <g key={r.pltu} onMouseEnter={() => setHov(r.pltu)} onMouseLeave={() => setHov('')} onClick={() => onSel(r.pltu)} style={{ cursor: 'pointer' }}>
