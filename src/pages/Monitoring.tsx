@@ -11,6 +11,9 @@ import { REGIONS } from '../domain/status'
 import { REGION_COLOR } from '../config/regions'
 import { tone } from '../domain/view'
 import { KINDS } from '../domain/schema'
+import SheetViz from '../components/SheetViz'
+import Gantt from '../components/Gantt'
+import { todayRef } from '../domain/insight'
 const Detail = ({ r, labels, onClose }: { r: any; labels: Record<string, string>; onClose: () => void }) => (
   <Card title="Detail" right={<button className="text-xs text-[#e6b457]" onClick={onClose}>Tutup</button>}><dl className="grid grid-cols-2 gap-x-4 text-xs">{Object.entries(labels).map(([k, l]) => <div key={k} className="contents"><dt className="text-slate-400">{l}</dt><dd>{String(r[k] ?? 'Data belum tersedia')}</dd></div>)}</dl></Card>)
 const lab = (kind: string) => Object.fromEntries(KINDS[kind].fields.map(f => [f.key, f.label]))
@@ -26,7 +29,7 @@ export function MonitoringShipment() {
 }
 const pltuCols: Col[] = [{ key: 'pltu', label: 'PLTU' }, { key: 'wilayah', label: 'Wilayah' }, { key: 'target', label: 'Konfirmasi (MT)', fmt: v => fmtNum(v) }, { key: 'carryOver', label: 'Carry Over (MT)', fmt: v => fmtNum(v) }, { key: 'p', label: 'Pemenuhan', fmt: v => fmtPct(v) }, ...STAGES.map(s => ({ key: s.key, label: `${s.label} (MT)`, fmt: (v: any) => fmtNum(v) })), { key: 'sumber', label: 'Sumber Tambang' }]
 export function MonitoringPltu() {
-  const { kinds } = useStore(); const ds = kinds.plant; const [sel, setSel] = useState<any>(null); const [view, setView] = useState<'kartu' | 'tabel'>('kartu'); const [reg, setReg] = useState(''); const [all, setAll] = useState(false)
+  const { kinds, monthly, asOf } = useStore(); const ds = kinds.plant; const [sel, setSel] = useState<any>(null); const [view, setView] = useState<'kartu' | 'tabel'>('kartu'); const [reg, setReg] = useState(''); const [all, setAll] = useState(false)
   if (!ds) return <Empty />
   const ships = kinds.shipment?.rows ?? []; const SK = STATUSES.filter(s => s.key !== 'carryOver')
   const rows = ds.rows.filter(r => (!reg || r.wilayah === reg) && (all || r.n > 0)).map(r => ({ ...r, p: pct(plantActual(r), kebutuhan(r)) }) as Record<string, any>)
@@ -42,6 +45,7 @@ export function MonitoringPltu() {
       </button> })}</div>
       : <Card title="Monitoring Pasokan PLTU"><DataTable rows={rows} cols={pltuCols} name="monitoring-pltu" onRow={setSel} /></Card>}
     {sel && <><Detail r={sel} labels={lab('plant')} onClose={() => setSel(null)} />
+      {monthly && monthly.ships.some(x => x.plant === sel.pltu) && <Card title={`Gantt ${sel.pltu}`}><Gantt ships={monthly.ships.filter(x => x.plant === sel.pltu)} today={asOf ? Date.parse(asOf) : todayRef()} group={false} maxH={360} /></Card>}
       <Card title="Shipment Terkait">{!kinds.shipment ? <p className="text-xs">Dataset shipment belum tersedia.</p> : <DataTable rows={ships.filter(s => s.pltu === sel.pltu)} cols={shipCols} name="shipment-terkait" />}</Card></>}</>
 }
 export function SheetPage() {
@@ -50,6 +54,5 @@ export function SheetPage() {
   return <>{asOf && <Card><p className="text-xs text-amber-300">Data mentah sheet hanya tersedia untuk tanggal langsung. Saat ini kamu melihat keadaan {fmtDate(asOf)}; pilih "Langsung" di bagian atas untuk membuka sheet ini.</p></Card>}<div className="flex items-center gap-2 mb-2 no-print"><h2 className="font-semibold">{name}</h2><Btn onClick={() => fetchSheet(name)}>Perbarui Data</Btn><span className="text-xs text-slate-400">{st?.state ?? ''}{st?.at ? ` · ${st.at}` : ''}</span></div>
     {st?.msg && <p className="text-xs text-amber-300 mb-2">{st.msg}.{d ? ' Menampilkan data terakhir yang berhasil dimuat.' : ''}</p>}
     {!d ? (st?.state === 'Gagal Diakses' ? <Empty text="Gagal Mengambil Data" hint="Klik Perbarui Data, atau impor CSV di" /> : <Card><p className="text-xs">Memuat Data…</p></Card>)
-      : <Card title={`${fmtNum(d.rows.length)} baris`}><p className="text-xs text-slate-400 mb-1">Baris judul kolom: {d.headerRow}. Sel error Sheets dianggap kosong: {d.errorCells}. Baris subtotal dan judul kelompok dari sheet tampil apa adanya. Satuan dan definisi kolom mengikuti sheet asli.</p>
-        <DataTable rows={d.rows} cols={(d.headers ?? []).map(h => ({ key: h, label: h }))} name={name} /></Card>}</>
+      : <><p className="text-[11px] text-slate-500 mb-2">Tampilan visual dibuat otomatis dari kolom sheet (angka, tanggal, kategori). Baris judul kolom: {d.headerRow} · sel error Sheets dianggap kosong: {d.errorCells}. Gunakan tombol Tabel untuk data apa adanya.</p><SheetViz key={name} name={name} headers={d.headers ?? []} rows={d.rows as any} /></>}</>
 }

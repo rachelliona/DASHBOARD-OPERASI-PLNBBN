@@ -9,6 +9,7 @@ import { sum, pct, attention, kebutuhan, plantActual, KPI_DEFS } from '../domain
 import { fmtNum, fmtPct } from '../domain/format'
 import { REGION_COLOR } from '../config/regions'
 import { tone } from '../domain/view'
+import InsightTeaser from '../components/InsightTeaser'
 const scols: Col[] = [{ key: 'id', label: 'Shipment' }, { key: 'pltu', label: 'PLTU' }, { key: 'mitra', label: 'Mitra' }, { key: 'kapal', label: 'TB/BG' }, { key: 'volume', label: 'Volume (MT)', fmt: v => fmtNum(v) }, { key: 'status', label: 'Status', fmt: v => stageLabel(v) }]
 function Count({ label, v, c }: { label: string; v: number; c: string }) { const n = useCountUp(v); return <div className="rcount" style={{ borderColor: c + '55' }}><div className="text-[10px] text-slate-400 leading-tight">{label}</div><div className="num font-bold" style={{ color: c }}>{fmtNum(Math.round(n))}<span className="text-[10px] font-normal text-slate-400"> MT</span></div></div> }
 export default function Ringkasan() {
@@ -29,6 +30,7 @@ export default function Ringkasan() {
         <div className="lay lay-big" role="img" aria-label="Kebutuhan, sudah muat, dan sudah bongkar"><i className="lay-bl" style={{ width: Math.min(100, pct(bl, keb) ?? 0) + '%' }} /><i className="lay-ds" style={{ width: Math.min(100, P ?? 0) + '%', background: `linear-gradient(90deg,${tone(P)}99,${tone(P)})`, boxShadow: `0 0 16px ${tone(P)}88` }} /></div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-300 mt-2"><span><i className="lg lg-t" />Kebutuhan = 100%</span><span><i className="lg lg-bl" />Sudah muat (B/L) {fmtPct(pct(bl, keb))}</span><span><i className="lg" style={{ background: tone(P) }} />Sudah bongkar (D/S) {fmtPct(P)}</span></div>
         <div className="grid grid-cols-3 gap-2 mt-3">{[['Sisa belum dipenuhi', Math.max(0, keb - ds), '#60a5fa'], ['Sudah dibongkar', ds, '#34d399'], ['Sudah dimuat (B/L)', bl, '#a78bfa']].map(([l, v, c]) => <Count key={l as string} label={l as string} v={v as number} c={c as string} />)}</div></div></section>
+    <InsightTeaser ships={monthly.ships} bulan={bulanAktif} />
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2.5 mb-3">
       <StatTile icon={CalendarCheck} label="Konfirmasi Bulan Ini" value={target} unit=" MT" share={pct(target, keb)} shareLabel="dari kebutuhan" color="#e6b457" tip={KPI_DEFS.target} />
       <StatTile icon={History} label="Carry Over" value={co} unit=" MT" share={pct(co, keb)} shareLabel="dari kebutuhan" color="#f87171" />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { NavLink, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { Activity, Download, Search, ChevronDown, ChevronsLeft, ChevronsRight, Circle, Database, FileText, LayoutDashboard, LogOut, Map as MapIcon, Menu, Users, X } from 'lucide-react'
 import { useStore } from './store'
 import Ringkasan from './pages/Ringkasan'
@@ -8,6 +8,8 @@ import Peta from './pages/Peta'
 import Dashboard from './pages/Dashboard'
 import Linimasa from './pages/Linimasa'
 import Eta from './pages/Eta'
+import GanttPage from './pages/Gantt'
+import Analisis from './pages/Analisis'
 import { MonitoringShipment, MonitoringPltu, SheetPage } from './pages/Monitoring'
 import { RealisasiBulan, RealisasiRingkasan } from './pages/Realisasi'
 import Sumber from './pages/Sumber'
@@ -18,7 +20,7 @@ import DateSelector from './components/DateSelector'
 import Palette from './components/Palette'
 import Megabar from './components/Megabar'
 import { useAuth } from './auth'
-import { NAV, NavItem } from './config/nav'
+import { navFor, isAdmin, DATA_SHEETS, NavItem } from './config/nav'
 import { fmtDate } from './domain/format'
 import { setTheme, useTheme } from './theme'
 import { Moon, Sun } from 'lucide-react'
@@ -27,6 +29,7 @@ const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: F
 const B = import.meta.env.BASE_URL
 const Img = ({ mark, cls }: { mark?: boolean; cls: string }) => <><img src={B + (mark ? 'logo-mark-dark.png' : 'logo-dark.png')} alt="PLN Batubara Niaga" className={cls + ' lg-d'} /><img src={B + (mark ? 'logo-mark-light.png' : 'logo-light.png')} alt="PLN Batubara Niaga" className={cls + ' lg-l'} /></>
 function ThemeBtn() { const t = useTheme(); const light = t === 'light'; return <button aria-label={light ? 'Ganti ke mode gelap' : 'Ganti ke mode terang'} title={light ? 'Mode gelap' : 'Mode terang'} onClick={() => setTheme(light ? 'dark' : 'light')} className="theme-btn">{light ? <Moon size={16} /> : <Sun size={16} />}<span className="hidden xl:inline text-[11px]">{light ? 'Gelap' : 'Terang'}</span></button> }
+function SheetGuard({ admin }: { admin: boolean }) { const { name = '' } = useParams(); let n = name; try { n = decodeURIComponent(name) } catch { /* apa adanya */ } return !admin && DATA_SHEETS.has(n) ? <Navigate to="/" replace /> : <SheetPage /> }
 function Item({ item, depth, rail, onExpand }: { item: NavItem; depth: number; rail?: boolean; onExpand?: () => void }) {
   const { pathname } = useLocation()
   const has = (it: NavItem): boolean => it.to ? decodeURI(pathname) === decodeURI(it.to) : !!it.children?.some(has)
@@ -51,7 +54,7 @@ export default function App() {
       <div className="side-head"><div className="logo-plate"><Img cls="logo-full" /><Img mark cls="logo-mark" /></div>
         <button aria-label="Tutup menu" className="absolute right-2 top-2 p-2 lg:hidden" onClick={() => setDrawer(false)}><X size={18} /></button></div>
       <div className="side-cap lbl"><i />Dashboard Operasi</div>
-      {NAV.map(i => <Item key={i.label} item={i} depth={0} rail={rail} onExpand={() => toggleRail(false)} />)}
+      {navFor(isAdmin(user)).map(i => <Item key={i.label} item={i} depth={0} rail={rail} onExpand={() => toggleRail(false)} />)}
       {inst && <button onClick={async () => { inst.prompt(); await inst.userChoice; setInst(null) }} className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl border border-[#e6b457]/50 bg-[#e6b457]/10 py-2 text-xs text-[#f2c76b]"><Download size={14} />Pasang sebagai aplikasi</button>}
       <div className="side-foot"><div className="avatar" aria-hidden>{(user.nama || '?').trim().charAt(0).toUpperCase()}</div><div className="min-w-0 lbl"><div className="text-xs font-semibold truncate">{user.nama}</div><div className="text-[10px] text-emerald-300 flex items-center gap-1"><i className="pulse" />Terhubung</div></div><button onClick={logout} aria-label="Keluar" title="Keluar" className="ml-auto p-2 rounded-lg hover:bg-white/10 text-slate-300 lbl"><LogOut size={15} /></button></div>
       <button className="hidden lg:flex rail-toggle" onClick={() => toggleRail(!rail)} aria-label={rail ? 'Lebarkan menu' : 'Ciutkan menu'} title={rail ? 'Lebarkan menu' : 'Ciutkan menu'}>{rail ? <ChevronsRight size={15} /> : <><ChevronsLeft size={15} /><span className="lbl">Ciutkan</span></>}</button></nav>
@@ -70,9 +73,9 @@ export default function App() {
       <div key={'p' + pathname} className="p-3 md:p-4 lg:p-6 page page-in pb-24 lg:pb-8"><Routes>
         <Route path="/" element={<Ringkasan />} /><Route path="/peta" element={<Peta />} />
         <Route path="/laporan" element={<Navigate to="/laporan/harian" replace />} /><Route path="/laporan/harian" element={<Laporan />} />
-        <Route path="/eta" element={<Eta />} /><Route path="/linimasa" element={<Linimasa />} /><Route path="/dashboard" element={<Dashboard />} /><Route path="/shipment" element={<MonitoringShipment />} /><Route path="/pltu" element={<MonitoringPltu />} />
+        <Route path="/eta" element={<Eta />} /><Route path="/analisis" element={<Analisis />} /><Route path="/gantt" element={<GanttPage />} /><Route path="/linimasa" element={<Linimasa />} /><Route path="/dashboard" element={<Dashboard />} /><Route path="/shipment" element={<MonitoringShipment />} /><Route path="/pltu" element={<MonitoringPltu />} />
         <Route path="/realisasi" element={<RealisasiRingkasan />} /><Route path="/realisasi/:bulan" element={<RealisasiBulan />} />
-        <Route path="/sheet/:name" element={<SheetPage />} /><Route path="/sumber-data" element={<Sumber />} /><Route path="/pengaturan" element={<Pengaturan />} />
+        <Route path="/sheet/:name" element={<SheetGuard admin={isAdmin(user)} />} /><Route path="/sumber-data" element={isAdmin(user) ? <Sumber /> : <Navigate to="/" replace />} /><Route path="/pengaturan" element={isAdmin(user) ? <Pengaturan /> : <Navigate to="/" replace />} />
       </Routes></div></main>
     <Palette open={pal} onClose={() => setPal(false)} />
     <nav className="no-print tabbar lg:hidden" aria-label="Menu utama">{TABS.map(([to, l, Ic]) => <NavLink key={to} to={to} end className={({ isActive }) => 'tab' + (isActive ? ' active' : '')}><Ic size={19} /><span>{l}</span></NavLink>)}<button className="tab" onClick={() => setDrawer(true)}><Menu size={19} /><span>Menu</span></button></nav></div>

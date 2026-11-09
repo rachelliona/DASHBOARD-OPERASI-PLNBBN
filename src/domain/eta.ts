@@ -1,6 +1,6 @@
-export type Cmp = 6 | 8 | 9
-export const CMP_LABEL: Record<Cmp, string> = { 6: 'TA PLTU (tiba di PLTU)', 8: 'Mulai bongkar', 9: 'Selesai bongkar' }
-const RANK = ['terjadwal', 'loading', 'sailing', 'tiba', 'bongkar', 'unloading']; const NEED: Record<Cmp, number> = { 6: 3, 8: 4, 9: 5 }
+export type Cmp = 1 | 6 | 8 | 9
+export const CMP_LABEL: Record<Cmp, string> = { 1: 'TA POL (tiba di pelabuhan muat)', 6: 'TA PLTU (tiba di PLTU)', 8: 'Mulai bongkar', 9: 'Selesai bongkar' }
+const RANK = ['terjadwal', 'loading', 'sailing', 'tiba', 'bongkar', 'unloading']; const NEED: Record<Cmp, number> = { 1: 1, 6: 3, 8: 4, 9: 5 }
 const day = (t: number) => Math.floor(t / 864e5)
 /** Selisih hari antara tanggal aktual dan ETA Rakor (positif = lebih lambat). Tanpa tanggal aktual: bila sudah lewat ETA dan tahap belum sampai, dihitung "lewat ETA". */
 export function etaDelay(s: { eta: number | null; ms: (number | null)[]; stage: string | null }, cmp: Cmp, ref: number) {

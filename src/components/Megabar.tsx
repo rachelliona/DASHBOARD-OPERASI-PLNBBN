@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { Activity, BarChart3, ChevronDown, Clock, Database, Factory, FileText, LayoutDashboard, Map as MapIcon, Settings, Ship, Table2, Users, Waypoints } from 'lucide-react'
-import { NAV, NavItem } from '../config/nav'
+import { navFor, isAdmin, NavItem } from '../config/nav'
+import { useAuth } from '../auth'
 const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: FileText, activity: Activity, users: Users, db: Database }
 const LEAF: Record<string, any> = { '/dashboard': Activity, '/shipment': Ship, '/eta': Clock, '/linimasa': Waypoints, '/pltu': Factory, '/realisasi': BarChart3, '/sumber-data': Database, '/pengaturan': Settings }
 const same = (a: string, b: string) => { try { return decodeURI(a) === decodeURI(b) } catch { return a === b } }
@@ -9,15 +10,15 @@ const has = (it: NavItem, p: string): boolean => it.to ? same(p, it.to) : !!it.c
 const leaves = (it: NavItem): NavItem[] => it.to ? [it] : (it.children ?? []).flatMap(leaves)
 /** Menu atas gaya mega-menu: ikon di atas label, panel terbuka saat disorot atau diklik. Hanya desktop. */
 export default function Megabar() {
-  const { pathname } = useLocation(); const [open, setOpen] = useState<string | null>(null); const t = useRef<number>(); const box = useRef<HTMLDivElement>(null)
+  const { pathname } = useLocation(); const { user } = useAuth(); const NAVX = navFor(isAdmin(user)); const [open, setOpen] = useState<string | null>(null); const t = useRef<number>(); const box = useRef<HTMLDivElement>(null)
   useEffect(() => setOpen(null), [pathname])
   useEffect(() => { const k = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(null); const c = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(null) }; window.addEventListener('keydown', k); window.addEventListener('mousedown', c); return () => { window.removeEventListener('keydown', k); window.removeEventListener('mousedown', c) } }, [])
   const show = (l: string) => { window.clearTimeout(t.current); t.current = window.setTimeout(() => setOpen(l), 90) }
   const hide = () => { window.clearTimeout(t.current); t.current = window.setTimeout(() => setOpen(null), 220) }
-  const cur = NAV.find(n => n.label === open && n.children)
+  const cur = NAVX.find(n => n.label === open && n.children)
   return <div ref={box} className="megabar no-print hidden lg:block" onMouseLeave={hide} onMouseEnter={() => window.clearTimeout(t.current)}>
     <div className="mega-row" role="menubar" aria-label="Menu utama">
-      {NAV.map(n => { const I = ICON[n.icon ?? ''] ?? Table2; const on = has(n, pathname)
+      {NAVX.map(n => { const I = ICON[n.icon ?? ''] ?? Table2; const on = has(n, pathname)
         if (n.to) return <NavLink key={n.label} to={n.to} end role="menuitem" onMouseEnter={() => show('')} className={'mega-tile' + (on ? ' active' : '')}><I size={22} /><span>{n.label}</span></NavLink>
         return <button key={n.label} role="menuitem" aria-haspopup="true" aria-expanded={open === n.label} onMouseEnter={() => show(n.label)} onClick={() => setOpen(open === n.label ? null : n.label)} className={'mega-tile' + (on || open === n.label ? ' active' : '')}><I size={22} /><span>{n.label}<ChevronDown size={12} className={'inline ml-1 transition-transform ' + (open === n.label ? 'rotate-180' : '')} /></span></button> })}
     </div>

@@ -2,13 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, FileText, Building2, Ship } from 'lucide-react'
 import { useStore } from '../store'
-import { NAV, NavItem } from '../config/nav'
+import { navFor, isAdmin, NavItem } from '../config/nav'
+import { useAuth } from '../auth'
 const flat = (items: NavItem[], trail: string[] = []): { label: string; to: string; path: string }[] => items.flatMap(i => i.to ? [{ label: i.label, to: i.to, path: [...trail, i.label].join(' › ') }] : flat(i.children ?? [], [...trail, i.label]))
 type R = { k: 'p' | 'l' | 's'; label: string; sub: string; to: string }
 /** Pencarian cepat (Ctrl/⌘+K atau "/"): halaman, PLTU, dan shipment (No. SI / TB-BG). */
 export default function Palette({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { all, monthly } = useStore(); const nav = useNavigate(); const [q, setQ] = useState(''); const [i, setI] = useState(0); const ref = useRef<HTMLInputElement>(null)
-  const pages = useMemo(() => flat(NAV), []); const ships = (monthly ?? all)?.ships ?? []
+  const { all, monthly } = useStore(); const { user } = useAuth(); const nav = useNavigate(); const [q, setQ] = useState(''); const [i, setI] = useState(0); const ref = useRef<HTMLInputElement>(null)
+  const pages = useMemo(() => flat(navFor(isAdmin(user))), [user]); const ships = (monthly ?? all)?.ships ?? []
   const res = useMemo<R[]>(() => {
     const t = q.trim().toLowerCase(); const out: R[] = []
     const P = pages.filter(p => !t || (p.path.toLowerCase().includes(t))).slice(0, t ? 6 : 8).map(p => ({ k: 'p' as const, label: p.label, sub: p.path, to: p.to })); out.push(...P)
