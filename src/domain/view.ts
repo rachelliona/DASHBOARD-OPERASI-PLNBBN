@@ -8,3 +8,12 @@ export function sumberText(rows: any[]) {
   for (const s of rows) { const k = s.mitra || '—'; const a = g.get(k) ?? { n: 0, v: 0, moda: new Set<string>() }; a.n++; a.v += s.volume ?? 0; if (s.moda) a.moda.add(String(s.moda).replace(/\s+/g, '')); g.set(k, a) }
   return [...g].map(([k, a]) => { const m = [...a.moda]; const vessel = m.length === 1 && /vessel/i.test(m[0]); return `${k} (${a.n} ${vessel ? 'vessel' : 'tongkang' + (m.length ? ' ' + m.join('/') : '')}; ${fmtNum(a.v / 1000, 1)}rb MT)` }).join(', ')
 }
+
+/** Penyingkatan bertahap teks sumber tambang: 1 = tongkang→tkg, 2 = tanpa "ft"/"MT", 3 = hanya nama (jumlah; volume). */
+export function compactSumber(t: string, level: number) {
+  let c = t
+  if (level >= 1) c = c.replace(/tongkang/gi, 'tkg').replace(/vessel/gi, 'vsl')
+  if (level >= 2) c = c.replace(/(\d)\s?ft\b/gi, '$1').replace(/\s?\/\s?/g, '/').replace(/\s*rb MT\)/g, 'rb)')
+  if (level >= 3) c = c.replace(/\((\d+)\s+(?:tkg|vsl)[^;)]*;/g, '($1;').replace(/\s+;/g, ';')
+  return c
+}

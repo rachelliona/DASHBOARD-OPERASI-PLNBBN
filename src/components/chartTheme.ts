@@ -1,2 +1,2 @@
-export const TIP = { contentStyle: { background: 'var(--s1)', color: 'var(--text)', border: '1px solid rgba(var(--ink),.16)', borderRadius: 12, boxShadow: '0 14px 34px -10px rgba(0,0,0,.45)', fontSize: 12 }, cursor: { fill: 'rgba(96,165,250,.12)' }, labelStyle: { color: 'var(--text)', fontWeight: 600 } } as const
+export const TIP = { contentStyle: { background: 'var(--s1)', color: 'var(--text)', border: '1px solid rgba(var(--ink),.16)', borderRadius: 12, boxShadow: '0 14px 34px -10px rgba(0,0,0,.45)', fontSize: 12 }, cursor: { fill: 'rgba(96,165,250,.12)' }, labelStyle: { color: 'var(--text)', fontWeight: 600 }, itemStyle: { color: 'var(--text)' } } as const
 export const AXIS = { stroke: '#7f8aa0', fontSize: 11, tickLine: false, axisLine: false } as const

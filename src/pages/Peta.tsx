@@ -38,7 +38,7 @@ export default function Peta() {
   const toggle = (k: string) => setOn(p => p.includes(k) ? p.filter(x => x !== k) : [...p, k])
   return <>
     <div className="vsw mb-3" role="tablist" aria-label="Pilih tampilan peta">{VIEWS.map(([k, l, I]) => <button key={k} role="tab" aria-selected={vw === k} onClick={() => setVw(k)} className={'vsw-b' + (vw === k ? ' on' : '')}><I size={16} /><span>{l}</span></button>)}</div>
-    <div className="flex gap-2 mb-2">{([['existing', 'Shipment Berjalan'], ['rekap', 'Rekap Tahun Berjalan']] as const).map(([k, l]) => <button key={k} onClick={() => { setView(k); setSel('') }} className="rounded-full border px-3 py-1 text-xs" style={{ borderColor: '#e6b457', background: view === k ? '#e6b457' : 'transparent', color: view === k ? '#15130d' : '#e6b457', fontWeight: view === k ? 600 : 400 }}>{l}</button>)}</div>
+    <div className="flex gap-2 mb-2">{([['existing', 'Shipment Berjalan'], ['rekap', 'Rekap Tahun Berjalan']] as const).map(([k, l]) => <button key={k} onClick={() => { setView(k); setSel('') }} className={'fchip' + (view === k ? ' on' : '')} style={{ ['--c' as any]: '#e6b457' }}>{l}</button>)}</div>
     {view === 'rekap' && !all && <p className="text-xs text-slate-400 mb-2">{status['ALL Shipment']?.state === 'Gagal Diakses' ? 'Gagal Mengambil Data ALL Shipment.' : 'Memuat Data… (sheet ALL Shipment cukup besar)'}</p>}
     <div className="flex flex-wrap items-center gap-2 mb-2 text-xs">
       <select aria-label="Filter wilayah" value={reg} onChange={e => setReg(e.target.value)}><option value="">Semua wilayah</option>{REGIONS.map(r => <option key={r}>{r}</option>)}</select>

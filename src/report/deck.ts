@@ -3,6 +3,8 @@ import type { KpiTahunan } from './kpi'
 import { fmtNum } from '../domain/format'
 import { REGIONS } from '../domain/status'
 import { kebutuhan, pct } from '../domain/kpi'
+import { compactSumber } from '../domain/view'
+export { compactSumber }
 
 export type DeckIn = { bulan: string; updateTxt: string; plants: any[]; ships: any[]; month: { carry: number; konf: number; bl: number; ds: number }; ytd: { bl: number; ds: number }; real: (number | null)[]; activeIdx: number; kpi: KpiTahunan }
 const C = { co: '#ff0000', loading: '#1fa2ff', sailing: '#ed7d31', tiba: '#1f3864', bongkar: '#a63fa6', unloading: '#4ea72e', terjadwal: '#a6a6a6', lain: '#d4d4d4' }
@@ -14,12 +16,25 @@ export function measure(t: string, size: number, bold = false, italic = false) {
   if (!_cx) return t.length * size * 0.6
   _cx.font = `${italic ? 'italic ' : ''}${bold ? 700 : 400} ${size}px Poppins, Arial, sans-serif`; return _cx.measureText(t).width
 }
-/** Singkat teks sumber tambang sampai muat dalam lebar kotak. */
-export function fitSumber(t: string, size: number, maxW: number) {
-  if (!t) return ''
-  const steps = [t, t.replace(/tongkang/gi, 'tkg').replace(/vessel/gi, 'vsl'), t.replace(/tongkang/gi, 'tkg').replace(/vessel/gi, 'vsl').replace(/(\d)\s?ft/g, '$1')]
-  for (const c of steps) if (measure(c, size) <= maxW) return c
-  let c = steps[2]; while (c.length > 4 && measure(c + '…', size) > maxW) c = c.slice(0, -1).trimEnd(); return c + '…'
+/** Singkat teks sumber tambang agar muat utuh di kotak: tingkat penyingkatan bertahap (tanpa "ft"/"MT"), 1 baris lalu 2 baris, ukuran huruf mengecil; terpotong hanya sebagai jalan terakhir. */
+export function fitSumber(t: string, size: number, maxW: number, maxH = 0): { s: string; size: number } {
+  if (!t) return { s: '', size }
+  const sizes = [size, size - 1, size - 2, size - 3].filter(v => v >= 6.5)
+  const twoOk = maxH >= 19
+  for (let lv = 0; lv <= 3; lv++) {
+    const c = compactSumber(t, lv)
+    for (const sz of sizes) if (measure(c, sz) <= maxW) return { s: c, size: sz }
+    if (twoOk) for (const sz of sizes.filter(v => v * 2.5 <= maxH)) {
+      const parts = c.split(/,\s*/); let best: string | null = null
+      for (let k = 1; k < parts.length; k++) { const a = parts.slice(0, k).join(', ') + ',', b = parts.slice(k).join(', '); if (measure(a, sz) <= maxW && measure(b, sz) <= maxW) { best = a + '\n' + b; break } }
+      if (best) return { s: best, size: sz }
+    }
+  }
+  const sz = Math.max(6.5, sizes[sizes.length - 1] ?? 6.5), c = compactSumber(t, 3)
+  if (twoOk) { const w = c.split(' '); let a = '', i = 0; while (i < w.length && measure((a + ' ' + w[i]).trim(), sz) <= maxW) a = (a + ' ' + w[i++]).trim(); let b = w.slice(i).join(' ')
+    if (measure(b, sz) <= maxW) return { s: a + '\n' + b, size: sz }
+    while (b.length > 3 && measure(b + '…', sz) > maxW) b = b.slice(0, -1).trimEnd(); return { s: a + '\n' + b + '…', size: sz } }
+  let x = c; while (x.length > 4 && measure(x + '…', sz) > maxW) x = x.slice(0, -1).trimEnd(); return { s: x + '…', size: sz }
 }
 const n0 = (v: number) => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Math.round(v))
 const pc0 = (v: number | null) => v == null || !isFinite(v) ? '—' : Math.round(v) + '%'
@@ -47,7 +62,7 @@ function slide1(d: DeckIn): Slide {
   blok(11, 'Volume  RKAP', '#e3dcea', false, k.rkapTerkontrak, pct(k.rkapTerkontrak, k.targetRkap) ?? -1, k.rkapRealisasi, pct(k.rkapRealisasi, k.targetRkap))
   blok(266, 'Proaktif Sourcing', '#f0dcdc', true, k.proaktifTerkontrak, -1, k.proaktifRealisasi, pct(k.proaktifRealisasi, k.proaktifTerkontrak))
   els.push(R(11, 569, 517, 20, '#e8e5d9'), T(11, 569, 517, 20, 'Total (Target + Proaktif) RKAP', 12.5, { bold: true, align: 'c', va: 'm', color: '#444' }))
-  const tReal = k.rkapRealisasi + k.proaktifRealisasi
+  const tReal = k.totalRealisasi || k.rkapRealisasi + k.proaktifRealisasi
   els.push(R(11, 592, 248, 56, '#3b5ea0'), R(11, 592, 248, 19, '#5b86d0'), T(11, 592, 248, 19, 'Terkontrak', 13, { color: '#fff', align: 'c', va: 'm' }), T(11, 611, 248, 37, n0(k.terkontrak), 28, { color: '#fff', align: 'c', va: 'm' }),
     R(266, 592, 262, 56, '#595959'), R(266, 592, 262, 19, '#7f7f7f'), T(266, 592, 262, 19, 'Realisasi', 13, { color: '#fff', align: 'c', va: 'm' }), T(266, 611, 180, 37, n0(tReal), 28, { color: '#fff', align: 'c', va: 'm' }), R(450, 611, 78, 37, '#262626'), T(450, 611, 78, 37, pc0(pct(tReal, k.targetRkap)), 20, { color: '#fff', bold: true, italic: true, align: 'c', va: 'm' }))
   // grafik
@@ -56,7 +71,7 @@ function slide1(d: DeckIn): Slide {
   for (let v = 0; v <= MAXV; v += 2) { const y = Y0 + CH - v / MAXV * CH; els.push({ t: 'line', x1: X0, y1: y, x2: X0 + CW, y2: y, color: v ? '#e3e3e3' : '#999', w: 1 }, T(X0 - 34, y - 8, 28, 16, String(v), 9.5, { align: 'r', va: 'm', color: '#555' })) }
   const BL = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des']; const gw = CW / 12, bw = 15
   BL.forEach((m, i) => {
-    const gx = X0 + i * gw + (gw - bw * 3 - 3) / 2; const real = i < d.activeIdx ? d.real[i] : null; const prog = k.prognosa[i]
+    const gx = X0 + i * gw + (gw - bw * 3 - 3) / 2; const real = k.realisasi?.[i] ?? null; const prog = k.prognosa[i]
     const vals: [number | null, string][] = [[k.y2025[i], '#4472c4'], [k.target[i], '#c0504d'], [real ?? prog, real != null ? '#9bbb59' : '#a6a6a6']]
     vals.forEach(([v, c], j) => { if (v == null) return; const h = v / MAXV * CH; const x = gx + j * (bw + 1.5); els.push(S(x, Y0 + CH - h, bw, h, c), T(x - 8, Y0 + CH - h - 14, bw + 16, 12, v >= 10 ? v.toFixed(2).replace(/0$/, '') : String(+v.toFixed(2)), 7.5, { bold: true, align: 'c', va: 'm', color: '#222' })) })
     els.push(T(X0 + i * gw, Y0 + CH + 3, gw, 14, m, 9.5, { align: 'c', va: 'm', color: '#444' }))
@@ -75,10 +90,10 @@ function slide2(d: DeckIn): Slide {
   const box = (x: number, w: number, fill: string, lab: string, v: string, pBg?: string, pv?: string) => els.push(R(x, 411, w, 70, fill), T(x + 4, 413, w - 8, 20, lab, 13.5, { color: '#fff', align: 'c', va: 'm' }), T(x, 433, pv ? w - 78 : w, 46, v, 36, { color: '#fff', bold: true, align: 'c', va: 'm' }), ...(pv ? [R(x + w - 78, 436, 78, 40, pBg!), T(x + w - 78, 436, 78, 40, pv, 22, { color: '#fff', bold: true, italic: true, align: 'c', va: 'm' })] : []))
   box(5, 308, '#9c1c14', `Carry Over ${bm} (MT)`, fmtNum(d.month.carry)); box(318, 318, '#4f8a96', `Konfirmasi Pasokan ${bm} (MT)`, fmtNum(d.month.konf))
   box(640, 308, '#a0507a', `Complete Loading ${bm} (MT)`, fmtNum(d.month.bl), '#6e2a52', pc0(pct(d.month.bl, kb))); box(952, 322, '#5b4a9a', `Complete Unloading ${bm} (MT)`, fmtNum(d.month.ds), '#3f2f76', pc0(pct(d.month.ds, kb)))
-  const T26 = d.kpi.targetRkap
-  els.push(R(5, 488, 631, 84, '#5486e8'), T(5, 490, 631, 26, 'TOTAL COMPLETE LOADING 2026 (MT)', 21, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }), T(5, 514, 450, 58, fmtNum(d.ytd.bl), 52, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }), R(440, 516, 196, 56, '#2a4a9a'), T(440, 516, 196, 56, (pct(d.ytd.bl, T26) ?? 0).toFixed(2).replace('.', ',') + '%', 34, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }))
-  els.push(R(640, 488, 634, 84, '#f0a030'), T(640, 490, 634, 26, 'TOTAL COMPLETE UNLOADING 2026 (MT)', 21, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }), T(640, 514, 450, 58, fmtNum(d.ytd.ds), 52, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }), R(1075, 516, 199, 56, '#a8681e'), T(1075, 516, 199, 56, (pct(d.ytd.ds, T26) ?? 0).toFixed(2).replace('.', ',') + '%', 34, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }))
-  els.push(T(5, 580, 1270, 16, `% bulanan terhadap Konfirmasi + Carry Over bulan ${d.bulan}; % total 2026 terhadap Target RKAP ${fmtNum(T26)} MT. Jumlah nominasi dihitung per baris shipment pada sheet bulan ${d.bulan}.`, 9.5, { color: '#555', italic: true, align: 'c' }))
+  const T26 = d.kpi.targetRkap, YD = d.kpi.ytdPembagi || T26
+  els.push(R(5, 488, 631, 84, '#5486e8'), T(5, 490, 631, 26, 'TOTAL COMPLETE LOADING 2026 (MT)', 21, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }), T(5, 514, 450, 58, fmtNum(d.kpi.ytdBlManual || d.ytd.bl), 52, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }), R(440, 516, 196, 56, '#2a4a9a'), T(440, 516, 196, 56, (pct(d.kpi.ytdBlManual || d.ytd.bl, YD) ?? 0).toFixed(2).replace('.', ',') + '%', 34, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }))
+  els.push(R(640, 488, 634, 84, '#f0a030'), T(640, 490, 634, 26, 'TOTAL COMPLETE UNLOADING 2026 (MT)', 21, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }), T(640, 514, 450, 58, fmtNum(d.kpi.ytdDsManual || d.ytd.ds), 52, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }), R(1075, 516, 199, 56, '#a8681e'), T(1075, 516, 199, 56, (pct(d.kpi.ytdDsManual || d.ytd.ds, YD) ?? 0).toFixed(2).replace('.', ',') + '%', 34, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }))
+  els.push(T(5, 580, 1270, 16, `% bulanan terhadap Konfirmasi + Carry Over bulan ${d.bulan}; % total 2026 terhadap ${fmtNum(YD)} MT (pembagi sesuai sheet DASHBOARD). Jumlah nominasi dihitung per baris shipment pada sheet bulan ${d.bulan}.`, 9.5, { color: '#555', italic: true, align: 'c' }))
   return { name: 'Monitoring Pasokan', els }
 }
 
@@ -99,7 +114,7 @@ function region(d: DeckIn, reg: string): Slide {
     // kanan: volume per tahapan
     let x = X0; for (const s of SER) { const v = r[s[0]] ?? 0; if (!v) continue; const w = v * sc; els.push(S(x, y, w, BH, s[2])); if (measure(fmtNum(v), 10, true) + 6 < w) els.push(T(x, y, w, BH, fmtNum(v), 10, { bold: true, align: 'c', va: 'm', color: s[0] === 'terjadwal' || s[0] === 'lain' ? '#222' : '#fff' })); x += w }
     const bx = 923, bwid = 317, bh = Math.min(26, pitch * 0.76)
-    els.push({ t: 'line', x1: Math.max(X0 + 2, x + 3), y1: cy, x2: bx - 4, y2: cy, w: 1, arrows: true }, R(bx, cy - bh / 2, bwid, bh, '#ffffff', { stroke: '#8a8a8a', r: 6 }), T(bx + 4, cy - bh / 2, bwid - 8, bh, fitSumber(txt || "", 9.5, bwid - 14), 9.5, { va: 'm', color: '#222' }))
+    els.push({ t: 'line', x1: Math.max(X0 + 2, x + 3), y1: cy, x2: bx - 4, y2: cy, w: 1, arrows: true }, R(bx, cy - bh / 2, bwid, bh, '#ffffff', { stroke: '#8a8a8a', r: 6 }), (() => { const f = fitSumber(txt || '', 9.5, bwid - 14, bh); return T(bx + 4, cy - bh / 2, bwid - 8, bh, f.s, f.size, { va: 'm', color: '#222' }) })())
   })
   for (let v = 0; v <= AX; v += step) { const x = X0 + v * sc; els.push(T(x - 28, 590, 56, 12, fmtNum(v), 8, { align: 'c', color: '#666' })) }
   ;[0, 50, 100].forEach(p => els.push(T(LX + LW * p / 100 - 18, 590, 36, 12, p + '%', 8, { align: 'c', color: '#666' })))

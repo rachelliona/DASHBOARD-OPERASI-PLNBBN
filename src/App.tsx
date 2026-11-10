@@ -19,6 +19,7 @@ import Login from './pages/Login'
 import BuatHash from './pages/BuatHash'
 import DateSelector from './components/DateSelector'
 import Palette from './components/Palette'
+import NotifBell from './components/NotifBell'
 import Megabar from './components/Megabar'
 import { useAuth } from './auth'
 import { navFor, isAdmin, DATA_SHEETS, NavItem } from './config/nav'
@@ -60,15 +61,17 @@ export default function App() {
       <div className="side-foot"><div className="avatar" aria-hidden>{(user.nama || '?').trim().charAt(0).toUpperCase()}</div><div className="min-w-0 lbl"><div className="text-xs font-semibold truncate">{user.nama}</div><div className="text-[10px] text-emerald-300 flex items-center gap-1"><i className="pulse" />Terhubung</div></div><button onClick={logout} aria-label="Keluar" title="Keluar" className="ml-auto p-2 rounded-lg hover:bg-white/10 text-slate-300 lbl"><LogOut size={15} /></button></div>
       <button className="hidden lg:flex rail-toggle" onClick={() => toggleRail(!rail)} aria-label={rail ? 'Lebarkan menu' : 'Ciutkan menu'} title={rail ? 'Lebarkan menu' : 'Ciutkan menu'}>{rail ? <ChevronsRight size={15} /> : <><ChevronsLeft size={15} /><span className="lbl">Ciutkan</span></>}</button></nav>
     <main className="flex-1 min-w-0">
-      <header className="topbar no-print px-3 lg:px-5 py-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <button aria-label="Buka menu" className="lg:hidden -ml-1 p-2 rounded-lg hover:bg-white/10" onClick={() => setDrawer(true)}><Menu size={20} /></button>
-        <Img mark cls="lg:hidden h-8 w-auto" /><div className="mr-auto min-w-0"><h1 className="text-sm font-bold leading-tight truncate"><span className="lg:hidden">Dashboard Operasi PLN BBN</span><span className="hidden lg:inline">Dashboard Operasi PLN Batubara Niaga</span></h1><p className="hidden lg:block text-[11px] text-slate-500">Monitoring Pasokan PLTU, Realisasi, dan Shipment Terintegrasi</p></div>
-        <button aria-label="Cari (Ctrl+K)" onClick={() => setPal(true)} className="hidden lg:flex items-center gap-2 rounded-lg border border-white/12 bg-white/5 px-3 py-1.5 text-xs text-slate-400 hover:text-white"><Search size={13} />Cari…<kbd className="ml-3 text-[10px] border border-white/15 rounded px-1">Ctrl K</kbd></button>
-        <button aria-label="Cari" onClick={() => setPal(true)} className="lg:hidden p-2 rounded-lg hover:bg-white/10"><Search size={19} /></button>
-        <ThemeBtn />
-        <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto no-scrollbar"><DateSelector />
-        {asOf ? <span className="badge past">◷ Data per {fmtDate(asOf)}</span> : <span className="badge live"><i className="pulse" />Langsung · {last ?? 'memuat…'}<span className="hidden md:inline"> · tiap {intervalSec} dtk</span></span>}</div>
-        </header>
+      <header className="topbar no-print px-3 lg:px-5 py-2">
+        <div className="topgrid">
+          <div className="top-l"><button aria-label="Buka menu" className="lg:hidden -ml-1 p-2 rounded-lg hover:bg-white/10" onClick={() => setDrawer(true)}><Menu size={20} /></button>
+            <Img mark cls="lg:hidden h-8 w-auto" /><div className="min-w-0"><h1 className="text-sm font-bold leading-tight truncate"><span className="lg:hidden">Dashboard Operasi PLN BBN</span><span className="hidden lg:inline">Dashboard Operasi PLN Batubara Niaga</span></h1>
+              <div className="hidden lg:flex items-center gap-2 mt-0.5 min-w-0">{asOf ? <span className="badge past">◷ Data per {fmtDate(asOf)}</span> : <span className="badge live"><i className="pulse" />Langsung · {last ?? 'memuat…'}</span>}</div></div></div>
+          <button aria-label="Cari (Ctrl+K)" onClick={() => setPal(true)} className="top-search hidden lg:flex"><Search size={15} /><span>Cari halaman, PLTU, shipment…</span><kbd>Ctrl K</kbd></button>
+          <div className="top-r"><span className="lg:hidden"><button aria-label="Cari" onClick={() => setPal(true)} className="theme-btn"><Search size={16} /></button></span><NotifBell /><ThemeBtn /><div className="hidden lg:block"><DateSelector /></div></div>
+        </div>
+        <div className="flex items-center gap-2 mt-2 lg:hidden overflow-x-auto no-scrollbar"><DateSelector />
+          {asOf ? <span className="badge past">◷ Data per {fmtDate(asOf)}</span> : <span className="badge live"><i className="pulse" />Langsung · {last ?? 'memuat…'}</span>}</div>
+      </header>
       <Megabar />
       <div key={pathname} className="route-bar no-print" />
       <div key={'p' + pathname} className="p-3 md:p-4 lg:p-6 page page-in pb-24 lg:pb-8"><Routes>

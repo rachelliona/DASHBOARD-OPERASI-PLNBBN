@@ -410,3 +410,52 @@ html[data-theme=light] .sevbox b{color:color-mix(in srgb,var(--c) 70%,#000)}
 .vtag{font-size:10.5px;font-weight:600;padding:2px 9px;border-radius:99px;border:1px solid color-mix(in srgb,var(--c) 55%,transparent);background:color-mix(in srgb,var(--c) 13%,transparent);color:var(--c)}
 html[data-theme=light] .vtag{color:color-mix(in srgb,var(--c) 62%,#000)}
 .spark{display:flex;align-items:flex-end;gap:3px;height:36px}.spark i{flex:1;border-radius:3px 3px 0 0;background:linear-gradient(180deg,var(--c),color-mix(in srgb,var(--c) 40%,transparent))}
+
+/* v18 — sumber tambang di tampilan interaktif: boleh 2 baris, tidak dipotong */
+.sumber-cell{font-size:10.5px;line-height:1.2;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;color:var(--text);opacity:.92}
+
+/* v18 — tooltip & teks hover selalu terbaca di kedua tema (Recharts memberi warna #000 bila seri tanpa warna) */
+.recharts-tooltip-wrapper .recharts-default-tooltip{background:var(--s1)!important;color:var(--text)!important;border:1px solid rgba(var(--ink),.18)!important}
+.recharts-tooltip-wrapper .recharts-tooltip-label,.recharts-tooltip-wrapper .recharts-tooltip-item,.recharts-tooltip-wrapper .recharts-tooltip-item-name,.recharts-tooltip-wrapper .recharts-tooltip-item-value,.recharts-tooltip-wrapper .recharts-tooltip-item-separator,.recharts-tooltip-wrapper .recharts-tooltip-item-unit{color:var(--text)!important}
+.recharts-legend-item-text{color:var(--text)!important}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--s1);color:var(--text)}
+.leaflet-popup-content{color:var(--text)}
+html[data-theme=light] .recharts-cartesian-axis-tick-value{fill:#475569}
+
+/* v18 — bilah atas: judul | pencarian di tengah | aksi */
+.topgrid{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 16px}
+.top-l{display:flex;align-items:center;gap:8px;min-width:0}
+.top-r{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+@media(min-width:1024px){.topgrid{grid-template-columns:minmax(0,1fr) minmax(300px,520px) minmax(0,1fr)}}
+.top-search{align-items:center;gap:10px;width:100%;height:38px;padding:0 12px;border-radius:12px;border:1px solid rgba(var(--ink),.14);background:rgba(var(--ink),.05);color:var(--text);opacity:.82;font-size:12.5px;text-align:left;transition:border-color .15s,background .15s,opacity .15s,box-shadow .15s}
+.top-search span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top-search:hover,.top-search:focus-visible{opacity:1;border-color:rgba(230,180,87,.55);background:rgba(var(--ink),.09);box-shadow:0 0 0 3px rgba(230,180,87,.14);outline:none}
+.top-search kbd{font-size:10px;border:1px solid rgba(var(--ink),.22);border-radius:5px;padding:1px 6px;opacity:.8}
+.notif{position:relative}
+.notif-btn{position:relative}
+.notif-dot{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:#38bdf8;color:#04121c;font-size:10px;font-weight:800;line-height:17px;text-align:center;border:2px solid var(--s1)}
+.notif-dot.hot{background:#fb7185;color:#fff}
+.notif-panel{position:absolute;right:0;top:calc(100% + 10px);width:min(420px,calc(100vw - 24px));max-height:min(560px,calc(100vh - 90px));display:flex;flex-direction:column;background:var(--s1);color:var(--text);border:1px solid rgba(var(--ink),.16);border-radius:16px;box-shadow:0 24px 60px -16px rgba(0,0,0,.55);z-index:60;overflow:hidden;animation:pageIn .18s ease-out}
+.notif-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid rgba(var(--ink),.1);font-size:13px}
+.notif-link{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:#d99b1d;font-weight:600}
+html:not([data-theme=light]) .notif-link{color:#f2c76b}
+.notif-link:disabled{opacity:.4;cursor:default}
+.notif-x{padding:4px;border-radius:8px;opacity:.7}.notif-x:hover{opacity:1;background:rgba(var(--ink),.08)}
+.notif-list{overflow-y:auto;overscroll-behavior:contain}
+.notif-item{display:flex;gap:10px;padding:11px 14px;border-bottom:1px solid rgba(var(--ink),.07);text-decoration:none;color:inherit}
+.notif-item:hover,.notif-item:focus-visible{background:rgba(var(--ink),.06);outline:none}
+.notif-item.read{opacity:.62}
+.notif-bar{width:3px;border-radius:3px;background:var(--c);flex-shrink:0}
+.notif-kat{display:block;font-size:10.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--c)}
+html[data-theme=light] .notif-kat{filter:brightness(.72)}
+.notif-t{display:block;font-size:12.5px;font-weight:600;margin-top:1px}
+.notif-d{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:11.5px;opacity:.78;margin-top:2px;line-height:1.35}
+.notif-empty{padding:26px 16px;text-align:center;font-size:12.5px;opacity:.8}
+.notif-foot{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;font-size:12px;font-weight:600;border-top:1px solid rgba(var(--ink),.1);color:inherit;text-decoration:none}
+.notif-foot:hover{background:rgba(var(--ink),.06)}
+@media(max-width:1023px){.notif{position:static}.notif-panel{position:fixed;left:12px;right:12px;width:auto;top:calc(env(safe-area-inset-top) + 56px)}}
+.top-l .badge{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
+:root{--gold:#e6b457}html[data-theme=light]{--gold:#7a4f00}
+.notif-dot.hot{background:#e11d48;color:#fff}
+html[data-theme=light] .fchip.on{background:color-mix(in srgb,var(--c) 52%,#0f172a);color:#fff;text-shadow:none;border-color:transparent}
+html[data-theme=light] .fchip.on b{opacity:1}

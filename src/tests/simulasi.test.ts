@@ -20,3 +20,8 @@ describe('simulasi ETA', () => {
   })
   it('peluang empiris', () => { const t = totals(hist, { plant: 'Paiton' }, 1, 6); expect(t.vals.length).toBe(12); expect(probWithin(t.vals, 100)).toBe(1); expect(probWithin(t.vals, 0)).toBe(0) })
 })
+describe('perhitungan mundur & pengisian celah', () => {
+  const st = stepStatsFor(hist, { plant: 'Paiton', jetty: 'JettyX' })
+  it('SI dihitung mundur dari TA POL', () => { const k: (number | null)[] = Array(10).fill(null); k[1] = D(11, 10); const p = predict(k, st, Array(9).fill(0), D(11, 1)); expect(p[0].date).toBe(D(11, 10) - 2 * DAY); expect(p[0].dir).toBe('mundur'); expect(p[0].lo as number).toBeLessThanOrEqual(p[0].date as number); expect(p[0].hi as number).toBeGreaterThanOrEqual(p[0].date as number) })
+  it('celah di antara dua tanggal terisi otomatis', () => { const k: (number | null)[] = Array(10).fill(null); k[1] = D(11, 10); k[4] = D(11, 15); const p = predict(k, st, Array(9).fill(0), D(11, 1)); expect(p[2].dir).toBe('isi'); expect(p[2].date as number).toBeGreaterThan(D(11, 10)); expect(p[3].date as number).toBeLessThan(D(11, 15)) })
+})

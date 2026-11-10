@@ -44,7 +44,7 @@ export function stepStatsFor(ships: Ship[], sel: Sel): StepStat[] {
   })
 }
 
-export type Pred = { i: number; known: boolean; date: number | null; lo: number | null; hi: number | null; tertahan?: boolean }
+export type Pred = { i: number; known: boolean; date: number | null; lo: number | null; hi: number | null; tertahan?: boolean; dir?: 'maju' | 'mundur' | 'isi' }
 /** known = 10 tanggal milestone (null bila belum diketahui). Prediksi dihitung dari milestone terakhir yang diketahui.
  *  adj[i] = tambahan (atau pengurangan) hari pada tahap i (skenario). Rentang = tengah ∓ akar jumlah kuadrat sebaran kuartil (tahap dianggap saling bebas). */
 export function predict(known: (number | null)[], stats: StepStat[], adj: number[], today: number): Pred[] {
@@ -59,7 +59,26 @@ export function predict(known: (number | null)[], stats: StepStat[], adj: number
     if (k === a) { const el = (today - (known[a] as number)) / DAY; if (el > d) { d = el + .5; p.tertahan = true } }
     d = Math.max(0, d + (adj[k] ?? 0)); mid += d * DAY
     vl += ((st.med - (st.p25 ?? st.med))) ** 2; vh += (((st.p75 ?? st.med) - st.med)) ** 2
-    p.date = mid; p.lo = mid - Math.sqrt(vl) * DAY; p.hi = mid + Math.sqrt(vh) * DAY
+    p.date = mid; p.lo = mid - Math.sqrt(vl) * DAY; p.hi = mid + Math.sqrt(vh) * DAY; p.dir = 'maju'
+  }
+  // ke belakang: milestone sebelum tanggal pertama yang diketahui (mis. kapan SI harus terbit agar TA POL jatuh di tanggal itu)
+  let f = known.findIndex(v => v != null)
+  if (f > 0) {
+    let mid = known[f] as number, vl = 0, vh = 0, broken = false
+    for (let k = f - 1; k >= 0; k--) {
+      const st = stats[k]; const p = out[k]; if (broken || st.med == null) { broken = true; p.date = p.lo = p.hi = null; continue }
+      const d = Math.max(0, st.med + (adj[k] ?? 0)); mid -= d * DAY
+      vl += (((st.p75 ?? st.med) - st.med)) ** 2; vh += ((st.med - (st.p25 ?? st.med))) ** 2
+      p.date = mid; p.lo = mid - Math.sqrt(vl) * DAY; p.hi = mid + Math.sqrt(vh) * DAY; p.dir = 'mundur'
+    }
+  }
+  // celah di antara dua tanggal yang diisi: dibagi sebanding median tiap tahap
+  const idx = known.map((v, i) => v != null ? i : -1).filter(i => i >= 0)
+  for (let q = 0; q + 1 < idx.length; q++) {
+    const i = idx[q], j = idx[q + 1]; if (j - i < 2) continue
+    const meds = stats.slice(i, j).map(x => x.med); if (meds.some(m => m == null)) continue
+    const tot = (meds as number[]).reduce((x, y) => x + y, 0) || 1; let c = 0
+    for (let k = i + 1; k < j; k++) { c += meds[k - i - 1] as number; const t = (known[i] as number) + ((known[j] as number) - (known[i] as number)) * (c / tot); Object.assign(out[k], { date: t, lo: t, hi: t, dir: 'isi' as const }) }
   }
   return out
 }

@@ -26,7 +26,7 @@ export default function Simulasi() {
   const known = useMemo(() => dates.map(d => d ? Date.parse(d) : null) as (number | null)[], [dates])
   const pred = useMemo(() => predict(known, stats, adj, today), [known, stats, adj, today])
   if (!all) return <Empty />
-  let anchor = -1; known.forEach((v, i) => { if (v != null) anchor = i })
+  let anchor = -1; known.forEach((v, i) => { if (v != null) anchor = i }); const first = known.findIndex(v => v != null)
   const tIdx = 6; const tpl = pred[tIdx]; const end = pred[9]
   const tgt = target ? Date.parse(target) : null
   const hist = anchor >= 0 && anchor < tIdx ? totals(ships, sel, anchor, tIdx) : null
@@ -40,7 +40,7 @@ export default function Simulasi() {
   const reset = () => { setDates(Array(10).fill('')); setAdj(Array(9).fill(0)); setTarget('') }
   const lowN = stats.slice(Math.max(anchor, 0), 9).some(s => s.n < 5)
   return <>
-    <PageHead icon={CalendarClock} color="#22d3ee" title="Simulasi ETA Shipment" sub={<>Isi tanggal yang sudah diketahui (mis. tiba di pelabuhan muat, mulai muat), pilih PLTU, jetty muat, dan sumber tambang — perkiraan tanggal tahap berikutnya dihitung dari durasi historis {fmtNum(ships.length)} shipment di sheet ALL Shipment.</>} />
+    <PageHead icon={CalendarClock} color="#22d3ee" title="Simulasi ETA Shipment" sub={<>Isi tanggal yang sudah diketahui atau yang kamu targetkan (mis. TA POL) — tahap sesudahnya diperkirakan maju, tahap sebelumnya (mis. tanggal SI terbit) dihitung mundur, pilih PLTU, jetty muat, dan sumber tambang — perkiraan tanggal tahap berikutnya dihitung dari durasi historis {fmtNum(ships.length)} shipment di sheet ALL Shipment.</>} />
     <div className="grid lg:grid-cols-5 gap-3">
       <div className="lg:col-span-2 grid gap-3 content-start">
         <Card title="1 · Rute & sumber">
@@ -50,7 +50,7 @@ export default function Simulasi() {
             <label>Sumber tambang<select className="w-full mt-1" value={sumber} onChange={e => setSumber(e.target.value)}><option value="">Semua sumber</option>{sumbers.map(j => <option key={j}>{j}</option>)}</select></label></div></Card>
         <Card title="2 · Tanggal yang sudah diketahui" right={<div className="flex gap-2 text-[11px]"><button className="text-[#f2c76b]" onClick={() => setD(1, iso(today))}>Kapal tiba hari ini</button><button className="text-slate-400 flex items-center gap-1" onClick={reset}><RotateCcw size={11} />Reset</button></div>}>
           <div className="grid gap-1.5">{MILESTONES.map((m, i) => <label key={m} className="grid grid-cols-[1fr_150px] items-center gap-2 text-xs"><span className={known[i] != null ? 'font-semibold' : 'text-slate-300'}>{i + 1}. {m}</span><input type="date" value={dates[i]} onChange={e => setD(i, e.target.value)} aria-label={m} /></label>)}</div>
-          <p className="text-[11px] text-slate-500 mt-2">Cukup isi yang sudah terjadi; perkiraan dihitung dari tanggal terakhir yang diisi.</p></Card>
+          <p className="text-[11px] text-slate-500 mt-2">Cukup isi satu atau beberapa tanggal. Tahap sesudahnya diperkirakan maju dari tanggal terakhir yang diisi; tahap sebelumnya (mis. tanggal SI terbit) dihitung mundur dari tanggal pertama yang diisi.</p></Card>
         <Card title="3 · Target & skenario (opsional)">
           <label className="grid grid-cols-[1fr_150px] items-center gap-2 text-xs mb-2"><span>Target tiba di PLTU (Tgl. Rakor)</span><input type="date" value={target} onChange={e => setTarget(e.target.value)} aria-label="Target tiba di PLTU" /></label>
           <button className="text-xs text-[#f2c76b]" onClick={() => setOpen(!open)}>{open ? 'Sembunyikan' : 'Tampilkan'} skenario tambahan hari per tahap</button>
@@ -63,14 +63,17 @@ export default function Simulasi() {
               {known[tIdx] == null && <div className="text-xs text-slate-300 mt-1">Rentang cepat–lambat: <b>{fd(tpl.lo)}</b> s.d. <b>{fd(tpl.hi)}</b>{needDays != null ? <> · ± {fmtNum(needDays, 1)} hari sejak {MILESTONES[anchor].toLowerCase()}</> : null}</div>}
               {end.date != null && known[9] == null && <div className="text-xs text-slate-400 mt-1">Perkiraan selesai bongkar: {fd(end.date)} (rentang {fd(end.lo)} – {fd(end.hi)})</div>}</> : <div className="text-sm text-amber-300 mt-1">Belum cukup data historis untuk tahap berikutnya pada pilihan ini.</div>}
             {pred.some(p => p.tertahan) && <p className="text-xs text-amber-300 mt-2 flex gap-1.5"><TriangleAlert size={14} className="shrink-0 mt-0.5" />Tahap setelah {MILESTONES[anchor].toLowerCase()} sudah melewati durasi biasanya — kemungkinan tertunda, perkiraan dihitung dari hari ini.</p>}
+            {first > 0 && pred[0].date != null && known[0] == null && <div className="mt-3 rounded-xl p-3 border border-violet-400/40 bg-violet-400/10"><div className="text-xs font-bold">⟲ Perhitungan mundur — agar {MILESTONES[first].toLowerCase()} jatuh pada {fd(known[first])}</div><div className="text-xs text-slate-200 mt-1">SI sebaiknya terbit sekitar <b>{fd(pred[0].date)}</b> (rentang {fd(pred[0].lo)} – {fd(pred[0].hi)}).{pred.slice(1, first).filter(x => x.date != null && !x.known).length ? ' Milestone lain sebelum tanggal itu bisa dilihat di daftar bawah.' : ''}</div></div>}
             {tgt != null && tpl.date != null && known[tIdx] == null && <div className="mt-3 rounded-xl p-3 border" style={{ borderColor: margin! >= 0 ? 'rgba(52,211,153,.5)' : 'rgba(251,113,133,.5)', background: margin! >= 0 ? 'rgba(52,211,153,.08)' : 'rgba(251,113,133,.08)' }}>
               <div className="flex items-center gap-2 text-xs font-bold"><Flag size={14} />Target Rakor {fd(tgt)}: {margin! >= 0 ? `estimasi ${margin} hari lebih awal` : `estimasi terlambat ${-margin!} hari`}</div>
               {prob != null ? <div className="text-xs text-slate-300 mt-1">Berdasarkan {hist!.vals.length} shipment serupa ({hist!.scope}), peluang tiba paling lambat di target ≈ <b>{Math.round(prob * 100)}%</b>.</div> : <div className="text-xs text-slate-400 mt-1">Sampel historis belum cukup (&lt; 8) untuk menghitung peluang.</div>}</div>}
             {lowN && <p className="text-[11px] text-slate-500 mt-2">Sebagian tahap memakai kurang dari {5} sampel pada pilihan ini, jadi dilebarkan ke cakupan lebih umum (lihat tabel di bawah).</p>}</section>
           <Card title="Perkiraan tiap milestone"><div className="grid gap-1.5">{pred.map((p, i) => { const st = i > 0 ? stats[i - 1] : null; return <div key={i} className="grid grid-cols-[22px_1fr_auto] gap-2 items-start py-1.5 border-b border-white/5 last:border-0">
-            <div className="pt-0.5">{p.known ? <CheckCircle2 size={16} className="text-emerald-400" /> : p.date != null ? <Clock size={16} className="text-[#22d3ee]" /> : <span className="inline-block w-4 text-center text-slate-600">·</span>}</div>
+            <div className="pt-0.5">{p.known ? <CheckCircle2 size={16} className="text-emerald-400" /> : p.date != null ? <Clock size={16} className={p.dir === 'mundur' ? 'text-[#a78bfa]' : 'text-[#22d3ee]'} /> : <span className="inline-block w-4 text-center text-slate-600">·</span>}</div>
             <div className="min-w-0"><div className={'text-[12.5px] ' + (p.known ? 'font-semibold' : '')}>{MILESTONES[i]}</div>
-              {!p.known && p.date != null && st && <div className="text-[10.5px] text-slate-500">+{fmtNum(Math.max(0, (st.med ?? 0) + (adj[i - 1] ?? 0)), 1)} hari dari tahap sebelumnya · {st.n} sampel ({st.scope})</div>}
+              {!p.known && p.date != null && p.dir === 'mundur' && <div className="text-[10.5px] text-slate-500">⟲ dihitung mundur: {fmtNum(Math.max(0, (stats[i].med ?? 0) + (adj[i] ?? 0)), 1)} hari sebelum {MILESTONES[i + 1].toLowerCase()} · {stats[i].n} sampel ({stats[i].scope})</div>}
+              {!p.known && p.date != null && p.dir === 'isi' && <div className="text-[10.5px] text-slate-500">diisi otomatis di antara dua tanggal yang kamu isi, sebanding durasi biasanya</div>}
+              {!p.known && p.date != null && p.dir === 'maju' && st && <div className="text-[10.5px] text-slate-500">+{fmtNum(Math.max(0, (st.med ?? 0) + (adj[i - 1] ?? 0)), 1)} hari dari tahap sebelumnya · {st.n} sampel ({st.scope})</div>}
               {p.date != null && <div className="relative h-1.5 rounded-full bg-white/10 mt-1.5"><i className="absolute top-0 h-full rounded-full" style={{ left: X(p.lo as number) + '%', width: Math.max(1.2, X(p.hi as number) - X(p.lo as number)) + '%', background: p.known ? '#34d399' : 'linear-gradient(90deg,#22d3ee55,#22d3ee)' }} /></div>}</div>
             <div className="text-right text-[12.5px] num"><b>{fd(p.date)}</b>{!p.known && p.date != null && <div className="text-[10.5px] text-slate-500">{fd(p.lo)} – {fd(p.hi)}</div>}</div></div> })}</div></Card>
           {bins && hist && hist.vals.length >= 3 && <Card title={`Sebaran durasi historis: ${MILESTONES[anchor]} → TA PLTU`} right={<span className="text-[11px] text-slate-400">{hist.vals.length} shipment · {hist.scope}</span>}>
