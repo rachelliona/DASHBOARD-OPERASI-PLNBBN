@@ -6,7 +6,7 @@ import { kebutuhan, pct } from '../domain/kpi'
 import { compactSumber } from '../domain/view'
 export { compactSumber }
 
-export type DeckIn = { bulan: string; updateTxt: string; plants: any[]; ships: any[]; month: { carry: number; konf: number; bl: number; ds: number }; ytd: { bl: number; ds: number }; real: (number | null)[]; activeIdx: number; kpi: KpiTahunan }
+export type DeckIn = { bulan: string; updateTxt: string; plants: any[]; ships: any[]; month: { carry: number; konf: number; bl: number; ds: number }; ytd: { bl: number | null; ds: number | null; blPct?: number | null; dsPct?: number | null }; real: (number | null)[]; activeIdx: number; kpi: KpiTahunan }
 const C = { co: '#ff0000', loading: '#1fa2ff', sailing: '#ed7d31', tiba: '#1f3864', bongkar: '#a63fa6', unloading: '#4ea72e', terjadwal: '#a6a6a6', lain: '#d4d4d4' }
 const SER: [string, string, string][] = [['carryOver', 'Carry Over', C.co], ['loading', 'Loading', C.loading], ['sailing', 'Sailing', C.sailing], ['tiba', 'Tiba/Antri', C.tiba], ['bongkar', 'Proses Bongkar', C.bongkar], ['unloading', 'Unloading', C.unloading], ['terjadwal', 'Sudah Ada Jadwal Muat', C.terjadwal], ['lain', 'Belum ada status', C.lain]]
 const GREEN = '#2f8f2f'
@@ -91,9 +91,11 @@ function slide2(d: DeckIn): Slide {
   box(5, 308, '#9c1c14', `Carry Over ${bm} (MT)`, fmtNum(d.month.carry)); box(318, 318, '#4f8a96', `Konfirmasi Pasokan ${bm} (MT)`, fmtNum(d.month.konf))
   box(640, 308, '#a0507a', `Complete Loading ${bm} (MT)`, fmtNum(d.month.bl), '#6e2a52', pc0(pct(d.month.bl, kb))); box(952, 322, '#5b4a9a', `Complete Unloading ${bm} (MT)`, fmtNum(d.month.ds), '#3f2f76', pc0(pct(d.month.ds, kb)))
   const T26 = d.kpi.targetRkap, YD = d.kpi.ytdPembagi || T26
-  els.push(R(5, 488, 631, 84, '#5486e8'), T(5, 490, 631, 26, 'TOTAL COMPLETE LOADING 2026 (MT)', 21, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }), T(5, 514, 450, 58, fmtNum(d.kpi.ytdBlManual || d.ytd.bl), 52, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }), R(440, 516, 196, 56, '#2a4a9a'), T(440, 516, 196, 56, (pct(d.kpi.ytdBlManual || d.ytd.bl, YD) ?? 0).toFixed(2).replace('.', ',') + '%', 34, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }))
-  els.push(R(640, 488, 634, 84, '#f0a030'), T(640, 490, 634, 26, 'TOTAL COMPLETE UNLOADING 2026 (MT)', 21, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }), T(640, 514, 450, 58, fmtNum(d.kpi.ytdDsManual || d.ytd.ds), 52, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }), R(1075, 516, 199, 56, '#a8681e'), T(1075, 516, 199, 56, (pct(d.kpi.ytdDsManual || d.ytd.ds, YD) ?? 0).toFixed(2).replace('.', ',') + '%', 34, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }))
-  els.push(T(5, 580, 1270, 16, `% bulanan terhadap Konfirmasi + Carry Over bulan ${d.bulan}; % total 2026 terhadap ${fmtNum(YD)} MT (pembagi sesuai sheet DASHBOARD). Jumlah nominasi dihitung per baris shipment pada sheet bulan ${d.bulan}.`, 9.5, { color: '#555', italic: true, align: 'c' }))
+  const yb = d.kpi.ytdBlManual || d.ytd.bl, yd = d.kpi.ytdDsManual || d.ytd.ds
+  const pcs = (v: number | null, sheetP: number | null | undefined) => v == null ? '—' : ((sheetP != null && !d.kpi.ytdBlManual && !d.kpi.ytdDsManual ? sheetP : pct(v, YD) ?? 0).toFixed(sheetP != null ? 0 : 2).replace('.', ',') + '%')
+  els.push(R(5, 488, 631, 84, '#5486e8'), T(5, 490, 631, 26, 'TOTAL COMPLETE LOADING 2026 (MT)', 21, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }), T(5, 514, 450, 58, yb == null ? '—' : fmtNum(yb), 52, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }), R(440, 516, 196, 56, '#2a4a9a'), T(440, 516, 196, 56, pcs(yb, d.ytd.blPct), 34, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }))
+  els.push(R(640, 488, 634, 84, '#f0a030'), T(640, 490, 634, 26, 'TOTAL COMPLETE UNLOADING 2026 (MT)', 21, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }), T(640, 514, 450, 58, yd == null ? '—' : fmtNum(yd), 52, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }), R(1075, 516, 199, 56, '#a8681e'), T(1075, 516, 199, 56, pcs(yd, d.ytd.dsPct), 34, { italic: true, bold: true, color: '#fff', align: 'c', va: 'm' }))
+  els.push(T(5, 580, 1270, 16, `% bulanan terhadap Konfirmasi + Carry Over bulan ${d.bulan}; Total 2026 + % dari sheet DASHBOARD; bila tak terbaca, dijumlah dari sheet bulanan (pembagi ${fmtNum(YD)} MT).`, 9.5, { color: '#555', italic: true, align: 'c' }))
   return { name: 'Monitoring Pasokan', els }
 }
 

@@ -9,7 +9,10 @@ export async function loadAssets(): Promise<Assets> {
   try { await Promise.all(FONTS.map(([w, st]) => document.fonts.load(`${st === 'italic' ? 'italic ' : ''}${w} 14px Poppins`))) } catch { /* abaikan */ }
   return cache = { bg: await toData(url('bg.jpg')), kapal: await toData(url('kapal.png')), batubara: await toData(url('batubara.png')), fontCss: fc }
 }
-const file = (bulan: string, ext: string) => `Laporan_Harian_${bulan}_2026.${ext}`
+/** Nama file mengikuti tanggal unduh (waktu perangkat): LAPORAN HARIAN OPERASI_10 November 2026 */
+const BLN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+export const fileName = (ext: string, d = new Date()) => `LAPORAN HARIAN OPERASI_${d.getDate()} ${BLN[d.getMonth()]} ${d.getFullYear()}.${ext}`
+const file = (_bulan: string, ext: string) => fileName(ext)
 const save = (blob: Blob, name: string) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000) }
 const raster = (svg: string) => new Promise<string>((ok, no) => { const u = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })); const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = 2560; c.height = 1440; const x = c.getContext('2d')!; x.fillStyle = '#fff'; x.fillRect(0, 0, 2560, 1440); x.drawImage(im, 0, 0, 2560, 1440); URL.revokeObjectURL(u); ok(c.toDataURL('image/jpeg', 0.93)) }; im.onerror = () => no(new Error('Gagal merender slide')); im.src = u })
 export async function downloadPdf(slides: Slide[], bulan: string) {

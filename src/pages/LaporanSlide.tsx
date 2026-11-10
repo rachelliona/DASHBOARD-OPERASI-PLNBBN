@@ -2,21 +2,26 @@ import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Download, FileText, Presentation } from 'lucide-react'
 import { BULAN } from '../domain/monthly'
 import { sum } from '../domain/kpi'
-import { fmtUpdate, sumberText } from '../domain/view'
+import { fmtUpdate, sumberText, ytdFromGrid, csvGrid } from '../domain/view'
+import { useStore } from '../store'
+import { SOURCES } from '../config/sources'
 import { buildDeck } from '../report/deck'
 import { toSvg, type Assets } from '../report/scene'
 import { downloadPdf, downloadPpt, loadAssets } from '../report/export'
 import { loadKpi } from '../report/kpi'
 const ACTIVE = ['loading', 'sailing', 'tiba', 'bongkar']
 export default function LaporanSlide({ b, ds, sh, months }: { b: string; ds: any; sh: any[]; months: Record<string, any> }) {
+  const { asOf } = useStore(); const [sheetYtd, setSheetYtd] = useState<ReturnType<typeof ytdFromGrid>>(null)
+  useEffect(() => { if (asOf) { setSheetYtd(null); return } const u = SOURCES.find(x => x.name === 'Dashboard 1')?.url; if (!u) return; const c = new AbortController()
+    fetch(u, { cache: 'no-store', signal: c.signal }).then(r => r.ok ? r.text() : Promise.reject()).then(t => setSheetYtd(ytdFromGrid(csvGrid(t)))).catch(() => setSheetYtd(null)); return () => c.abort() }, [asOf, ds?.at])
   const [a, setA] = useState<Assets | null>(null); const [i, setI] = useState(0); const [busy, setBusy] = useState(''); const [err, setErr] = useState('')
   useEffect(() => { loadAssets().then(setA).catch(e => setErr(String(e.message ?? e))) }, [])
   const slides = useMemo(() => {
     const plants = ds.rows.map((r: any) => ({ ...r, __sumber: sumberText(sh.filter(x => x.pltu === r.pltu && ACTIVE.includes(x.status))) }))
     const ms = (x: string) => months[x] && !months[x].missing?.length ? months[x].ships as any[] : null
-    let ytdBl = 0, ytdDs = 0, cum = 0, stop = false; const real: (number | null)[] = BULAN.map(x => { const s = ms(x); if (!s || stop) { stop = true; return null } const d = s.reduce((t, k) => t + (k.ds ?? 0), 0); ytdBl += s.reduce((t, k) => t + (k.bl ?? 0), 0); ytdDs += d; cum += d; return cum / 1e6 })
-    return buildDeck({ bulan: b, updateTxt: fmtUpdate(ds.at), plants, ships: sh, month: { carry: sum(ds.rows, 'carryOver'), konf: sum(ds.rows, 'target'), bl: sum(ds.rows, 'bl'), ds: sum(ds.rows, 'ds') }, ytd: { bl: ytdBl, ds: ytdDs }, real, activeIdx: BULAN.indexOf(b), kpi: loadKpi() })
-  }, [b, ds, sh, months, a])
+    let ytdBl = 0, ytdDs = 0, cum = 0, stop = false; const complete = BULAN.slice(0, BULAN.indexOf(b) + 1).every(x => !!ms(x)); const real: (number | null)[] = BULAN.map(x => { const s = ms(x); if (!s || stop) { stop = true; return null } const d = s.reduce((t, k) => t + (k.ds ?? 0), 0); ytdBl += s.reduce((t, k) => t + (k.bl ?? 0), 0); ytdDs += d; cum += d; return cum / 1e6 })
+    return buildDeck({ bulan: b, updateTxt: fmtUpdate(ds.at), plants, ships: sh, month: { carry: sum(ds.rows, 'carryOver'), konf: sum(ds.rows, 'target'), bl: sum(ds.rows, 'bl'), ds: sum(ds.rows, 'ds') }, ytd: { bl: sheetYtd?.bl ?? (complete ? ytdBl : null), ds: sheetYtd?.ds ?? (complete ? ytdDs : null), blPct: sheetYtd?.blPct ?? null, dsPct: sheetYtd?.dsPct ?? null }, real, activeIdx: BULAN.indexOf(b), kpi: loadKpi() })
+  }, [b, ds, sh, months, a, sheetYtd])
   const svgs = useMemo(() => a ? slides.map(s => toSvg(s, a)) : [], [slides, a]); const go = (d: number) => setI(v => (v + d + slides.length) % slides.length)
   const dl = async (k: 'pdf' | 'ppt') => { setBusy(k); setErr(''); try { await (k === 'pdf' ? downloadPdf : downloadPpt)(slides, b) } catch (e: any) { setErr('Gagal membuat file: ' + (e?.message ?? e)) } finally { setBusy('') } }
   return <div>
