@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Pause, Play, RotateCw, Ship, Home } from 'lucide-react'
+import { Pause, Play, RotateCw, Info, Ship, Home } from 'lucide-react'
 import { land, seaOrigin, hash } from './geo'
 import { REGIONS, STATUSES } from '../../domain/status'
 import { REGION_COLOR } from '../../config/regions'
@@ -28,10 +28,10 @@ export default function Map3D({ rows, color, sel, onSel, showShips: ships0, reg 
   useEffect(() => { fly(reg) }, [reg]) // eslint-disable-line
   useEffect(() => { dirty.current = true }, [rows, sel, hover])
   useEffect(() => {
-    const c = cv.current!, box = wrap.current!, ctx = c.getContext?.('2d'); if (!ctx || typeof ResizeObserver === 'undefined') return; let raf = 0, W = 0, H = 0, last = performance.now()
-    const size = () => { const d = Math.min(2, window.devicePixelRatio || 1); W = box.clientWidth; H = box.clientHeight; c.width = W * d; c.height = H * d; c.style.width = W + 'px'; c.style.height = H + 'px'; ctx.setTransform(d, 0, 0, d, 0, 0); dirty.current = true }
+    const c = cv.current!, box = wrap.current!, ctx = c.getContext?.('2d'); if (!ctx || typeof ResizeObserver === 'undefined') return; let raf = 0, W = 0, H = 0, last = performance.now(), snapped = false
+    const size = () => { const d = Math.min(2, window.devicePixelRatio || 1); W = box.clientWidth; H = box.clientHeight; c.width = W * d; c.height = H * d; c.style.width = W + 'px'; c.style.height = H + 'px'; ctx.setTransform(d, 0, 0, d, 0, 0); dirty.current = true; if (!snapped && W > 50) { snapped = true; cam.current = { ...HOME() }; tgt.current = { ...HOME() } } }
     const ro = new ResizeObserver(size); ro.observe(box); size()
-    const proj = (cm: Cam, S: number, lon: number, lat: number, z = 0) => { const dx = lon - cm.lon, dy = lat - cm.lat, cy = Math.cos(cm.yaw), sy = Math.sin(cm.yaw), xr = dx * cy - dy * sy, yr = dx * sy + dy * cy; return [W / 2 + xr * S, H * 0.54 - yr * S * Math.sin(cm.pitch) - z * S * Math.cos(cm.pitch), yr] as const }
+    const proj = (cm: Cam, S: number, lon: number, lat: number, z = 0) => { const dx = lon - cm.lon, dy = lat - cm.lat, cy = Math.cos(cm.yaw), sy = Math.sin(cm.yaw), xr = dx * cy - dy * sy, yr = dx * sy + dy * cy; return [W / 2 + xr * S, H * 0.5 - yr * S * Math.sin(cm.pitch) - z * S * Math.cos(cm.pitch), yr] as const }
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame); const dt = Math.min(50, now - last); last = now; const p = P.current, cm = cam.current, tg = tgt.current
       if (p.auto) { cm.yaw += dt * 0.00035; tg.yaw = cm.yaw; dirty.current = true }
@@ -130,7 +130,7 @@ export default function Map3D({ rows, color, sel, onSel, showShips: ships0, reg 
       <button aria-label={anim ? 'Jeda animasi' : 'Putar animasi'} title="Animasi" className={'ctl ' + (anim ? 'on' : '')} onClick={() => setAnim(a => !a)}>{anim ? <Pause size={15} /> : <Play size={15} />}</button>
       <button aria-label="Tampilkan kapal" title="Kapal ilustratif" className={'ctl ' + (ships ? 'on' : '')} onClick={() => setShips(s => !s)}><Ship size={15} /></button>
       <button aria-label="Kembali ke tampilan awal" title="Atur ulang" className="ctl" onClick={() => { tgt.current = { ...HOME() }; dirty.current = true }}><Home size={15} /></button></div>
-    <p className="absolute left-2 bottom-2 text-[10px] map-hint pointer-events-none">Seret = putar/miring · Shift atau klik kanan = geser · roda/cubit = zoom · klik ganda = atur ulang</p>
+    <button aria-label="Petunjuk kendali peta" className="ctl absolute left-2 bottom-2 tip-r" data-tip={'Seret = putar / miring\nShift atau klik kanan = geser\nRoda atau cubit = zoom\nKlik ganda = atur ulang\nKlik balok = detail PLTU\nKapal ilustratif, bukan posisi GPS nyata'}><Info size={15} /></button>
     {hover && <div className="absolute pointer-events-none rounded-lg border border-white/20 bg-[var(--s0)]/95 px-2.5 py-1.5 text-[11px] shadow-xl" style={{ left: clamp(hover.x + 12, 4, (wrap.current?.clientWidth ?? 600) - 230), top: clamp(hover.y + 10, 40, (wrap.current?.clientHeight ?? 400) - 90) }}><b className="text-xs">{hover.r.pltu}</b><div style={{ color: REGION_COLOR[hover.r.wilayah] }}>{hover.r.wilayah ?? 'Tanpa wilayah'}</div><div>{fmtNum(hover.r.v)} MT · {hover.r.sh ? hover.r.sh.length : hover.r.n} shipment · {fmtPct(hover.r.pp)}</div></div>}
   </div>
 }

@@ -50,10 +50,13 @@ export function Donut({ data, active, onPick, fmt }: { data: { key: string; labe
   </div>
 }
 /** Kartu angka: ikon, angka menghitung naik, dan cincin kecil porsinya terhadap kebutuhan. */
-export function StatTile({ icon: I, label, value, unit, share, shareLabel, color, tip }: { icon: any; label: string; value: number; unit?: string; share: number | null; shareLabel: string; color: string; tip?: string }) {
-  const n = useCountUp(value), m = useMounted(), R = 19, C = 2 * Math.PI * R, p = Math.max(0, Math.min(100, share ?? 0))
-  return <div className="stile" title={tip} style={{ ['--c' as any]: color }}><I className="stile-wm" size={86} aria-hidden />
-    <div className="flex items-start gap-3"><div className="stile-ic"><I size={18} /></div><div className="min-w-0 flex-1"><div className="text-[11px] text-slate-300 leading-tight">{label}</div><div className="stile-v num">{Math.round(n).toLocaleString('id-ID')}<small>{unit}</small></div></div>
-      <svg width="48" height="48" viewBox="0 0 48 48" className="shrink-0" aria-label={`${shareLabel} ${p.toFixed(0)} persen`}><circle cx="24" cy="24" r={R} fill="none" style={{ stroke: 'rgba(var(--ink),.1)' }} strokeWidth="5" /><circle cx="24" cy="24" r={R} fill="none" stroke={color} strokeWidth="5" strokeLinecap="round" transform="rotate(-90 24 24)" strokeDasharray={C} strokeDashoffset={m ? C * (1 - Math.min(1, p / 100)) : C} style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1)', filter: `drop-shadow(0 0 4px ${color})` }} /><text x="24" y="27.5" textAnchor="middle" fontSize="10" fontWeight="700" fill="#fff">{share == null ? '—' : p.toFixed(0) + '%'}</text></svg></div>
-    <div className="text-[10px] text-slate-400 mt-1.5">{shareLabel}</div></div>
+export function StatTile({ icon: I, label, value, unit, share, shareLabel, color, tip, onClick }: { icon: any; label: string; value: number; unit?: string; share: number | null; shareLabel: string; color: string; tip?: string; onClick?: () => void }) {
+  const n = useCountUp(value), m = useMounted(), R = 17, C = 2 * Math.PI * R, p = Math.max(0, Math.min(100, share ?? 0))
+  const Tag: any = onClick ? 'button' : 'div'
+  return <Tag className={'stile stile-c' + (onClick ? ' clk' : '')} data-tip={tip ? tip + (onClick ? '\nKlik untuk detail' : '') : onClick ? 'Klik untuk detail' : undefined} onClick={onClick} style={{ ['--c' as any]: color }}><span className="stile-clip"><I className="stile-wm" size={86} aria-hidden /></span>
+    <div className="stile-side" aria-label={`${shareLabel} ${p.toFixed(0)} persen`}><svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r={R} fill="none" style={{ stroke: 'rgba(var(--ink),.12)' }} strokeWidth="4.5" /><circle cx="22" cy="22" r={R} fill="none" stroke={color} strokeWidth="4.5" strokeLinecap="round" transform="rotate(-90 22 22)" strokeDasharray={C} strokeDashoffset={m ? C * (1 - p / 100) : C} style={{ transition: 'stroke-dashoffset 1s cubic-bezier(.22,1,.36,1)' }} /></svg><b>{share == null ? '—' : Math.round(p) + '%'}</b></div>
+    <div className="stile-ic"><I size={17} /></div>
+    <div className="stile-l">{label}</div>
+    <div className="stile-v num">{Math.round(n).toLocaleString('id-ID')}<small>{unit}</small></div>
+    <div className="stile-f">{shareLabel}</div></Tag>
 }

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Ship, STEPS, regionOf } from '../domain/monthly'
 import { REGION_COLOR } from '../config/regions'
 /** Gantt shipment: satu baris per shipment, dikelompokkan per PLTU. Tiap potongan = satu tahap (antar-milestone); garis putus-putus = tahap yang sedang berjalan sampai hari ini. */
@@ -14,15 +14,17 @@ export default function Gantt({ ships, today: ref, cmp = 6, onSelect, selId, fla
   const [t0, t1] = useMemo(() => { let a = Infinity, b = -Infinity; for (const s of items) { for (const x of [...s.ms, s.eta]) if (x != null) { a = Math.min(a, x); b = Math.max(b, x) } } if (!isFinite(a)) return [ref - 15 * DAY, ref + 15 * DAY]; b = Math.max(b, ref) + 2 * DAY; a = Math.floor(a / DAY) * DAY - DAY; return [a, Math.ceil(b / DAY) * DAY] }, [items, ref])
   const days = Math.max(7, Math.round((t1 - t0) / DAY)); const W = days * ppd; const X = (t: number) => (t - t0) / DAY * ppd
   const rows = useMemo(() => { const g = new Map<string, Ship[]>(); for (const s of items) { const k = group ? s.plant : 'x'; (g.get(k) ?? g.set(k, []).get(k)!).push(s) }
-    const out: ({ h: string; n: number } | Ship)[] = []; const keys = [...g.keys()].sort((a, b) => (regionOf(a) ?? 'z').localeCompare(regionOf(b) ?? 'z') || a.localeCompare(b)); for (const k of keys) { if (group) out.push({ h: k, n: g.get(k)!.length }); out.push(...g.get(k)!.sort((a, b) => (a.ms.find(x => x != null) ?? 0) - (b.ms.find(x => x != null) ?? 0))) } return out }, [items, group])
+    const out: ({ h: string; n: number } | Ship)[] = []; const keys = [...g.keys()].sort((a, b) => (regionOf(a) ?? 'z').localeCompare(regionOf(b) ?? 'z') || a.localeCompare(b)); for (const k of keys) { if (group) out.push({ h: k, n: g.get(k)!.length }); out.push(...g.get(k)!.sort((a, b) => (a.ms.find(x => x != null) ?? 9e15) - (b.ms.find(x => x != null) ?? 9e15))) } return out }, [items, group])
   const H = HEAD + rows.length * ROW + 6
+  const toToday = () => { const w = wrap.current; if (w) w.scrollTo({ left: Math.max(0, X(ref) - (w.clientWidth - LBL) * 0.6), behavior: 'smooth' }) }
+  useEffect(() => { const w = wrap.current; if (w) w.scrollLeft = Math.max(0, X(ref) - (w.clientWidth - LBL) * 0.6) }, [items.length, t0, ppd === 15])
   const ticks: { t: number; major: boolean }[] = []; for (let t = t0; t <= t1; t += DAY) { const d = new Date(t); const dow = d.getUTCDay(); if (ppd >= 22 || dow === 1 || d.getUTCDate() === 1) ticks.push({ t, major: d.getUTCDate() === 1 || dow === 1 }) }
   const weekends: number[] = []; for (let t = t0; t < t1; t += DAY) { const dow = new Date(t).getUTCDay(); if (dow === 6) weekends.push(t) }
   return <div>
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-2 text-[11px] no-print">
       <div className="flex flex-wrap gap-x-3 gap-y-1">{STEPS.map((n, i) => <span key={n} className="inline-flex items-center gap-1.5 text-slate-300"><i style={{ width: 14, height: 8, borderRadius: 3, background: PHASE_COLOR[i], display: 'inline-block' }} />{n}</span>)}
         <span className="inline-flex items-center gap-1.5 text-slate-300"><svg width="12" height="12"><path d="M6 1l5 5-5 5-5-5z" fill="#fbbf24" /></svg>ETA</span><span className="inline-flex items-center gap-1.5 text-slate-300"><i style={{ width: 2, height: 12, background: '#fb7185', display: 'inline-block' }} />Hari ini</span></div>
-      <label className="ml-auto flex items-center gap-2 text-slate-400">Zoom<input type="range" min={6} max={44} value={ppd} onChange={e => setPpd(+e.target.value)} aria-label="Zoom Gantt" className="w-28" style={{ minHeight: 0, padding: 0 }} /></label></div>
+      <button className="pbtn ml-auto" onClick={toToday}>Ke hari ini</button><label className="flex items-center gap-2 text-slate-400">Zoom<input type="range" min={6} max={44} value={ppd} onChange={e => setPpd(+e.target.value)} aria-label="Zoom Gantt" className="w-28" style={{ minHeight: 0, padding: 0 }} /></label></div>
     <div ref={wrap} className="gantt-scroll" style={{ maxHeight: maxH }}>
       <div style={{ width: LBL + W + 16, position: 'relative' }}>
         <svg width={LBL + W + 16} height={H} role="img" aria-label="Gantt chart shipment" className="gantt-svg" onMouseLeave={() => setTip(null)}>
