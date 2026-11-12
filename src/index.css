@@ -598,3 +598,10 @@ html:not([data-theme=light]) .rhead-m{color:#f2c76b}
   .pcard{padding:10px 12px!important}.pcard .ring{transform:scale(.8);margin:-4px -4px -4px -6px}
   .pcard .sbar{margin-top:8px!important}.pcard>div:last-child{margin-top:6px!important}
 }
+
+/* v22 — judul halaman seragam (gaya Ringkasan) */
+.rhead-t{font-size:clamp(24px,3vw,36px)}
+.rhead-s{margin-top:6px;font-size:12.5px;line-height:1.5;color:color-mix(in srgb,var(--text) 62%,transparent);max-width:78ch}
+.rhead-s a{color:var(--gold)}
+.rhead{margin-bottom:16px}
+@media(max-width:767px){.rhead-t{font-size:24px}.rhead-s{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}}

@@ -15,7 +15,7 @@ function KpiForm() {
 }
 export default function Pengaturan() {
   const { threshold, setThreshold, clear, intervalSec, setIntervalSec } = useStore()
-  return <><PageHead icon={Settings} color="#94a3b8" title="Pengaturan" sub="Ambang perhatian, interval pembaruan, dan memori data" /><Card title="Preferensi"><label className="block text-xs mb-3">Ambang "Perlu Perhatian" (% pemenuhan provisional): <input type="number" min={1} max={100} value={threshold} onChange={e => setThreshold(Math.min(100, Math.max(1, Number(e.target.value) || 70)))} /></label>
+  return <><PageHead icon={Settings} color="#94a3b8" title="Pengaturan" month={false} sub="Ambang perhatian, interval pembaruan, dan memori data" /><Card title="Preferensi"><label className="block text-xs mb-3">Ambang "Perlu Perhatian" (% pemenuhan provisional): <input type="number" min={1} max={100} value={threshold} onChange={e => setThreshold(Math.min(100, Math.max(1, Number(e.target.value) || 70)))} /></label>
     <label className="block text-xs mb-3">Pembaruan otomatis data (detik, 30–600): <input type="number" min={30} max={600} value={intervalSec} onChange={e => setIntervalSec(Math.min(600, Math.max(30, Number(e.target.value) || 60)))} /></label>
     <label className="block text-xs mb-3">Alamat dasar snapshot (kosongkan untuk otomatis): <input className="w-96" defaultValue={localStorage.getItem('pln-snap-base') ?? ''} onBlur={e => { e.target.value.trim() ? localStorage.setItem('pln-snap-base', e.target.value.trim()) : localStorage.removeItem('pln-snap-base') }} placeholder="https://raw.githubusercontent.com/…/data/snapshots" /></label>
     <Btn onClick={() => { if (confirm('Hapus semua data yang diimpor dari memori? Pemetaan kolom tetap tersimpan.')) clear() }}>Hapus Data dari Memori</Btn>

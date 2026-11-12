@@ -34,7 +34,7 @@ export default function Laporan() {
   const viewBar = <div className="flex flex-wrap gap-1.5 mb-3 no-print items-center">{([['slide', 'Laporan (Slide)'], ['interaktif', 'Tampilan Interaktif']] as const).map(([k, l]) => <button key={k} onClick={() => setView(k)} className={'fchip' + (view === k ? ' on' : '')} style={{ ['--c' as any]: '#e6b457' }}>{l}</button>)}
     <span className="flex-1" /><button className="pbtn" data-tip="Salin ringkasan per wilayah + 3 PLTU terendah, siap tempel ke WhatsApp" onClick={salin}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? 'Tersalin' : 'Salin ringkasan WhatsApp'}</button>
     <button className="pbtn" data-tip="Layar penuh untuk rapat (Esc untuk keluar)" onClick={() => document.documentElement.requestFullscreen?.().catch(() => {})}><Maximize2 size={14} />Layar penuh</button></div>
-  if (view === 'slide') return <>{bulanBar}{viewBar}<LaporanSlide b={b} ds={ds} sh={sh} months={months} /></>
+  if (view === 'slide') return <><PageHead title="Laporan Harian Operasi" month={`${b} 2026`} sub="Laporan siap unduh (PDF/PPT) dan tampilan interaktif untuk rapat." />{bulanBar}{viewBar}<LaporanSlide b={b} ds={ds} sh={sh} months={months} /></>
   const inStage = (x: any) => stage === 'carryOver' ? x.konf === 'carry' : stage ? x.status === stage : ACTIVE.includes(x.status)
   const regionRows = ds.rows.filter(r => r.wilayah === reg); const col = REGION_COLOR[reg]
   const rows = regionRows.filter(r => (!q || norm(r.pltu).includes(norm(q))) && (!stage || (r[stage] ?? 0) > 0)).map(r => ({ ...r, keb: kebutuhan(r), p: pct(r[basis] ?? 0, kebutuhan(r)), sumberTxt: sumberText(sh.filter(x => x.pltu === r.pltu && inStage(x))), z: 0 }) as Record<string, any>).map(r => ({ ...r, tot: (stage ? [stage] : SEG.map(g => g.key)).reduce((a, k) => a + (r[k] ?? 0), 0) })).sort(SORTS[sort])
@@ -44,7 +44,7 @@ export default function Laporan() {
     { key: 'p', label: 'Pemenuhan', fmt: v => <div className="w-28"><div className="text-[11px]" style={{ color: tone(v) }}>{fmtPct(v)}</div><Bar pct={v} color={tone(v)} /></div> },
     ...SEG.filter(s => keys.includes(s.key) && s.key !== 'carryOver').map(s => ({ key: s.key, label: `${s.label} (MT)`, fmt: (v: any) => fmtNum(v) })), { key: 'sumberTxt', label: 'Sumber Tambang' }]
   return <>
-    <PageHead icon={FileBarChart} color="#e6b457" title={`UPDATE MONITORING PASOKAN PLTU — ${b.toUpperCase()} 2026`} sub={`PT PLN BATUBARA NIAGA · UPDATE ${fmtUpdate(ds.at)} · Satuan: MT · Sumber: ${ds.source}`} />
+    <PageHead icon={FileBarChart} color="#e6b457" title="Update Monitoring Pasokan PLTU" month={`${b} 2026`} sub={`PT PLN BATUBARA NIAGA · UPDATE ${fmtUpdate(ds.at)} · Satuan: MT · Sumber: ${ds.source}`} />
     {bulanBar}{viewBar}
     <div className="chips flex flex-wrap gap-1.5 mb-2 no-print">{REGIONS.map(g => <RegionChip key={g} label={g} color={REGION_COLOR[g]} on={reg === g} onClick={() => setReg(g)} />)}</div>
     <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">

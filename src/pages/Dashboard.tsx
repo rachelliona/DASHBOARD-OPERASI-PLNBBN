@@ -41,7 +41,7 @@ export default function Dashboard() {
   const TABS = [['ikhtisar', 'Ikhtisar', Layers], ['mitra', 'Mitra & Sumber', Handshake], ['pltu', 'PLTU & Wilayah', MapPinned], ['tabel', 'Tabel shipment', Table2]] as const
   const byKey = (d: string) => charts.find(c => c.dim === d)!
   return <>
-    <PageHead icon={LayoutDashboard} color="#a78bfa" title={`Dashboard Interaktif — ${bulanAktif} 2026`} sub="Klik kartu atau batang untuk popup detail; dari popup bisa menyaring semua grafik. Arahkan kursor untuk melihat angka." right={Object.keys(f).length > 0 && <button className="fchip" style={{ ['--c' as any]: '#94a3b8' }} onClick={() => setF({})}>Reset semua</button>} />
+    <PageHead icon={LayoutDashboard} color="#a78bfa" title="Dashboard Interaktif" sub="Klik kartu atau batang untuk popup detail; dari popup bisa menyaring semua grafik. Arahkan kursor untuk melihat angka." right={Object.keys(f).length > 0 && <button className="fchip" style={{ ['--c' as any]: '#94a3b8' }} onClick={() => setF({})}>Reset semua</button>} />
     <div className="dtabs" role="tablist">{TABS.map(([k, l, I]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}><I size={15} />{l}</button>)}</div>
     <div className="flex flex-wrap gap-1.5 mb-3 min-h-[28px]">{Object.entries(f).map(([k, v]) => <button key={k} onClick={() => flip(k, v)} className="fchip on" style={{ ['--c' as any]: '#a78bfa' }}>{k === 'status' ? stageLabel(v) : k === 'konf' ? KONF[v] : v} <X size={12} /></button>)}{Object.keys(f).length === 0 && <span className="text-[11px] text-slate-500 self-center">Belum ada penyaring aktif — ini tampilan semua shipment {bulanAktif}.</span>}</div>
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-2.5 mb-3">

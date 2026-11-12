@@ -3,7 +3,7 @@ import { useTheme } from '../theme'
 import { MapContainer, TileLayer, CircleMarker, Tooltip } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useStore } from '../store'
-import { Bar, Card, Empty } from '../components/ui'
+import { Bar, Card, Empty, PageHead } from '../components/ui'
 import { STATUSES, REGIONS, norm, stageLabel } from '../domain/status'
 import { pct, plantActual, kebutuhan } from '../domain/kpi'
 import { fmtNum, fmtPct } from '../domain/format'
@@ -38,6 +38,7 @@ export default function Peta() {
   const pw = new Map(plants.map(p => [p.pltu, p.wilayah])); const flowShips = ships.filter(x => on.includes(x.status ?? '')).map(x => ({ ...x, wilayah: x.wilayah ?? pw.get(x.pltu) }))
   const toggle = (k: string) => setOn(p => p.includes(k) ? p.filter(x => x !== k) : [...p, k])
   return <>
+    <PageHead title="Peta Shipment" sub="Sebaran pasokan batubara ke PLTU. Klik PLTU untuk detail, ganti tampilan peta di bawah." />
     <div className="vsw mb-3" role="tablist" aria-label="Pilih tampilan peta">{VIEWS.map(([k, l, I]) => <button key={k} role="tab" aria-selected={vw === k} onClick={() => setVw(k)} className={'vsw-b' + (vw === k ? ' on' : '')}><I size={16} /><span>{l}</span></button>)}</div>
     <div className="flex gap-2 mb-2">{([['existing', 'Shipment Berjalan'], ['rekap', 'Rekap Tahun Berjalan']] as const).map(([k, l]) => <button key={k} onClick={() => { setView(k); setSel('') }} className={'fchip' + (view === k ? ' on' : '')} style={{ ['--c' as any]: '#e6b457' }}>{l}</button>)}</div>
     {view === 'rekap' && !all && <p className="text-xs text-slate-400 mb-2">{status['ALL Shipment']?.state === 'Gagal Diakses' ? 'Gagal Mengambil Data ALL Shipment.' : 'Memuat Data… (sheet ALL Shipment cukup besar)'}</p>}

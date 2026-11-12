@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSheetYtd } from './useSheetYtd'
 import { ArrowRight, CalendarCheck, History, Target, Ship, PackageCheck } from 'lucide-react'
 import { Gauge, Layer, useCountUp, Donut, StatTile } from '../components/Anim'
 import { useStore } from '../store'
@@ -65,11 +66,18 @@ export default function Ringkasan() {
 }
 
 function YearPanel() {
-  const k = loadKpi(); const BL = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
-  const data = BL.map((m, i) => ({ m, y2025: k.y2025[i], target: k.target[i], real: k.realisasi?.[i] ?? null, prog: k.realisasi?.[i] == null ? k.prognosa[i] : null }))
-  const cells: [string, number, string][] = [['Rencana', k.rencana, '#a78bfa'], ['Target RKAP', k.targetRkap, '#e6b457'], ['Terkontrak', k.terkontrak, '#38bdf8'], ['Realisasi (Target + Proaktif)', k.totalRealisasi, '#34d399']]
-  return <section className="gcard mb-3 yrp"><div className="grid grid-cols-2 xl:grid-cols-4 gap-2 mb-3">{cells.map(([l, v, c]) => <div key={l} className="yr-c" style={{ ['--c' as any]: c }}><span>{l}</span><b className="num">{fmtNum(v)}</b><small>MT · {fmtPct(pct(v, k.targetRkap))} dari Target RKAP</small></div>)}</div>
+  const k = loadKpi(); const { months, bulanAktif, asOf, raw, status, fetchSheet, kinds } = useStore(); const ytd = useSheetYtd()
+  const BL = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']; const FULL = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']; const idx = FULL.indexOf(bulanAktif)
+  useEffect(() => { if (asOf) return; FULL.slice(0, idx + 1).forEach(b => { if (!raw[b] && !status[b]) fetchSheet(b) }) }, [asOf, idx])
+  // realisasi kumulatif per bulan dari sheet bulanan (Complete Unloading); bulan yang belum terbaca = null
+  let cum = 0; let stop = false; const real: (number | null)[] = FULL.map((b, i) => { const m = months[b]; if (i > idx || stop || !m || m.missing?.length) { stop = true; return null } cum += (m.ships as any[]).reduce((t, x) => t + (x.ds ?? 0), 0); return +(cum / 1e6).toFixed(2) })
+  const live = real.filter(x => x != null).length > 0; const full = real.slice(0, idx + 1).every(x => x != null)
+  const tot = (key: 'bl' | 'ds') => full ? FULL.slice(0, idx + 1).reduce((t, b) => t + (months[b].ships as any[]).reduce((a, x) => a + (x[key] ?? 0), 0), 0) : null
+  const data = BL.map((m, i) => ({ m, y2025: k.y2025[i], target: k.target[i], real: live ? real[i] : null, prog: real[i] == null && i >= idx ? k.prognosa[i] : null }))
+  const T = k.targetRkap; const bln = bulanAktif.toUpperCase()
+  const cells: [string, number | null, string, string][] = [['Target RKAP', T, '#e6b457', 'tetap (konfigurasi)'], ['Complete Loading 2026', ytd?.bl ?? tot('bl'), '#38bdf8', ytd?.blPct != null ? `${fmtNum(ytd.blPct)}% menurut sheet DASHBOARD` : ytd ? 'sheet DASHBOARD' : 'jumlah sheet bulanan'], ['Complete Unloading 2026', ytd?.ds ?? tot('ds'), '#34d399', ytd?.dsPct != null ? `${fmtNum(ytd.dsPct)}% menurut sheet DASHBOARD` : ytd ? 'sheet DASHBOARD' : 'jumlah sheet bulanan'], [`Konfirmasi ${bln}`, ytd?.month && ytd.month.bulan === bulanAktif.toLowerCase() ? ytd.month.konf : kinds.plant ? sum(kinds.plant.rows, 'target') : null, '#a78bfa', 'bulan berjalan']]
+  return <section className="gcard mb-3 yrp"><div className="grid grid-cols-2 xl:grid-cols-4 gap-2 mb-3">{cells.map(([l, v, c, n]) => <div key={l} className="yr-c" style={{ ['--c' as any]: c }}><span>{l}</span><b className="num">{v == null ? '—' : fmtNum(v)}</b><small>MT · {n}</small></div>)}</div>
     <div style={{ height: 230 }}><ResponsiveContainer><LineChart data={data} margin={{ top: 6, right: 12, left: -8, bottom: 0 }}><CartesianGrid stroke="rgba(128,140,160,.18)" /><XAxis dataKey="m" {...AXIS} /><YAxis {...AXIS} unit=" jt" /><Tooltip {...TIP} formatter={(v: any, n: any) => [v == null ? '—' : v + ' juta MT', n]} /><Legend />
       <Line name="2025" dataKey="y2025" stroke="#94a3b8" strokeDasharray="4 3" dot={false} /><Line name="Target" dataKey="target" stroke="#e6b457" dot={false} strokeWidth={2} /><Line name="Realisasi" dataKey="real" stroke="#34d399" strokeWidth={2.5} dot={{ r: 3 }} connectNulls={false} /><Line name="Prognosa" dataKey="prog" stroke="#cbd5e1" strokeDasharray="5 4" dot={{ r: 3 }} connectNulls={false} /></LineChart></ResponsiveContainer></div>
-    <p className="text-[11px] opacity-70 mt-1">Kumulatif juta MT. Angka tahunan diatur di Pengaturan (KPI tahunan); sama dengan slide 1 laporan harian.</p></section>
+    <p className="text-[11px] opacity-70 mt-1">Kartu dan garis Realisasi dibaca otomatis dari Google Sheet (sheet DASHBOARD dan sheet bulanan, diperbarui tiap menit). Garis 2025, Target, dan Prognosa adalah angka acuan tetap.</p></section>
 }

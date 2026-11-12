@@ -40,7 +40,7 @@ export default function Simulasi() {
   const reset = () => { setDates(Array(10).fill('')); setAdj(Array(9).fill(0)); setTarget('') }
   const lowN = stats.slice(Math.max(anchor, 0), 9).some(s => s.n < 5)
   return <>
-    <PageHead icon={CalendarClock} color="#22d3ee" title="Simulasi ETA Shipment" sub={<>Isi tanggal yang sudah diketahui atau yang kamu targetkan (mis. TA POL) — tahap sesudahnya diperkirakan maju, tahap sebelumnya (mis. tanggal SI terbit) dihitung mundur, pilih PLTU, jetty muat, dan sumber tambang — perkiraan tanggal tahap berikutnya dihitung dari durasi historis {fmtNum(ships.length)} shipment di sheet ALL Shipment.</>} />
+    <PageHead icon={CalendarClock} color="#22d3ee" title="Simulasi ETA Shipment" month={false} sub={<>Isi tanggal yang sudah diketahui atau yang kamu targetkan (mis. TA POL) — tahap sesudahnya diperkirakan maju, tahap sebelumnya (mis. tanggal SI terbit) dihitung mundur, pilih PLTU, jetty muat, dan sumber tambang — perkiraan tanggal tahap berikutnya dihitung dari durasi historis {fmtNum(ships.length)} shipment di sheet ALL Shipment.</>} />
     <div className="grid lg:grid-cols-5 gap-3">
       <div className="lg:col-span-2 grid gap-3 content-start">
         <Card title="1 · Rute & sumber">

@@ -12,6 +12,7 @@ import AnalisisBox from '../components/AnalisisBox'
 import { CMP_LABEL, Cmp, EtaHist, etaDelay } from '../domain/eta'
 import { snapBase } from '../config/snapshots'
 import { fmtDate, fmtNum } from '../domain/format'
+import { useScope } from './useBulan'
 const iso = (t: number | null) => t == null ? null : new Date(t).toISOString().slice(0, 10)
 const CAT: Record<string, string> = { Terlambat: '#fb7185', 'Tepat waktu': '#34d399', 'Belum tiba, lewat ETA': '#fbbf24', 'Belum jatuh tempo': '#38bdf8', 'Tanpa tanggal aktual': '#6b7280', 'ETA hanya bulan': '#a78bfa' }
 const BINS: [string, (d: number) => boolean, string][] = [['≤ −3', d => d <= -3, '#34d399'], ['−2 s.d. −1', d => d >= -2 && d <= -1, '#34d399'], ['0', d => d === 0, '#34d399'], ['1 s.d. 2', d => d >= 1 && d <= 2, '#fbbf24'], ['3 s.d. 5', d => d >= 3 && d <= 5, '#fb923c'], ['≥ 6', d => d >= 6, '#fb7185']]
@@ -22,15 +23,15 @@ export default function Eta() {
   useEffect(() => { if (!asOf && !raw['ALL Shipment'] && !status['ALL Shipment']) fetchSheet('ALL Shipment') }, [asOf])
   useEffect(() => { (async () => { try { const r = await fetch(snapBase() + '/eta-history.json', { cache: 'no-store' }); if (!r.ok) throw new Error(); setHist(await r.json()) } catch { setHist({}) } })() }, [])
   useEffect(() => { (async () => { try { const r = await fetch(snapBase() + '/analisis.json', { cache: 'no-store' }); if (!r.ok) throw new Error(); setAi(await r.json()) } catch { setAi({}) } })() }, [])
-  const stats = useMemo(() => all ? stepStats(all.ships, stepDays) : [], [all])
+  const sc = useScope(); const stats = useMemo(() => all ? stepStats(all.ships, stepDays) : [], [all])
   const ref = asOf ? Date.parse(asOf) : (() => { const w = new Date(Date.now() + 7 * 36e5); return Date.UTC(w.getUTCFullYear(), w.getUTCMonth(), w.getUTCDate()) })()
-  const rows = useMemo(() => !all ? [] : all.ships.filter(s => s.eta != null || s.etaTxt).map(s => {
+  const rows = useMemo(() => !all ? [] : sc.pick(all.ships).filter(s => s.eta != null || s.etaTxt).map(s => {
     const d = etaDelay(s, cmp, ref); const h = (hist?.[s.id] ?? []).filter(x => !asOf || x[0] <= asOf)
     const c = s.eta == null ? 'ETA hanya bulan' : d.kind === 'aktual' ? (d.days! > tol ? 'Terlambat' : 'Tepat waktu') : d.kind === 'lewat-eta' ? (d.days! > tol ? 'Belum tiba, lewat ETA' : 'Belum jatuh tempo') : d.kind === 'tanpa-aktual' ? 'Tanpa tanggal aktual' : 'Belum jatuh tempo'
     const late = c === 'Terlambat' || c === 'Belum tiba, lewat ETA'; const an = late && (d.days ?? 0) > 0 ? analisis(s.ms, stepDays(s.ms), stats, s.note ?? '', ref, d.days) : null; const a = ai[s.id]; const aiOk = a && (!asOf || a.d <= asOf) ? a : null
     return { id: s.id, an, aiTxt: aiOk?.t ?? null, aiK: aiOk?.k ?? null, dur: stepDays(s.ms), note: s.note ?? '', utama: an?.utama ?? null, masalah: an?.masalah ?? null, solusi1: an?.solusi[0] ?? null, sev: an?.sev ?? null, pltu: s.plant, wilayah: regionOf(s.plant), si: s.si, kapal: s.tbbg.split(';')[0], mitra: s.mitraReal, konf: s.konfRaw, etaTxt: s.etaTxt, eta: iso(s.eta), aktual: iso(s.ms[cmp]), days: d.days, cat: c, status: s.stage,
       etaAwal: h.length ? h[0][1] : null, geser: h.length > 1 ? Math.round((Date.parse(h[h.length - 1][1]) - Date.parse(h[0][1])) / 864e5) : h.length ? 0 : null, chg: h.length ? h.length - 1 : null }
-  }), [all, cmp, ref, tol, hist, asOf, stats, ai])
+  }), [all, cmp, ref, tol, hist, asOf, stats, ai, sc.key])
   if (!all) return <Empty />
   const vis = rows.filter(r => (!reg || r.wilayah === reg) && (!cat || r.cat === cat) && (stg == null || r.utama === stg)); const base = rows.filter(r => !reg || r.wilayah === reg)
   const n = (c: string) => base.filter(r => r.cat === c).length; const done = n('Terlambat') + n('Tepat waktu'); const late = base.filter(r => r.cat === 'Terlambat')
@@ -43,11 +44,11 @@ export default function Eta() {
     { key: 'days', label: 'Selisih (hari)', fmt: (v, r) => v == null ? '—' : <b style={{ color: CAT[r.cat] }}>{v > 0 ? '+' : ''}{fmtNum(v)}</b> }, { key: 'cat', label: 'Keterangan', fmt: v => <span style={{ color: CAT[v] }}>{v}</span> },
     { key: 'etaAwal', label: 'ETA awal (riwayat)', fmt: v => v ? fmtDate(v) : '—' }, { key: 'geser', label: 'Geser ETA (hari)', fmt: v => v == null ? '—' : (v > 0 ? '+' : '') + fmtNum(v) }, { key: 'chg', label: 'Jml perubahan' }, { key: 'masalah', label: 'Masalah (dugaan)', fmt: v => v ? <span className="text-red-300 block min-w-[230px] max-w-[300px] whitespace-normal leading-snug" title={v}>{v.length > 110 ? v.slice(0, 110) + '…' : v}</span> : '—' }, { key: 'solusi1', label: 'Solusi', fmt: v => v ? <span className="text-emerald-300 block min-w-[230px] max-w-[300px] whitespace-normal leading-snug" title={v}>{v.length > 110 ? v.slice(0, 110) + '…' : v}</span> : '—' }, { key: 'aiTxt', label: 'Analisis AI', fmt: (v, r) => v ? <span title={v}>{String(v).slice(0, 70)}{String(v).length > 70 ? '…' : ''} <i className="text-slate-500">({r.aiK})</i></span> : <span className="text-slate-500">{r.an ? 'menunggu' : '—'}</span> }, { key: 'status', label: 'Status', fmt: v => stageLabel(v) }]
   return <>
-    <PageHead icon={Clock} color="#fb7185" title="ETA Rakor & Keterlambatan" sub={<>Sumber: sheet ALL Shipment · ETA Rakor = kolom <b>Tgl.</b> (tanggal dalam bulan konfirmasi) · selisih = tanggal aktual − ETA, positif berarti lebih lambat</>} />
+    <PageHead icon={Clock} color="#fb7185" title="ETA Rakor & Keterlambatan" month={sc.label} sub={<>Sumber: sheet ALL Shipment · ETA Rakor = kolom <b>Tgl.</b> (tanggal dalam bulan konfirmasi) · selisih = tanggal aktual − ETA, positif berarti lebih lambat</>} />
     {!hasEta && <Card><p className="text-xs text-amber-300">Kolom "Tgl." tidak terbaca di sheet ALL Shipment, sehingga ETA tidak bisa dihitung. Cek nama kolom di halaman data mentah.</p></Card>}
     <div className="flex flex-wrap items-center gap-2 mb-3 text-xs no-print"><span className="text-slate-400">Bandingkan ETA dengan:</span><select aria-label="Pembanding" value={cmp} onChange={e => setCmp(+e.target.value as Cmp)}>{([1, 6, 8, 9] as Cmp[]).map(k => <option key={k} value={k}>{CMP_LABEL[k]}</option>)}</select>
       <label>toleransi <input type="number" min={0} max={14} value={tol} onChange={e => setTol(Math.max(0, +e.target.value || 0))} className="w-14" /> hari</label>
-      <select aria-label="Wilayah" value={reg} onChange={e => setReg(e.target.value)}><option value="">Semua wilayah</option>{REGIONS.map(r => <option key={r}>{r}</option>)}</select></div>
+      {sc.ui}<select aria-label="Wilayah" value={reg} onChange={e => setReg(e.target.value)}><option value="">Semua wilayah</option>{REGIONS.map(r => <option key={r}>{r}</option>)}</select></div>
     <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3"><Kpi label="Shipment ber-ETA" value={fmtNum(base.length)} accent="#e6b457" /><Kpi label="Tepat waktu" value={fmtNum(n('Tepat waktu'))} note={done ? `${fmtNum(n('Tepat waktu') / done * 100, 1)}% dari yang sudah bertanggal aktual` : undefined} accent="#34d399" />
       <Kpi label="Terlambat" value={fmtNum(late.length)} note={avg == null ? undefined : `rata-rata +${fmtNum(avg, 1)} hari`} accent="#fb7185" /><Kpi label="Belum tiba, lewat ETA" value={fmtNum(n('Belum tiba, lewat ETA'))} accent="#fbbf24" /><Kpi label="Sudah berubah ETA" value={fmtNum(base.filter(r => (r.chg ?? 0) > 0).length)} note={hist && Object.keys(hist).length ? 'dari riwayat snapshot' : 'riwayat belum terkumpul'} accent="#a78bfa" /></div>
     <section className="hero" style={{ ['--hc' as any]: '#f87171' }}>

@@ -20,7 +20,7 @@ export function compactSumber(t: string, level: number) {
 
 /** Baca angka "TOTAL COMPLETE LOADING/UNLOADING 2026" langsung dari sheet DASHBOARD (Dashboard 1): baris nilai di bawah baris label berisi
  *  ... Complete Loading, %, Complete Unloading, %, TOTAL Loading, %, TOTAL Unloading, %. null bila tata letak tidak ditemukan. */
-export type YtdSheet = { bl: number; blPct: number | null; ds: number; dsPct: number | null }
+export type YtdSheet = { bl: number; blPct: number | null; ds: number; dsPct: number | null; month?: { bulan: string; carry: number; konf: number; bl: number; ds: number } }
 const num = (s: string) => { const t = String(s ?? '').trim(); if (!/^[\d.,]+%?$/.test(t)) return null; const v = parseFloat(t.replace('%', '').replace(/\./g, '').replace(',', '.')); return isFinite(v) ? v : null }
 /** Pecah teks CSV menjadi sel mentah (mendukung tanda kutip) tanpa memotong kolom. */
 export function csvGrid(text: string): string[][] {
@@ -37,13 +37,22 @@ export function csvGrid(text: string): string[][] {
 export function ytdFromSheet(headers: string[] | undefined, rows: Record<string, any>[]): YtdSheet | null {
   return ytdFromGrid([(headers ?? []).map(String), ...rows.map(r => Object.values(r).map(v => String(v ?? '')))])
 }
+/** Blok bulan berjalan di sheet DASHBOARD: baris label "Carry Over … Konfirmasi Pasokan …" lalu baris nilai (Carry, Konfirmasi, Loading, %, Unloading, %, …). */
+export function monthFromGrid(grid: string[][]): YtdSheet['month'] | undefined {
+  const bulan = (grid.slice(0, 3).flat().join(' ').match(/\b(JANUARI|FEBRUARI|MARET|APRIL|MEI|JUNI|JULI|AGUSTUS|SEPTEMBER|OKTOBER|NOVEMBER|DESEMBER)\b/i) ?? [])[1]
+  for (let i = 0; i < grid.length; i++) {
+    if (!/Carry Over/i.test(grid[i].join('|')) || !/Konfirmasi Pasokan/i.test(grid[i].join('|'))) continue
+    for (let j = i + 1; j <= i + 2 && j < grid.length; j++) { const c = grid[j].map(x => x.trim()).filter(Boolean).map(num); if (c.length >= 6 && c[0] != null && c[1] != null && c[2] != null && c[4] != null) return { bulan: (bulan ?? '').toLowerCase(), carry: c[0], konf: c[1], bl: c[2], ds: c[4] } }
+  }
+}
 export function ytdFromGrid(grid: string[][]): YtdSheet | null {
+  const month = monthFromGrid(grid)
   for (let i = 0; i < grid.length; i++) {
     if (!/TOTAL COMPLETE LOADING 2026/i.test(grid[i].join('|'))) continue
     for (let j = i + 1; j <= i + 3 && j < grid.length; j++) {
       const cells = grid[j].map(c => c.trim()).filter(Boolean); if (cells.length < 8) continue
       const k = cells.length; const v = cells.slice(k - 4).map(num)
-      if (v[0] != null && v[2] != null && v[0] > 1000 && v[2] > 1000 && cells[k - 3].endsWith('%') && cells[k - 1].endsWith('%')) return { bl: v[0], blPct: v[1], ds: v[2], dsPct: v[3] }
+      if (v[0] != null && v[2] != null && v[0] > 1000 && v[2] > 1000 && cells[k - 3].endsWith('%') && cells[k - 1].endsWith('%')) return { bl: v[0], blPct: v[1], ds: v[2], dsPct: v[3], month }
     }
   }
   return null

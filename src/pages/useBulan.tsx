@@ -20,3 +20,12 @@ export function useCmp() {
   const ui = <label className="flex items-center gap-2 text-xs no-print"><span className="text-slate-400">Bandingkan ETA (Tgl.) dengan:</span><select aria-label="Pembanding ETA" value={cmp} onChange={e => setCmp(+e.target.value as Cmp)}>{([6, 1, 8, 9] as Cmp[]).map(k => <option key={k} value={k}>{CMP_LABEL[k]}</option>)}</select></label>
   return { cmp, ui }
 }
+
+/** Cakupan bulan untuk halaman yang membaca sheet ALL Shipment (setahun): default = bulan aktif, bisa diganti "Semua bulan". */
+export function useScope() {
+  const { monthly, bulanAktif } = useStore(); const [scope, setScope] = useState(''); const b = scope === 'ALL' ? '' : scope || bulanAktif
+  const ids = new Set((monthly?.ships ?? []).map((s: any) => s.id)); const lb = b.toLowerCase()
+  const pick = <T extends { id: string; konfRaw?: string }>(ships: T[]) => b ? ships.filter(s => String(s.konfRaw ?? '').toLowerCase().includes(lb) || (b === bulanAktif && ids.has(s.id))) : ships
+  const ui = <label className="flex items-center gap-2 text-xs no-print"><span className="text-slate-400">Bulan:</span><select aria-label="Cakupan bulan" value={scope || bulanAktif} onChange={e => setScope(e.target.value)}>{BULAN.map(x => <option key={x}>{x}</option>)}<option value="ALL">Semua bulan (setahun)</option></select></label>
+  return { pick, ui, label: b ? `${b} 2026` : 'Tahun 2026', key: scope + bulanAktif + ids.size }
+}
