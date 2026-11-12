@@ -5,7 +5,7 @@ import { Stat, stepStats, CAUSE, SOLUSI, noteTags } from './sebab'
 /** Mesin temuan otomatis: dihitung di peramban dari tanggal milestone, status, volume, dan catatan sheet.
  *  Semua hasil adalah DUGAAN berbasis data, bukan penyebab yang sudah dikonfirmasi. */
 export type Sev = 'tinggi' | 'sedang' | 'rendah'
-export type Insight = { id: string; kat: string; sev: Sev; judul: string; detail: string; solusi: string; pltu?: string; ship?: string; hari?: number | null; mitra?: string }
+export type Insight = { id: string; kat: string; sev: Sev; judul: string; detail: string; solusi: string; pltu?: string; ship?: string; hari?: number | null; mitra?: string; grp?: 'telat' | 'muat' | 'antre' }
 export const SEV_RANK: Record<Sev, number> = { tinggi: 0, sedang: 1, rendah: 2 }
 export const SEV_COLOR: Record<Sev, string> = { tinggi: '#fb7185', sedang: '#fbbf24', rendah: '#38bdf8' }
 export const KATEGORI: Record<string, string> = {
@@ -36,12 +36,12 @@ export function buildInsights({ ships, ref, bulanIdx, tol = 1, base, cmp = 6 }: 
       if (e.kind === 'aktual') {
         const k = e.days!; const m = s.mitraReal || s.transport || '—'; const a = mitraAgg.get(m) ?? { n: 0, late: 0, days: 0 }; a.n++
         if (k > tol) { etaPol.telat++; sumLate += k; a.late++; a.days += k
-          add({ id: 'eta-' + s.id, kat: 'ETA', sev: k >= 5 ? 'tinggi' : k >= 3 ? 'sedang' : 'rendah', judul: `Telat ${k} hari dari ETA (${CS})`, detail: `${label(s)}: ETA ${fmt(s.eta)}, realisasi ${CMP_LABEL[cmp]} ${fmt(s.ms[cmp]!)} (+${k} hari).${s.mitraReal ? ' Mitra: ' + s.mitraReal + '.' : ''}`,
+          add({ id: 'eta-' + s.id, grp: 'telat', kat: 'ETA', sev: k >= 5 ? 'tinggi' : k >= 3 ? 'sedang' : 'rendah', judul: `Telat ${k} hari dari ETA (${CS})`, detail: `${label(s)}: ETA ${fmt(s.eta)}, realisasi ${CMP_LABEL[cmp]} ${fmt(s.ms[cmp]!)} (+${k} hari).${s.mitraReal ? ' Mitra: ' + s.mitraReal + '.' : ''}`,
             solusi: 'Telusuri tahap mana yang memakan waktu (lihat Gantt shipment ini), minta konfirmasi jadwal terbaru dari mitra transport, dan perbarui ETA di sheet agar PLTU bisa menyesuaikan jadwal bongkar.', pltu: s.plant, ship: s.id, hari: k, mitra: s.mitraReal }) }
         else if (k < -2) etaPol.cepat++; else etaPol.tepat++
         mitraAgg.set(m, a)
       } else if (e.kind === 'lewat-eta') { etaPol.belum++
-        add({ id: 'etalewat-' + s.id, kat: 'ETA', sev: e.days! > 3 ? 'tinggi' : 'sedang', judul: `Lewat ETA ${e.days} hari, belum ${CMP_LABEL[cmp]}`, detail: `${label(s)}: ETA ${fmt(s.eta)} sudah lewat ${e.days} hari tetapi ${CMP_LABEL[cmp]} belum tercatat (status: ${s.status || '—'}).`,
+        add({ id: 'etalewat-' + s.id, grp: 'telat', kat: 'ETA', sev: e.days! > 3 ? 'tinggi' : 'sedang', judul: `Lewat ETA ${e.days} hari, belum ${CMP_LABEL[cmp]}`, detail: `${label(s)}: ETA ${fmt(s.eta)} sudah lewat ${e.days} hari tetapi ${CMP_LABEL[cmp]} belum tercatat (status: ${s.status || '—'}).`,
           solusi: 'Cek posisi kapal/tongkang ke mitra transport; bila memang tertunda, perbarui ETA dan informasikan ke PLTU tujuan. Bila sudah tiba, lengkapi tanggalnya di sheet.', pltu: s.plant, ship: s.id, hari: e.days, mitra: s.mitraReal }) }
     } else if (active && s.etaTxt === '' && (s.stage === 'terjadwal' || s.stage === 'loading')) {
       add({ id: 'noeta-' + s.id, kat: 'Data', sev: 'rendah', judul: 'ETA (Tgl.) belum diisi', detail: `${label(s)} berstatus ${s.status || '—'} tetapi kolom Tgl. kosong sehingga ketepatan jadwal tidak bisa dipantau.`, solusi: 'Isi kolom Tgl. (ETA) dari hasil Rakor agar keterlambatan terdeteksi otomatis.', pltu: s.plant, ship: s.id })
@@ -51,7 +51,7 @@ export function buildInsights({ ships, ref, bulanIdx, tol = 1, base, cmp = 6 }: 
     const truk = /trucking|truk/i.test(s.tbbg + ' ' + s.moda)
     if (active && !truk) { const last = s.ms.reduce<number>((a, v, i) => v != null ? i : a, -1)
       if (last >= needIdx && last >= 1 && last < 9 && (stats[last]?.n ?? 0) >= 8) { const p = stats[last]?.p75, el = (ref - (s.ms[last] as number)) / 864e5
-        if (p != null && el > p && el >= 2) add({ id: 'stuck-' + s.id, kat: 'Tertahan', sev: el > p * 2 && el >= 4 ? 'tinggi' : 'sedang', judul: `Tertahan di "${STEPS[last]}" ${f1(el)} hari`, detail: `${label(s)}: tahap ini biasanya ${f1(stats[last].med ?? p)} hari (P75 ${f1(p)} hari), sekarang sudah ${f1(el)} hari. Dugaan: ${CAUSE[last]}.`, solusi: SOLUSI[last], pltu: s.plant, ship: s.id, hari: Math.round(el), mitra: s.mitraReal }) } }
+        if (p != null && el > p && el >= 2) add({ id: 'stuck-' + s.id, grp: last <= 4 ? 'muat' : last === 5 ? 'telat' : 'antre', kat: 'Tertahan', sev: el > p * 2 && el >= 4 ? 'tinggi' : 'sedang', judul: `Tertahan di "${STEPS[last]}" ${f1(el)} hari`, detail: `${label(s)}: tahap ini biasanya ${f1(stats[last].med ?? p)} hari (P75 ${f1(p)} hari), sekarang sudah ${f1(el)} hari. Dugaan: ${CAUSE[last]}.`, solusi: SOLUSI[last], pltu: s.plant, ship: s.id, hari: Math.round(el), mitra: s.mitraReal }) } }
     // 3. antrean di PLTU
     if (s.stage === 'tiba') { const a = tibaPer.get(s.plant) ?? []; a.push(s); tibaPer.set(s.plant, a) }
     // 4. kualitas data
@@ -66,7 +66,7 @@ export function buildInsights({ ships, ref, bulanIdx, tol = 1, base, cmp = 6 }: 
     if (active && tags.length) add({ id: 'note-' + s.id, kat: 'Catatan', sev: tags.includes('Dibatalkan') || tags.includes('Kendala RKAB / izin') ? 'tinggi' : 'sedang', judul: `Catatan menyebut: ${tags.join(', ')}`, detail: `${label(s)} — "${(s.note ?? '').slice(0, 140)}"`, solusi: 'Konfirmasi status terkini dengan mitra/PLTU, lalu perbarui status dan ETA di sheet.', pltu: s.plant, ship: s.id })
   }
   etaPol.rata = etaPol.telat ? sumLate / etaPol.telat : null
-  for (const [p, a] of tibaPer) if (a.length >= 3) add({ id: 'q-' + p, kat: 'Antrean', sev: a.length >= 5 ? 'tinggi' : 'sedang', judul: `${a.length} kapal antre di ${p}`, detail: `${a.length} shipment berstatus Tiba/Antri di ${p} (${nf(a.reduce((x, s) => x + (s.bl ?? s.vol), 0))} MT menunggu bongkar).`, solusi: SOLUSI[6], pltu: p, hari: a.length })
+  for (const [p, a] of tibaPer) if (a.length >= 3) add({ id: 'q-' + p, grp: 'antre', kat: 'Antrean', sev: a.length >= 5 ? 'tinggi' : 'sedang', judul: `${a.length} kapal antre di ${p}`, detail: `${a.length} shipment berstatus Tiba/Antri di ${p} (${nf(a.reduce((x, s) => x + (s.bl ?? s.vol), 0))} MT menunggu bongkar).`, solusi: SOLUSI[6], pltu: p, hari: a.length })
   if (neg.length) add({ id: 'neg', kat: 'Data', sev: 'sedang', judul: `${neg.length} shipment urutan tanggalnya terbalik`, detail: 'Tanggal tahap berikutnya lebih awal dari tahap sebelumnya, sehingga durasi tahap tidak bisa dihitung: ' + neg.slice(0, 4).map(label).join('; ') + (neg.length > 4 ? ` +${neg.length - 4} lainnya` : '') + '.', solusi: 'Periksa salah ketik tanggal/jam di sheet bulanan.', hari: neg.length })
   if (miss.length) add({ id: 'miss', kat: 'Data', sev: 'sedang', judul: `${miss.length} shipment statusnya maju tapi tanggalnya belum diisi`, detail: 'Status sudah di tahap lanjut namun tanggal milestone tahap itu kosong: ' + miss.slice(0, 4).map(label).join('; ') + (miss.length > 4 ? ` +${miss.length - 4} lainnya` : '') + '.', solusi: 'Lengkapi tanggal milestone agar analisis keterlambatan akurat.', hari: miss.length })
   // pasokan per PLTU (khusus bulan berjalan)
@@ -79,6 +79,7 @@ export function buildInsights({ ships, ref, bulanIdx, tol = 1, base, cmp = 6 }: 
   }
   // mitra
   for (const [m, a] of mitraAgg) if (a.n >= 3 && a.late / a.n >= 0.5 && m !== '—') add({ id: 'mitra-' + m, kat: 'Mitra', sev: a.late / a.n >= 0.75 ? 'tinggi' : 'sedang', judul: `${m}: ${a.late} dari ${a.n} shipment telat ke POL`, detail: `Rata-rata keterlambatan ${f1(a.days / a.late)} hari dari ETA POL.`, solusi: 'Jadwalkan evaluasi kepatuhan jadwal dengan mitra ini dan minta rencana perbaikan mobilisasi.', mitra: m, hari: null })
+  for (let i = list.length; i--;) if (!list[i].grp) list.splice(i, 1) // fokus: keterlambatan, pemuatan, antre bongkar
   list.sort((a, b) => SEV_RANK[a.sev] - SEV_RANK[b.sev] || (b.hari ?? 0) - (a.hari ?? 0))
   const ringkas = { tinggi: 0, sedang: 0, rendah: 0 }; list.forEach(i => ringkas[i.sev]++)
   const k = new Map<string, { n: number; tinggi: number }>(); list.forEach(i => { const a = k.get(i.kat) ?? { n: 0, tinggi: 0 }; a.n++; if (i.sev === 'tinggi') a.tinggi++; k.set(i.kat, a) })

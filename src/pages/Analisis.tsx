@@ -1,49 +1,43 @@
 import { useMemo, useState } from 'react'
-import { Brain, AlertTriangle, Lightbulb, CalendarClock, Siren } from 'lucide-react'
-import { BarChart, Bar as RBar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import { TIP } from '../components/chartTheme'
+import { Brain, Clock, Anchor, Ship as ShipIc, ChevronDown, Lightbulb } from 'lucide-react'
 import { Card, Empty, PageHead } from '../components/ui'
 import { useBulan, useCmp } from './useBulan'
 import { useStore } from '../store'
-import { KATEGORI, SEV_COLOR, CMP_SHORT, buildInsights, todayRef, Sev } from '../domain/insight'
+import { SEV_COLOR, buildInsights, todayRef, Insight } from '../domain/insight'
 import { fmtNum } from '../domain/format'
 import { REGIONS } from '../domain/status'
 import { regionOf } from '../domain/monthly'
-const SEVL: Record<Sev, string> = { tinggi: 'Prioritas tinggi', sedang: 'Perlu perhatian', rendah: 'Info' }
-function Skor({ v }: { v: number }) { const c = v >= 80 ? '#34d399' : v >= 60 ? '#fbbf24' : '#fb7185'; const L = v >= 80 ? 'Sehat' : v >= 60 ? 'Waspada' : 'Kritis'
-  return <div className="skor" style={{ ['--p' as any]: v, ['--t' as any]: c }}><div><b style={{ color: c }}>{v}</b><span>/100</span><em style={{ color: c }}>{L}</em></div></div> }
+type G = 'telat' | 'muat' | 'antre'
+const GR: { k: G; t: string; s: string; icon: any; c: string }[] = [
+  { k: 'telat', t: 'Keterlambatan shipment', s: 'Lewat ETA Rakor atau pelayaran tertahan', icon: Clock, c: '#fb7185' },
+  { k: 'muat', t: 'Lama pemuatan', s: 'Sandar, mulai muat, dan selesai muat lebih lama dari biasanya', icon: ShipIc, c: '#f59e0b' },
+  { k: 'antre', t: 'Tiba & bongkar', s: 'Tiba tapi belum bongkar, atau bongkar lebih lama dari biasanya', icon: Anchor, c: '#a78bfa' }]
+const f1 = (n: number) => fmtNum(Math.round(n * 10) / 10, 1)
 export default function Analisis() {
-  const { asOf, all } = useStore(); const { b, bar, md, bulanIdx } = useBulan(); const [sev, setSev] = useState<Sev | ''>(''); const [kat, setKat] = useState(''); const [reg, setReg] = useState(''); const [lim, setLim] = useState(12)
+  const { asOf, all } = useStore(); const { b, bar, md, bulanIdx } = useBulan(); const [g, setG] = useState<G>('telat'); const [reg, setReg] = useState(''); const [lim, setLim] = useState(10); const [open, setOpen] = useState<string | null>(null)
   const { cmp, ui: cmpUi } = useCmp(); const ref = asOf ? Date.parse(asOf) : todayRef()
   const out = useMemo(() => md ? buildInsights({ ships: md.ships, ref, bulanIdx, base: all?.ships, cmp }) : null, [md, ref, bulanIdx, all, cmp])
   if (!md || !out) return <>{bar}<Empty /></>
-  const vis = out.list.filter(i => (!sev || i.sev === sev) && (!kat || i.kat === kat) && (!reg || (i.pltu && regionOf(i.pltu) === reg)))
-  const top = out.list.filter(i => i.sev === 'tinggi').slice(0, 3); const e = out.etaPol; const done = e.tepat + e.cepat + e.telat
+  const kapal = new Map(md.ships.map(s => [s.id, s.tbbg.split(';')[0].trim() || (s.si ? 'SI ' + s.si : '')]))
+  const inReg = (i: Insight) => !reg || (i.pltu && regionOf(i.pltu) === reg)
+  const by = (k: G) => out.list.filter(i => i.grp === k && inReg(i))
+  const vis = by(g); const cur = GR.find(x => x.k === g)!
+  const info = (k: G) => { const l = by(k); const mx = Math.max(0, ...l.filter(i => !i.id.startsWith('q-')).map(i => i.hari ?? 0)); return { n: l.length, tinggi: l.filter(i => i.sev === 'tinggi').length, mx } }
+  const chip = (i: Insight) => i.id.startsWith('q-') ? `${i.hari} kapal` : i.hari != null ? (i.id.startsWith('eta-') ? '+' : '') + f1(i.hari) + ' hari' : ''
   return <>
-    <PageHead icon={Brain} color="#a78bfa" title="Analisis Cerdas" sub={<>Temuan otomatis dari sheet {b}: ketepatan ETA (kolom Tgl.), tahap tertahan, antrean, risiko pemenuhan PLTU, kualitas data, dan kinerja mitra — lengkap dengan perkiraan solusi. Ini dugaan dari data, bukan penyebab terkonfirmasi.</>} />
+    <PageHead icon={Brain} color="#a78bfa" title="Analisis" month={b} sub="Per shipment: telat dari ETA, lama muat, tiba tapi belum bongkar, dan lama bongkar — lengkap dengan dugaan penyebab dan tindak lanjut." />
     {bar}
-    <div className="mb-3">{cmpUi}</div>
-    <section className="hero ai-hero" style={{ ['--hc' as any]: '#a78bfa' }}>
-      <div className="ai-grid"><div className="flex flex-col items-center gap-1"><Skor v={out.skor} /><div className="text-[11px] text-slate-400">Skor kesehatan pasokan</div></div>
-        <div className="grid gap-2 content-center">
-          <div className="grid grid-cols-3 gap-2">{(['tinggi', 'sedang', 'rendah'] as Sev[]).map(s => <button key={s} onClick={() => setSev(sev === s ? '' : s)} className={'sevbox' + (sev === s ? ' on' : '')} style={{ ['--c' as any]: SEV_COLOR[s] }}><b>{out.ringkas[s]}</b><span>{SEVL[s]}</span></button>)}</div>
-          <div className="text-xs text-slate-300 leading-relaxed">{out.ringkas.tinggi ? <>Ada <b>{out.ringkas.tinggi}</b> temuan prioritas tinggi. </> : <>Tidak ada temuan prioritas tinggi. </>}
-            {done ? <>Dari {done} shipment ber-ETA yang sudah punya tanggal {CMP_SHORT[cmp]}, <b>{fmtNum(e.tepat + e.cepat)}</b> sesuai ETA dan <b style={{ color: '#fb7185' }}>{e.telat}</b> telat{e.rata ? ` (rata-rata +${fmtNum(e.rata, 1)} hari)` : ''}. </> : null}
-            {out.bottleneck && <>Tahap yang paling banyak memakan waktu berlebih: <b>{out.bottleneck.nama}</b> ({out.bottleneck.n} shipment melewati P75).</>}</div></div></div>
-      {top.length > 0 && <div className="mt-3"><div className="text-[11px] uppercase tracking-wider text-slate-400 mb-1.5">Perlu ditangani dulu</div><div className="grid md:grid-cols-3 gap-2">{top.map(i => <div key={i.id} className="topcard"><div className="flex items-center gap-1.5 text-[11px] font-bold" style={{ color: SEV_COLOR[i.sev] }}><Siren size={13} />{i.kat}</div><div className="text-[13px] font-semibold mt-1">{i.judul}</div><div className="text-[11px] text-slate-400 mt-1 line-clamp-2">{i.detail}</div></div>)}</div></div>}
-    </section>
-    <div className="grid lg:grid-cols-3 gap-3 mb-3">
-      <Card title="Temuan per kategori — klik untuk menyaring"><div style={{ height: out.perKat.length * 30 + 20 }}><ResponsiveContainer><BarChart layout="vertical" data={out.perKat.map(k => ({ ...k, nama: k.kat }))} margin={{ top: 0, right: 20, left: 0, bottom: 0 }}><XAxis type="number" allowDecimals={false} stroke="#b4bccb" fontSize={10} /><YAxis type="category" dataKey="nama" width={80} stroke="#b4bccb" fontSize={11} interval={0} />
-        <Tooltip formatter={(v: any, _n, p: any) => [`${v} temuan (${p.payload.tinggi} prioritas tinggi)`, KATEGORI[p.payload.kat]]} {...TIP} /><RBar dataKey="n" barSize={16} radius={[0, 8, 8, 0]} cursor="pointer" onClick={(d: any) => setKat(kat === d.kat ? '' : d.kat)}>{out.perKat.map(k => <Cell key={k.kat} fill={k.tinggi ? '#fb7185' : '#fbbf24'} fillOpacity={kat && kat !== k.kat ? .3 : 1} />)}</RBar></BarChart></ResponsiveContainer></div></Card>
-      <Card title={`Ketepatan ETA (Tgl.) vs ${CMP_SHORT[cmp]}`}><div className="etabar"><div style={{ flex: e.cepat + e.tepat || .001, background: '#34d399' }} title="Sesuai/lebih cepat" /><div style={{ flex: e.telat || .001, background: '#fb7185' }} title="Telat" /><div style={{ flex: e.belum || .001, background: '#fbbf24' }} title="Lewat ETA belum tiba" /></div>
-        <ul className="text-xs mt-3 grid gap-1.5"><li className="flex justify-between"><span><i className="dot" style={{ background: '#34d399' }} />Sesuai ETA (±1 hari) / lebih cepat</span><b>{e.tepat + e.cepat}</b></li><li className="flex justify-between"><span><i className="dot" style={{ background: '#fb7185' }} />Telat dari ETA</span><b>{e.telat}</b></li><li className="flex justify-between"><span><i className="dot" style={{ background: '#fbbf24' }} />Lewat ETA, realisasi belum tercatat</span><b>{e.belum}</b></li><li className="flex justify-between text-slate-400"><span>Total shipment ber-ETA</span><b>{e.total}</b></li></ul></Card>
-      <Card title="Durasi tiap tahap vs kebiasaan"><div className="grid gap-1.5">{out.stats.map((s, i) => s.med == null ? null : <div key={i} className="text-[11px]"><div className="flex justify-between text-slate-300"><span>{['SI → TA POL', 'TA POL → Sandar', 'Sandar → Muat', 'Durasi muat', 'Muat → Berlayar', 'Pelayaran', 'TA PLTU → Sandar', 'Sandar → Bongkar', 'Durasi bongkar'][i]}</span><span className="num">median {fmtNum(s.med, 1)} · P75 {fmtNum(s.p75, 1)} hari</span></div><div className="mini"><i style={{ width: Math.min(100, (s.med / Math.max(...out.stats.map(x => x.p75 ?? 0), 1)) * 100) + '%' }} /></div></div>)}</div></Card></div>
-    <Card title={`Daftar temuan & perkiraan solusi (${vis.length})`} right={<div className="flex gap-2 text-xs no-print"><select aria-label="Wilayah" value={reg} onChange={e => setReg(e.target.value)}><option value="">Semua wilayah</option>{REGIONS.map(r => <option key={r}>{r}</option>)}</select>{(sev || kat || reg) && <button className="text-[#f2c76b] underline" onClick={() => { setSev(''); setKat(''); setReg('') }}>Reset</button>}</div>}>
-      {vis.length === 0 ? <p className="text-xs text-emerald-300">Tidak ada temuan pada saringan ini.</p> : <div className="grid gap-2">{vis.slice(0, lim).map(i => <article key={i.id} className="finding" style={{ ['--c' as any]: SEV_COLOR[i.sev] }}>
-        <div className="flex flex-wrap items-center gap-2 mb-1"><span className="sevtag">{SEVL[i.sev]}</span><span className="kat">{i.kat}</span>{i.pltu && <span className="text-[11px] text-slate-400">{i.pltu}</span>}</div>
-        <h3 className="text-[13px] font-bold">{i.judul}</h3><p className="text-xs text-slate-300 mt-1 flex gap-1.5"><AlertTriangle size={13} className="shrink-0 mt-0.5 text-slate-400" /><span>{i.detail}</span></p>
-        <p className="text-xs mt-1.5 flex gap-1.5" style={{ color: 'var(--ok)' }}><Lightbulb size={13} className="shrink-0 mt-0.5" /><span><b>Solusi:</b> {i.solusi}</span></p></article>)}</div>}
+    <div className="flex flex-wrap items-center gap-2 mb-3 text-xs no-print">{cmpUi}<select aria-label="Wilayah" value={reg} onChange={e => { setReg(e.target.value); setLim(10) }}><option value="">Semua wilayah</option>{REGIONS.map(r => <option key={r}>{r}</option>)}</select></div>
+    <div className="an-tabs">{GR.map(x => { const i = info(x.k); const Ic = x.icon; return <button key={x.k} className={'an-tab' + (g === x.k ? ' on' : '')} style={{ ['--c' as any]: x.c }} onClick={() => { setG(x.k); setLim(10); setOpen(null) }}>
+      <Ic size={18} /><span className="an-n">{i.n}</span><span className="an-l">{x.t}</span><span className="an-s">{i.n === 0 ? 'Tidak ada' : `${i.tinggi} prioritas tinggi${i.mx ? ` · terlama ${f1(i.mx)} hari` : ''}`}</span></button> })}</div>
+    <Card title={cur.t} right={<span className="text-[11px] opacity-60">{cur.s}</span>}>
+      {vis.length === 0 ? <p className="text-xs text-emerald-300">Tidak ada temuan pada kategori ini.</p> : <div className="an-list">{vis.slice(0, lim).map(i => { const o = open === i.id
+        return <div key={i.id} className={'an-row' + (o ? ' on' : '')} style={{ ['--c' as any]: SEV_COLOR[i.sev] }}>
+          <button className="an-head" onClick={() => setOpen(o ? null : i.id)} aria-expanded={o}>
+            <span className="an-main"><b>{i.pltu ?? '—'}</b>{kapal.get(i.ship ?? '') ? <span className="an-v"> · {kapal.get(i.ship ?? '')}</span> : null}<span className="an-j">{i.judul}</span></span>
+            {chip(i) && <span className="an-chip">{chip(i)}</span>}<ChevronDown size={15} className="an-chev" /></button>
+          {o && <div className="an-body"><p>{i.detail}</p><p className="an-sol"><Lightbulb size={13} /><span><b>Tindak lanjut:</b> {i.solusi}</span></p></div>}</div> })}</div>}
       {vis.length > lim && <button className="btn rounded-lg px-3 py-1 text-xs mt-3" onClick={() => setLim(lim + 20)}>Tampilkan lebih banyak ({vis.length - lim})</button>}
-      <p className="text-[10px] text-slate-500 mt-3 flex items-center gap-1"><CalendarClock size={11} />Dihitung ulang tiap data diperbarui. Ambang "tahap tertahan" memakai P75 durasi seluruh shipment bulan ini; toleransi ETA 1 hari.</p></Card>
+      <p className="text-[10px] text-slate-500 mt-3">Dugaan dari tanggal milestone dan catatan sheet, bukan penyebab terkonfirmasi. "Terlalu lama" = melewati P75 durasi tahap itu pada seluruh shipment; toleransi ETA 1 hari.</p></Card>
   </>
 }

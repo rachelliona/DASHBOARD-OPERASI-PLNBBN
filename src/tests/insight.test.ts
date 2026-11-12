@@ -15,11 +15,11 @@ describe('buildInsights', () => {
   it('status lebih maju dari tanggal milestone = masalah data, bukan tertahan', () => {
     const base = Array.from({ length: 12 }, (_, i) => ship({ id: 'b' + i, stage: 'unloading', ds: 7500, ms: [D(9, 1), D(9, 3), D(9, 4), D(9, 4), D(9, 5), D(9, 5), D(9, 8), D(9, 8), D(9, 9), D(9, 10)] }))
     const o = buildInsights({ ships: [ship({ stage: 'tiba', ms: [D(10, 1), D(10, 3), D(10, 4), D(10, 4), D(10, 5), null, null, null, null, null] })], ref: D(11, 8), bulanIdx: 10, base })
-    expect(o.list.some(i => i.kat === 'Tertahan')).toBe(false); expect(o.list.some(i => i.kat === 'Data')).toBe(true)
+    expect(o.list.some(i => i.kat === 'Tertahan')).toBe(false); expect(o.list.length).toBe(0)
   })
-  it('PLTU dengan volume belum terjadwal besar ditandai', () => {
+  it('analisis hanya memuat temuan shipment (telat, muat, tiba/bongkar), bukan pemenuhan PLTU', () => {
     const o = buildInsights({ ships: [ship({ jumlah: 50000, stage: 'terjadwal', vol: 7500 })], ref: D(11, 8), bulanIdx: 10 })
-    expect(o.list.some(i => i.kat === 'Pasokan' && /belum terjadwal/.test(i.judul))).toBe(true)
+    expect(o.list.every(i => i.grp != null && i.kat !== 'Pasokan')).toBe(true)
   })
 })
 describe('akses menu Data', () => {

@@ -667,3 +667,29 @@ html[data-theme=light] .tg-hfix{background:#1e2f55}
 .co{text-decoration:none;font-size:10px;font-weight:600;padding:1px 6px;border-radius:6px;background:rgba(245,158,11,.2);color:#b45309}
 .tg-sh .fl{position:absolute;left:3px;width:6px;height:6px;border-radius:50%}.tg-sh .fl.tinggi{background:#fb7185}.tg-sh .fl.sedang{background:#fbbf24}.tg-sh .fl.rendah{background:#38bdf8}
 @media(max-width:767px){.tg-fix{width:196px}.tg-fix .c-kat,.tg-fix .c-eta,.tg-fix .c-vol,.tg-fix .c-st{display:none!important}.c-mitra{width:60px}.c-ves{width:136px}}
+
+/* v31 Analisis sederhana */
+.an-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.an-tab{text-align:left;display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;padding:12px 14px;border-radius:14px;border:1px solid rgba(var(--ink),.12);background:rgba(var(--ink),.03);color:var(--text);cursor:pointer;transition:.15s;border-top:3px solid var(--c)}
+.an-tab svg{color:var(--c);grid-row:1/3}.an-n{font-size:26px;font-weight:800;line-height:1;color:var(--c)}.an-l{grid-column:2;font-size:12.5px;font-weight:700;margin-top:2px}.an-s{grid-column:1/3;font-size:11px;opacity:.65;margin-top:6px}
+.an-tab.on{background:rgba(var(--ink),.08);box-shadow:0 0 0 1.5px var(--c)}.an-tab:hover{background:rgba(var(--ink),.07)}
+.an-list{display:grid;gap:6px}.an-row{border:1px solid rgba(var(--ink),.1);border-left:4px solid var(--c);border-radius:10px;background:rgba(var(--ink),.025);overflow:hidden}
+.an-head{width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;text-align:left;color:var(--text);cursor:pointer}
+.an-main{flex:1;min-width:0;display:flex;flex-direction:column;font-size:12.5px}.an-main b{font-size:13px}.an-v{opacity:.7;font-weight:400}.an-main{display:block}
+.an-j{display:block;font-size:11.5px;opacity:.72;margin-top:2px}
+.an-chip{flex:none;font-weight:800;font-size:12px;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--c) 20%,transparent);color:var(--c)}
+.an-chev{flex:none;opacity:.5;transition:transform .15s}.an-row.on .an-chev{transform:rotate(180deg)}
+.an-body{padding:2px 14px 12px 14px;font-size:12px;line-height:1.55;display:grid;gap:8px;border-top:1px dashed rgba(var(--ink),.12);padding-top:10px}
+.an-sol{display:flex;gap:6px;color:var(--ok,#34d399);padding:8px 10px;border-radius:8px;background:rgba(52,211,153,.08)}.an-sol svg{flex:none;margin-top:2px}
+@media(max-width:767px){.an-tabs{grid-template-columns:1fr;gap:8px}.an-tab{grid-template-columns:auto auto 1fr;padding:10px 12px}.an-tab .an-l{grid-column:3;margin:0}.an-tab .an-s{grid-column:2/4;margin-top:4px}.an-tab svg{grid-row:1}}
+
+/* v32 login: latar & kontrol mengikuti tema + tombol gelap/terang */
+.login-bg{background:radial-gradient(700px 500px at 15% 5%,rgba(230,180,87,.22),transparent 60%),radial-gradient(600px 500px at 90% 95%,rgba(167,139,250,.18),transparent 60%),#0c0f14}
+html[data-theme=light] .login-bg{background:radial-gradient(760px 520px at 12% 0%,rgba(230,180,87,.28),transparent 60%),radial-gradient(640px 520px at 95% 100%,rgba(99,102,241,.16),transparent 60%),#eef2f8}
+.login-theme{position:absolute;top:24px;right:28px;z-index:5;padding:8px 14px;font-weight:600}
+@media(max-width:767px){.login-theme{top:16px;right:16px;padding:7px 12px}}
+html[data-theme=light] .login-card{border:1px solid rgba(15,23,42,.1);box-shadow:0 30px 70px -30px rgba(15,23,42,.3),0 0 0 1px rgba(230,180,87,.25)}
+html[data-theme=light] .login-card input{background:#fff;border-color:rgba(15,23,42,.2);color:#0f172a}
+html[data-theme=light] .login-card input:focus{border-color:#b7791f;box-shadow:0 0 0 3px rgba(230,180,87,.28)}
+html[data-theme=light] .login-card a{color:#8a5a00}
+html[data-theme=light] .login-theme{background:#fff;border-color:rgba(15,23,42,.18)}

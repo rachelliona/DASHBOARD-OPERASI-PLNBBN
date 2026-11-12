@@ -11,7 +11,7 @@ const readSeen = (): string[] => { try { return JSON.parse(localStorage.getItem(
 const writeSeen = (a: string[]) => { try { localStorage.setItem(KEY, JSON.stringify(a.slice(-400))) } catch { /* tanpa penyimpanan */ } }
 const SEV_LABEL = { tinggi: 'Prioritas tinggi', sedang: 'Perlu perhatian', rendah: 'Info' } as const
 
-/** Lonceng notifikasi: temuan otomatis berprioritas tinggi/sedang dari Analisis Cerdas. Status "sudah dibaca" disimpan per peramban. */
+/** Lonceng notifikasi: temuan otomatis berprioritas tinggi/sedang dari Analisis. Status "sudah dibaca" disimpan per peramban. */
 export default function NotifBell() {
   const { monthly, bulanAktif, asOf, all } = useStore(); const [open, setOpen] = useState(false); const [seen, setSeen] = useState<string[]>(readSeen); const box = useRef<HTMLDivElement>(null)
   const ref = asOf ? Date.parse(asOf) : todayRef()
@@ -38,6 +38,6 @@ export default function NotifBell() {
       <div className="notif-list">{list.length === 0 ? <p className="notif-empty">Tidak ada temuan yang perlu ditindaklanjuti. Pasokan berjalan sesuai jadwal.</p>
         : list.map(i => <Link key={i.id} to="/analisis" onClick={() => { mark([i.id]); setOpen(false) }} className={'notif-item' + (seen.includes(i.id) ? ' read' : '')} style={{ ['--c' as any]: SEV_COLOR[i.sev] }}>
           <span className="notif-bar" /><span className="min-w-0"><span className="notif-kat">{SEV_LABEL[i.sev]} · {i.kat}</span><span className="notif-t">{i.judul}</span><span className="notif-d">{i.detail}</span></span></Link>)}</div>
-      <Link to="/analisis" onClick={() => setOpen(false)} className="notif-foot">Buka Analisis Cerdas <ArrowRight size={13} /></Link></div>}
+      <Link to="/analisis" onClick={() => setOpen(false)} className="notif-foot">Buka Analisis <ArrowRight size={13} /></Link></div>}
   </div>
 }
