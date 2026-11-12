@@ -19,7 +19,7 @@ export default function GanttPage() {
   const ships = md.ships.filter(s => (!reg || regionOf(s.plant) === reg) && (!st || s.stage === st) && (!bad || flags.has(s.id)))
   const e = out.etaPol; const an = sel ? analisis(sel.ms, stepDays(sel.ms), out.stats, sel.note ?? '', ref, null) : null; const mine = sel ? out.list.filter(i => i.ship === sel.id) : []
   return <>
-    <PageHead icon={GanttChart} color="#6366f1" title="Gantt Pasokan" sub={<>Garis waktu tiap shipment dari SI sampai selesai bongkar · ◆ = ETA (kolom Tgl.) · garis merah di bawah ◆ = ETA terlewati (belum/terlambat tercatat) · klik batang untuk analisis</>} />
+    <PageHead icon={GanttChart} color="#6366f1" title="Gantt Pasokan" sub={<>Tabel + garis waktu harian tiap shipment (SI sampai selesai bongkar), dikelompokkan Wilayah → PLTU · penanda merah = ETA · garis merah di bawahnya = ETA terlewati · klik baris untuk analisis</>} />
     {bar}
     <div className="mb-3">{cmpUi}</div>
     <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3"><Kpi label={`Shipment ${b}`} value={fmtNum(md.ships.length)} accent="#6366f1" /><Kpi label={`ETA ${CMP_SHORT[cmp]} tepat waktu`} value={fmtNum(e.tepat + e.cepat)} note={`dari ${fmtNum(e.tepat + e.cepat + e.telat)} yang sudah bertanggal ${CMP_SHORT[cmp]}`} accent="#34d399" />
