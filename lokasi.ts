@@ -1,0 +1,71 @@
+/** Sumber: Master Data Pembangkit (Drive PLN BBN). Meulaboh 3-4 sengaja tidak dimuat: koordinatnya identik dengan Nagan Raya (perlu diverifikasi). */
+const RAW = `Adipala|-7.680766|109.137580
+Indramayu|-6.273899|107.971347
+Labuan|-6.391093|105.830505
+Teluk Naga|-6.059138|106.462906
+Teluk Naga Unit IV|-6.058367|106.467485
+Pacitan|-8.257737|111.374111
+Paiton Baru|-7.710708|113.571383
+Pelabuhan Ratu|-7.024464|106.547520
+Rembang|-6.636497|111.477205
+Suralaya Baru|-5.886580|106.038156
+Tj. Awar Awar|-6.810005|111.996589
+Suralaya|-5.891609|106.030507
+Paiton|-7.714754|113.585715
+Tj. Jati B|-6.445126|110.753377
+Bangka Baru|-2.077154|106.150463
+Belitung Baru|-2.892257|107.565653
+Bukit Asam|-3.731082|103.798268
+Galang Batang|0.906654|104.626786
+Labuhan Angin|1.752280|98.729686
+Nagan Raya|4.115320|96.201904
+Ombilin|-0.608295|100.754937
+Pangkalan Susu|4.119769|98.259850
+Pangkalan Susu Unit 1-4|4.116891|98.262071
+Riau Tenayan|0.563171|101.525070
+Tj. Balai Karimun|1.042079|103.420569
+Tarahan Baru|-5.522216|105.352026
+Teluk Sirih|-1.076166|100.373329
+Tembilahan|-0.297274|103.204802
+Asam Asam|-3.924474|115.107092
+Ketapang|-1.781822|109.942825
+Parit Baru / Bengkayang|0.835669|108.874133
+Pulang Pisau|-2.822001|114.211534
+Sanggau|0.030602|110.556196
+Sintang|0.074147|111.434392
+Tj. Redeb / Berau|2.158531|117.405846
+Teluk Balikpapan|-1.166473|116.791518
+Malinau|3.635518|116.672098
+SW ITP|-3.272276|116.108134
+Ampana|-0.964308|121.823861
+Amurang|1.183264|124.480402
+Amurang SW|1.183157|124.480241
+Barru|-4.290669|119.632160
+Sulsel Barru 2|-4.291359|119.628481
+Ende|-8.853680|121.654854
+Endog Jeranjang|-8.659329|116.073314
+Gorontalo|0.849878|122.798188
+Jayapura|-2.614547|140.791073
+Kendari|-3.894482|122.550751
+Kendari 3|-4.046113|122.663256
+Kupang|-10.238998|123.491020
+Lombok FTP 2|-8.423623|116.711235
+Palu 3|-0.640865|119.808983
+Sofifi|0.649416|127.543890
+Sumbawa Barat|-8.741725|116.778480
+Sulut 1|0.888045|123.470472
+Takalar|-5.623918|119.550178
+Timor|-10.352960|123.459522
+Tidore Ternate|0.739080|127.389222
+Jawa 7|-5.993619|106.090166
+LED|-8.433173|116.708361
+Kalbar 1|0.057886|109.203836
+Celukan Bawang|-8.195763|114.853657
+Bengkulu|-3.911970|102.271369
+Paiton Energy Company|-7.726310|113.509591
+Embalut|-0.374413|117.062476
+Kaltim-4|-0.365037|117.065870
+Jeneponto|-5.619266|119.551380
+Cilacap|-7.684615|109.087106
+Lestari Banten Energi|-5.883397|106.044144`
+export const LOKASI_ROWS = RAW.split('\n').map(l => { const [nama, lat, lon] = l.split('|'); return { nama, lat: +lat, lon: +lon, jenis: 'PLTU' } })
