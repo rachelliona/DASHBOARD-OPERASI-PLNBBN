@@ -12,6 +12,7 @@ import { fmtNum, fmtPct } from '../domain/format'
 import { compactSumber, fmtUpdate, sumberText, tone } from '../domain/view'
 import { REGION_COLOR } from '../config/regions'
 import LaporanSlide from './LaporanSlide'
+import DateSelector from '../components/DateSelector'
 import { useDetail } from '../components/Detail'
 import { Copy, Check, Maximize2 } from 'lucide-react'
 const SEG = [...STAGES, { key: 'terjadwal', label: 'Sudah Ada Jadwal Muat', color: '#94a3b8' }, { key: 'lain', label: 'Belum ada status', color: '#64748b' }]
@@ -24,6 +25,7 @@ export default function Laporan() {
   const mm = months[b]; const alt = b !== bulanAktif && mm && !mm.missing.length
   const ds = useMemo(() => alt ? { rows: aggregatePlants(mm.ships), source: `Sheet ${b}`, at: mm.at } as any : kinds.plant, [alt, mm, kinds.plant]); const sh = useMemo(() => alt ? toShipRows(mm.ships) as any[] : kinds.shipment?.rows ?? [], [alt, mm, kinds.shipment])
   const [basis, setBasis] = useState<'bl' | 'ds'>('bl'); const [view, setView] = useState<'slide' | 'interaktif'>('slide'); const [reg, setReg] = useState(REGIONS[0]); const [q, setQ] = useState(''); const [stage, setStage] = useState(''); const [mode, setMode] = useState<'grafik' | 'tabel'>('grafik'); const [sort, setSort] = useState('urut')
+  const tglBar = <div className="flex flex-wrap items-center gap-2 mb-3 no-print"><span className="text-[11px] text-slate-400">Tanggal data:</span><DateSelector /><span className="text-[11px] text-slate-500">{asOf ? 'Menampilkan keadaan data pada tanggal itu' : 'Langsung dari sheet, diperbarui otomatis'}</span></div>
   const bulanBar = <div className="chips flex flex-wrap gap-1.5 mb-3 no-print"><span className="text-[11px] text-slate-400 self-center">Bulan:</span>{BULAN.map(x => { const ok = !!months[x] && !months[x].missing.length; return <button key={x} disabled={!ok && x !== bulanAktif && !!asOf} onClick={() => setBln(x === bulanAktif ? '' : x)} className={'fchip' + (b === x ? ' on' : '')} style={{ ['--c' as any]: ok || x === bulanAktif ? '#34d399' : '#64748b' }}>{x}</button> })}</div>
   if (!ds) return <Empty />
   if (b !== bulanAktif && !alt) return <>{bulanBar}<Card><p className="text-xs">{asOf ? 'Data Belum Tersedia pada tanggal ini.' : status[b]?.state === 'Gagal Diakses' ? 'Gagal Mengambil Data' : 'Memuat Data…'}</p></Card></>
@@ -34,7 +36,7 @@ export default function Laporan() {
   const viewBar = <div className="flex flex-wrap gap-1.5 mb-3 no-print items-center">{([['slide', 'Laporan (Slide)'], ['interaktif', 'Tampilan Interaktif']] as const).map(([k, l]) => <button key={k} onClick={() => setView(k)} className={'fchip' + (view === k ? ' on' : '')} style={{ ['--c' as any]: '#e6b457' }}>{l}</button>)}
     <span className="flex-1" /><button className="pbtn" data-tip="Salin ringkasan per wilayah + 3 PLTU terendah, siap tempel ke WhatsApp" onClick={salin}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? 'Tersalin' : 'Salin ringkasan WhatsApp'}</button>
     <button className="pbtn" data-tip="Layar penuh untuk rapat (Esc untuk keluar)" onClick={() => document.documentElement.requestFullscreen?.().catch(() => {})}><Maximize2 size={14} />Layar penuh</button></div>
-  if (view === 'slide') return <><PageHead title="Laporan Harian Operasi" month={`${b} 2026`} sub="Laporan siap unduh (PDF/PPT) dan tampilan interaktif untuk rapat." />{bulanBar}{viewBar}<LaporanSlide b={b} ds={ds} sh={sh} months={months} /></>
+  if (view === 'slide') return <><PageHead title="Laporan Harian Operasi" month={`${b} 2026`} sub="Laporan siap unduh (PDF/PPT) dan tampilan interaktif untuk rapat." />{tglBar}{bulanBar}{viewBar}<LaporanSlide b={b} ds={ds} sh={sh} months={months} /></>
   const inStage = (x: any) => stage === 'carryOver' ? x.konf === 'carry' : stage ? x.status === stage : ACTIVE.includes(x.status)
   const regionRows = ds.rows.filter(r => r.wilayah === reg); const col = REGION_COLOR[reg]
   const rows = regionRows.filter(r => (!q || norm(r.pltu).includes(norm(q))) && (!stage || (r[stage] ?? 0) > 0)).map(r => ({ ...r, keb: kebutuhan(r), p: pct(r[basis] ?? 0, kebutuhan(r)), sumberTxt: sumberText(sh.filter(x => x.pltu === r.pltu && inStage(x))), z: 0 }) as Record<string, any>).map(r => ({ ...r, tot: (stage ? [stage] : SEG.map(g => g.key)).reduce((a, k) => a + (r[k] ?? 0), 0) })).sort(SORTS[sort])
@@ -45,7 +47,7 @@ export default function Laporan() {
     ...SEG.filter(s => keys.includes(s.key) && s.key !== 'carryOver').map(s => ({ key: s.key, label: `${s.label} (MT)`, fmt: (v: any) => fmtNum(v) })), { key: 'sumberTxt', label: 'Sumber Tambang' }]
   return <>
     <PageHead icon={FileBarChart} color="#e6b457" title="Update Monitoring Pasokan PLTU" month={`${b} 2026`} sub={`PT PLN BATUBARA NIAGA · UPDATE ${fmtUpdate(ds.at)} · Satuan: MT · Sumber: ${ds.source}`} />
-    {bulanBar}{viewBar}
+    {tglBar}{bulanBar}{viewBar}
     <div className="chips flex flex-wrap gap-1.5 mb-2 no-print">{REGIONS.map(g => <RegionChip key={g} label={g} color={REGION_COLOR[g]} on={reg === g} onClick={() => setReg(g)} />)}</div>
     <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
       <Kpi label="Konfirmasi" value={fmtNum(T.t)} unit="MT" accent={col} /><Kpi label="Carry Over" value={fmtNum(T.c)} unit="MT" accent="#ef4444" /><Kpi label="Complete Loading (B/L)" value={fmtNum(T.bl)} unit="MT" accent="#38bdf8" />

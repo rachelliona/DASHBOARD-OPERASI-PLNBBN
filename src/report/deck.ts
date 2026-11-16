@@ -6,7 +6,7 @@ import { kebutuhan, pct } from '../domain/kpi'
 import { compactSumber } from '../domain/view'
 export { compactSumber }
 
-export type DeckIn = { bulan: string; updateTxt: string; plants: any[]; ships: any[]; month: { carry: number; konf: number; bl: number; ds: number }; ytd: { bl: number | null; ds: number | null; blPct?: number | null; dsPct?: number | null }; real: (number | null)[]; activeIdx: number; kpi: KpiTahunan }
+export type DeckIn = { bulan: string; updateTxt: string; plants: any[]; ships: any[]; counts?: Record<string, number>; month: { carry: number; konf: number; bl: number; ds: number }; ytd: { bl: number | null; ds: number | null; blPct?: number | null; dsPct?: number | null }; real: (number | null)[]; activeIdx: number; kpi: KpiTahunan }
 const C = { co: '#ff0000', loading: '#1fa2ff', sailing: '#ed7d31', tiba: '#1f3864', bongkar: '#a63fa6', unloading: '#4ea72e', terjadwal: '#a6a6a6', lain: '#d4d4d4' }
 const SER: [string, string, string][] = [['carryOver', 'Carry Over', C.co], ['loading', 'Loading', C.loading], ['sailing', 'Sailing', C.sailing], ['tiba', 'Tiba/Antri', C.tiba], ['bongkar', 'Proses Bongkar', C.bongkar], ['unloading', 'Unloading', C.unloading], ['terjadwal', 'Sudah Ada Jadwal Muat', C.terjadwal], ['lain', 'Belum ada status', C.lain]]
 const GREEN = '#2f8f2f'
@@ -81,7 +81,7 @@ function slide1(d: DeckIn): Slide {
 }
 
 function slide2(d: DeckIn): Slide {
-  const els: El[] = [bg(), title(d.updateTxt)]; const cnt = (k: string) => d.ships.filter(s => s.status === k).length
+  const els: El[] = [bg(), title(d.updateTxt)]; const cnt = (k: string) => d.counts?.[k] ?? d.ships.filter(s => s.status === k).length
   els.push(T(30, 168, 170, 40, '<< 2025', 18, { bold: true, align: 'c', va: 'm' }), R(217, 152, 833, 88, '#2a5bd0', { r: 8 }), T(217, 152, 833, 88, 'DASHBOARD MONITORING PASOKAN\nPT PLN BATUBARA NIAGA TAHUN 2026', 27, { bold: true, color: '#fff', align: 'c', va: 'm' }))
   els.push(R(1072, 180, 197, 32, '#9c1c14', { r: 6 }), T(1072, 180, 170, 32, d.bulan.toUpperCase(), 19, { bold: true, color: '#fff', align: 'c', va: 'm' }), T(1236, 180, 30, 32, '▼', 11, { color: '#fff', align: 'c', va: 'm' }))
   const BX: [string, string, string][] = [['Sudah Ada\nJadwal Muat', 'terjadwal', ''], ['Proses\nLoading', 'loading', ''], ['Selesai\nMuat/Sailing', 'sailing', ''], ['Tiba/Antri\nJetty PLTU', 'tiba', ''], ['Proses\nBongkar', 'bongkar', ''], ['Selesai\nBongkar', 'unloading', '']]

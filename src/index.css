@@ -693,3 +693,14 @@ html[data-theme=light] .login-card input{background:#fff;border-color:rgba(15,23
 html[data-theme=light] .login-card input:focus{border-color:#b7791f;box-shadow:0 0 0 3px rgba(230,180,87,.28)}
 html[data-theme=light] .login-card a{color:#8a5a00}
 html[data-theme=light] .login-theme{background:#fff;border-color:rgba(15,23,42,.18)}
+
+/* v33 kalender pilih tanggal */
+.datebtn{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:9px;border:1px solid rgba(var(--ink),.16);background:rgba(var(--ink),.06);color:var(--text);font-size:12px;white-space:nowrap}.datebtn:hover{background:rgba(var(--ink),.12)}
+.cal-pop{position:fixed;z-index:200;width:272px;padding:12px;border-radius:14px;background:var(--s1);border:1px solid rgba(var(--ink),.18);box-shadow:0 24px 60px -20px rgba(0,0,0,.6);color:var(--text)}
+html[data-theme=light] .cal-pop{box-shadow:0 24px 60px -20px rgba(15,23,42,.35)}
+.cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:13px}.cal-h button{padding:4px;border-radius:8px}.cal-h button:hover{background:rgba(var(--ink),.1)}
+.cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}.cal-w{font-style:normal;font-size:10px;opacity:.55;padding:3px 0}
+.cal-d{height:32px;border-radius:8px;font-size:12px;opacity:.3;font-variant-numeric:tabular-nums}.cal-d.ok{opacity:1;background:rgba(230,180,87,.16);font-weight:600;cursor:pointer}.cal-d.ok:hover{background:rgba(230,180,87,.34)}
+.cal-d.td{box-shadow:inset 0 0 0 1px rgba(var(--ink),.4)}.cal-d.on{background:#e6b457!important;color:#1b1303;opacity:1}
+.cal-f{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(var(--ink),.12);font-size:11px}.cal-f>span{opacity:.6}
+.cal-live{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:9px;border:1px solid rgba(var(--ink),.2);font-size:11.5px;font-weight:600}.cal-live.on{background:rgba(52,211,153,.18);border-color:#34d399}

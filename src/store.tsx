@@ -12,9 +12,9 @@ export type DS = { rows: Row[]; rejected: Rejected[]; source: string; at: string
 export type Stat = { state: string; msg?: string; at?: string }
 export type PM = ReturnType<typeof parseMonthly>
 export type MD = PM & { at: string }
-export type Snap = { v: number; date: string; at: string; bulan: string; all: PM; months: Record<string, PM> }
+export type Snap = { v: number; date: string; at: string; dashCsv?: string; bulan: string; all: PM; months: Record<string, PM> }
 type St = { kinds: Record<string, DS>; raw: Record<string, DS>; status: Record<string, Stat>; threshold: number; intervalSec: number; bulanAktif: string
-  monthly: MD | null; all: MD | null; months: Record<string, MD>; asOf: string; setAsOf: (d: string) => void; snapList: string[] | null; snapState: string
+  monthly: MD | null; all: MD | null; months: Record<string, MD>; asOf: string; setAsOf: (d: string) => void; snapList: string[] | null; snapState: string; snapDashCsv?: string
   fetchSheet: (name: string) => Promise<void>; setKind: (k: string, d: DS) => void; setRaw: (n: string, d: DS) => void; setStatus: (n: string, s: Stat) => void; setThreshold: (n: number) => void; setIntervalSec: (n: number) => void; clear: () => void }
 const Ctx = createContext<St>(null as any)
 export const useStore = () => useContext(Ctx)
@@ -55,7 +55,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (user) fetchSheet(liveBulan) }, [user])
   useEffect(() => { if (!user) return; (async () => { try { const r = await fetch(snapBase() + '/index.json', { cache: 'no-store' }); if (!r.ok) throw new Error(); const j = await r.json(); setSnapList([...(j.dates ?? [])].sort()) } catch { setSnapList([]) } })() }, [user])
   useEffect(() => { const tick = () => { if (document.visibilityState === 'visible') refreshRef.current() }; const id = setInterval(tick, intervalSec * 1000); document.addEventListener('visibilitychange', tick); return () => { clearInterval(id); document.removeEventListener('visibilitychange', tick) } }, [intervalSec])
-  return <Ctx.Provider value={{ fetchSheet, kinds, raw, status, threshold, intervalSec, bulanAktif, monthly, all, months, asOf, setAsOf, snapList, snapState,
+  return <Ctx.Provider value={{ fetchSheet, kinds, raw, status, threshold, intervalSec, bulanAktif, monthly, all, months, asOf, setAsOf, snapList, snapState, snapDashCsv: snapMode ? snap?.dashCsv : undefined,
     setIntervalSec: (n: number) => { localStorage.setItem('pln-interval', String(n)); setI(n) },
     setKind: (k, x) => setK(p => ({ ...p, [k]: x })), setRaw: (n, x) => setR(p => ({ ...p, [n]: x })), setStatus: (n, s) => setS(p => ({ ...p, [n]: s })),
     setThreshold: n => { localStorage.setItem('pln-threshold', String(n)); setT(n) }, clear: () => { setK({}); setR({}); setS({}) } }}>{children}</Ctx.Provider>
