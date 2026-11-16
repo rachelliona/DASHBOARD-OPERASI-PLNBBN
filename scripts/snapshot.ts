@@ -14,6 +14,8 @@ async function main() {
   }
   const snap = buildSnapshot(n => tables[n], now, nowWib())
   for (const [n, m] of [['ALL Shipment', snap.all], [snap.bulan, snap.months[snap.bulan]]] as const) if (m.missing.length || !m.ships.length) throw new Error(`Snapshot ditolak: sheet ${n} tidak lengkap (kolom hilang: ${m.missing.join(', ') || '-'}, shipment: ${m.ships.length})`)
+  // isi sheet DASHBOARD (angka kotak status, total 2026, dst.) ikut disimpan agar tanggal lama tetap sama persis dengan sheet saat itu; gagal tidak menggagalkan snapshot
+  const dsrc = SOURCES.find(x => x.name === 'Dashboard 1'); if (dsrc) { try { const r = await fetch(dsrc.url); if (r.ok) (snap as any).dashCsv = await r.text() } catch { /* opsional */ } }
   fs.mkdirSync(out, { recursive: true }); fs.writeFileSync(path.join(out, `${snap.date}.json`), JSON.stringify(snap))
   const ip = path.join(out, 'index.json'), dates = new Set<string>(fs.existsSync(ip) ? JSON.parse(fs.readFileSync(ip, 'utf8')).dates : [])
   dates.add(snap.date); fs.writeFileSync(ip, JSON.stringify({ dates: [...dates].sort() }))
