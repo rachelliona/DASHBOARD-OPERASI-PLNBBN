@@ -68,8 +68,8 @@ export function SideBySide({ items, mk }: { items: SbsItem[]; mk: string }) {
       return <button type="button" role="listitem" key={i.key} className="sbs-r" onClick={i.onClick} disabled={!i.onClick}>
         <div className="sbs-n"><div className="sbs-nm" title={i.name}>{i.name}</div>{i.sub && <div className="kb-sub">{i.sub}</div>}</div>
         <div className="sbs-b">
-          <div className="sbs-l"><div className="sbs-t"><div className="sbs-f" style={{ width: `${i.kontrak / mx * 100}%`, background: 'rgba(var(--ink),.26)' }} /></div><span>{shortMT(i.kontrak)}</span></div>
-          <div className="sbs-l"><div className="sbs-t"><div className="sbs-f" style={{ width: `${i.real / mx * 100}%`, background: over ? 'linear-gradient(90deg,#34d399,#fbbf24)' : `linear-gradient(90deg,${i.color},color-mix(in srgb,${i.color} 60%,#fff))` }} /></div><span>{shortMT(i.real)}</span></div>
+          <div className="sbs-l"><div className="sbs-t"><div className="sbs-f" style={{ width: `${i.kontrak / mx * 100}%`, background: 'rgba(var(--ink),.26)' }} /></div><span><em>Kontrak</em><b>{shortMT(i.kontrak)} MT</b></span></div>
+          <div className="sbs-l"><div className="sbs-t"><div className="sbs-f" style={{ width: `${i.real / mx * 100}%`, background: over ? 'linear-gradient(90deg,#34d399,#fbbf24)' : `linear-gradient(90deg,${i.color},color-mix(in srgb,${i.color} 60%,#fff))` }} /></div><span><em>Realisasi</em><b>{shortMT(i.real)} MT</b></span></div>
         </div>
         <div className="sbs-p"><b style={{ color: over ? '#fbbf24' : undefined }}>{pct == null ? '—' : pct.toLocaleString('id-ID', { maximumFractionDigits: 1 }) + '%'}</b><span className={over ? 'kb-neg' : ''}>{over ? 'lebih ' + shortMT(-sisa) : 'belum ' + shortMT(sisa)}</span></div>
       </button> })}
