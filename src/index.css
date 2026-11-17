@@ -777,3 +777,12 @@ html[data-theme=light] .km-back{background:rgba(30,36,50,.38)}html[data-theme=li
 @media(max-width:700px){.km-back{padding:0;align-items:flex-end}.km{width:100%;max-height:92vh;border-radius:22px 22px 0 0;animation:kmSheet .28s cubic-bezier(.2,.9,.25,1) both}.km-hero{flex-direction:column;align-items:stretch}.km-hero>.kring{align-self:center}.km-big{grid-template-columns:1fr 1fr 1fr;gap:8px}.km-big b{font-size:17px}.km-nr{grid-template-columns:1fr auto 18px}.km-nr .sbs-t{display:none}.km-h h3{font-size:17px}}
 @keyframes kmSheet{from{transform:translateY(100%)}to{transform:none}}
 @media(prefers-reduced-motion:reduce){.km,.km-back{animation:none}}
+/* v45 popup tengah yang lebih lapang */
+.dlg-modal{border:1px solid color-mix(in srgb,var(--c) 30%,rgba(var(--ink),.12));background:linear-gradient(180deg,color-mix(in srgb,var(--c) 8%,var(--s1)),var(--s1) 120px);position:relative;display:flex;flex-direction:column}
+.dlg-modal::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,var(--c),transparent 70%);z-index:1}
+.dlg-modal.wide{width:min(780px,100%);max-height:min(88vh,860px)}
+.dlg-modal .dlg-h{border-bottom:1px solid rgba(var(--ink),.08);padding:18px 20px 12px}.dlg-modal .dlg-b{overflow-y:auto;padding:14px 20px 20px}
+.dlg-modal .dlg-h h3{font-size:19px;font-weight:800;letter-spacing:-.01em}
+.dlg-modal .dlg-stat{border-radius:14px}.dlg-modal .dlg-stat b{font-size:20px}
+.dlg-modal.wide .dlg-stats{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+@media(max-width:640px){.dlg-modal.wide{width:100%}}
