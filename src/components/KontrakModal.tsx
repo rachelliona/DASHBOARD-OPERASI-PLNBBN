@@ -42,12 +42,12 @@ function KList({ v, nav }: { v: KView; nav: KNav }) {
   </section>
 }
 function KModal({ stack, go, back, close }: { stack: KView[]; go: (v: KView) => void; back: () => void; close: () => void }) {
-  const v = stack[stack.length - 1], box = useRef<HTMLDivElement>(null), scr = useRef<HTMLDivElement>(null)
+  const v = stack[stack.length - 1], side = (stack[0].items?.length ?? 0) > 10, box = useRef<HTMLDivElement>(null), scr = useRef<HTMLDivElement>(null)
   useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === 'Escape') (stack.length > 1 ? back : close)() }; document.addEventListener('keydown', k); document.body.style.overflow = 'hidden'; return () => { document.removeEventListener('keydown', k); document.body.style.overflow = '' } }, [stack.length, back, close])
   useEffect(() => { scr.current?.scrollTo({ top: 0 }); box.current?.focus() }, [stack.length])
   const nav = { go, close }
-  return createPortal(<div className="km-back" onMouseDown={e => { if (e.target === e.currentTarget) close() }}>
-    <div className="km" role="dialog" aria-modal="true" aria-label={v.title} tabIndex={-1} ref={box} style={{ ['--c' as any]: v.color ?? '#e6b457' }}>
+  return createPortal(<div className={'km-back' + (side ? ' side' : '')} onMouseDown={e => { if (e.target === e.currentTarget) close() }}>
+    <div className={'km' + (side ? ' side' : '')} role="dialog" aria-modal="true" aria-label={v.title} tabIndex={-1} ref={box} style={{ ['--c' as any]: v.color ?? '#e6b457' }}>
       <header className="km-h">
         {stack.length > 1 && <button type="button" className="km-back-b" onClick={back} aria-label="Kembali"><ArrowLeft size={16} /></button>}
         <div className="min-w-0 flex-1">

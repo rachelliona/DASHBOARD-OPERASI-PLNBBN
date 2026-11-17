@@ -786,3 +786,12 @@ html[data-theme=light] .km-back{background:rgba(30,36,50,.38)}html[data-theme=li
 .dlg-modal .dlg-stat{border-radius:14px}.dlg-modal .dlg-stat b{font-size:20px}
 .dlg-modal.wide .dlg-stats{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
 @media(max-width:640px){.dlg-modal.wide{width:100%}}
+/* v46 popup kontrak: daftar panjang → panel samping */
+.km-back.side{justify-content:flex-end;align-items:stretch;padding:0}
+.km.side{width:min(640px,100%);max-height:100vh;height:100vh;border-radius:22px 0 0 22px;animation:kmSide .26s cubic-bezier(.2,.9,.25,1) both}
+.km.side .km-hero{flex-direction:column;align-items:stretch}.km.side .km-hero>.kring{align-self:center}
+.km.side .sbs-r{grid-template-columns:minmax(110px,160px) 1fr 88px;gap:10px}.km.side .sbs-l span{min-width:112px}
+.km.side .km-stats{grid-template-columns:repeat(2,1fr)}
+@keyframes kmSide{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+@media(max-width:700px){.km-back.side{align-items:flex-end}.km.side{height:auto;max-height:92vh;border-radius:22px 22px 0 0;animation:kmSheet .28s cubic-bezier(.2,.9,.25,1) both}}
+.km.side .km-hero-r{width:100%}.km.side .sbs.compact .sbs-r{grid-template-columns:1fr}.km.side .km-hero{gap:14px}

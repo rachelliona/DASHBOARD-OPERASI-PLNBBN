@@ -45,7 +45,9 @@ export function DetailProvider({ children }: { children: ReactNode }) {
     document.addEventListener('keydown', k); document.body.style.overflow = 'hidden'; box.current?.focus()
     return () => { document.removeEventListener('keydown', k); document.body.style.overflow = '' }
   }, [s, close])
-  const I = s?.icon; const drawer = !!s && s.variant === 'drawer'
+  const I = s?.icon; const rows = s?.table?.rows.length ?? 0, weight = rows + (s?.bars?.reduce((a, b) => a + b.items.length, 0) ?? 0) + (s?.trend ? 3 : 0) + (s?.stack ? 2 : 0)
+  /** Info singkat → popup tengah; data panjang (banyak baris/batang) → panel samping. */
+  const drawer = !!s && (s.variant ? s.variant === 'drawer' : rows >= 9 || weight >= 14)
   const rich = !!s && !!(s.table || s.bars || s.stack || s.trend || s.body)
   return <Ctx.Provider value={{ open, close }}>{children}
     {s && createPortal(<div className={'dlg-back ' + (drawer ? 'drawer' : 'modal')} onMouseDown={e => { if (e.target === e.currentTarget) close() }}>
