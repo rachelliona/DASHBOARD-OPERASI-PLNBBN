@@ -20,7 +20,10 @@ export function compactSumber(t: string, level: number) {
 
 /** Baca angka "TOTAL COMPLETE LOADING/UNLOADING 2026" langsung dari sheet DASHBOARD (Dashboard 1): baris nilai di bawah baris label berisi
  *  ... Complete Loading, %, Complete Unloading, %, TOTAL Loading, %, TOTAL Unloading, %. null bila tata letak tidak ditemukan. */
-export type YtdSheet = { bl: number; blPct: number | null; ds: number; dsPct: number | null; month?: { bulan: string; carry: number; konf: number; bl: number; ds: number }; counts?: Record<string, number> }
+export type YtdSheet = { bl: number; blPct: number | null; ds: number; dsPct: number | null; month?: { bulan: string; carry: number; konf: number; bl: number; ds: number }; counts?: Record<string, number>; rincian?: Rincian; umpire?: Umpire }
+export type Blok = { konf: number; real: number; pct: number | null }
+export type Rincian = { pln: Blok; ipp: Blok; co: Blok }
+export type Umpire = { total: number; selesai: number; proses: number }
 const num = (s: string) => { const t = String(s ?? '').trim(); if (!/^[\d.,]+%?$/.test(t)) return null; const v = parseFloat(t.replace('%', '').replace(/\./g, '').replace(',', '.')); return isFinite(v) ? v : null }
 /** Pecah teks CSV menjadi sel mentah (mendukung tanda kutip) tanpa memotong kolom. */
 export function csvGrid(text: string): string[][] {
@@ -55,14 +58,29 @@ export function countsFromGrid(grid: string[][]): Record<string, number> | undef
     if (Object.keys(out).length === 6) return out
   }
 }
+/** Rincian PLN Group / IPP / Carry Over (Konfirmasi, Realisasi, %) dari blok DASHBOARD: baris label "PLN GROUP … IPP … CARRY OVER", lalu baris 9 angka. */
+export function rincianFromGrid(grid: string[][]): Rincian | undefined {
+  for (let i = 0; i < grid.length; i++) {
+    const r = grid[i].map(c => c.trim()); if (!(r.includes('PLN GROUP') && r.includes('IPP') && r.includes('CARRY OVER'))) continue
+    for (let j = i + 1; j <= i + 8 && j < grid.length; j++) { const c = grid[j].map(x => x.trim()).filter(Boolean); if (c.length < 9) continue; const v = c.slice(0, 9).map(num); if (v.some(x => x == null)) continue
+      const b = (k: number): Blok => ({ konf: v[k]!, real: v[k + 1]!, pct: v[k + 2] }); return { pln: b(0), ipp: b(3), co: b(6) } }
+  }
+}
+/** Monitoring Umpire: label TOTAL UMPIRE / UMPIRE SELESAI / PROSES UMPIRE, lalu baris 3 angka. */
+export function umpireFromGrid(grid: string[][]): Umpire | undefined {
+  for (let i = 0; i < grid.length; i++) {
+    if (!/TOTAL UMPIRE/i.test(grid[i].join('|'))) continue
+    for (let j = i + 1; j <= i + 8 && j < grid.length; j++) { const c = grid[j].map(x => x.trim()).filter(Boolean).map(num); if (c.length >= 3 && c.slice(0, 3).every(x => x != null)) return { total: c[0]!, selesai: c[1]!, proses: c[2]! } }
+  }
+}
 export function ytdFromGrid(grid: string[][]): YtdSheet | null {
-  const month = monthFromGrid(grid); const counts = countsFromGrid(grid)
+  const month = monthFromGrid(grid); const counts = countsFromGrid(grid); const rincian = rincianFromGrid(grid); const umpire = umpireFromGrid(grid)
   for (let i = 0; i < grid.length; i++) {
     if (!/TOTAL COMPLETE LOADING 2026/i.test(grid[i].join('|'))) continue
     for (let j = i + 1; j <= i + 3 && j < grid.length; j++) {
       const cells = grid[j].map(c => c.trim()).filter(Boolean); if (cells.length < 8) continue
       const k = cells.length; const v = cells.slice(k - 4).map(num)
-      if (v[0] != null && v[2] != null && v[0] > 1000 && v[2] > 1000 && cells[k - 3].endsWith('%') && cells[k - 1].endsWith('%')) return { bl: v[0], blPct: v[1], ds: v[2], dsPct: v[3], month, counts }
+      if (v[0] != null && v[2] != null && v[0] > 1000 && v[2] > 1000 && cells[k - 3].endsWith('%') && cells[k - 1].endsWith('%')) return { bl: v[0], blPct: v[1], ds: v[2], dsPct: v[3], month, counts, rincian, umpire }
     }
   }
   return null

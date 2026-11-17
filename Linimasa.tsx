@@ -11,10 +11,12 @@ import { fmtNum } from '../domain/format'
 import { analisis, CAUSE, SOLUSI } from '../domain/sebab'
 import AnalisisBox from '../components/AnalisisBox'
 import { useScope } from './useBulan'
+import Gantt from '../components/Gantt'
+import { todayRef } from '../domain/insight'
 const SHORT = ['SI → TA POL', 'TA POL → Sandar', 'Sandar → Muat', 'Durasi muat', 'Muat → Berlayar', 'Pelayaran', 'TA PLTU → Sandar', 'Sandar → Bongkar', 'Durasi bongkar']
 const flat = (d: (number | null)[]) => Object.fromEntries(d.map((x, i) => ['s' + i, x]))
 export default function Linimasa() {
-  const { all, raw, status, fetchSheet, asOf } = useStore(); const sc = useScope(); const [reg, setReg] = useState(''); const [st, setSt] = useState(''); const [late, setLate] = useState(false); const [stg, setStg] = useState<number | null>(null); const [sel, setSel] = useState<any>(null)
+  const { all, raw, status, fetchSheet, asOf } = useStore(); const sc = useScope(); const [reg, setReg] = useState(''); const [vw, setVw] = useState<'tabel' | 'gantt'>('tabel'); const [st, setSt] = useState(''); const [late, setLate] = useState(false); const [stg, setStg] = useState<number | null>(null); const [sel, setSel] = useState<any>(null)
   useEffect(() => { if (!asOf && !raw['ALL Shipment'] && !status['ALL Shipment']) fetchSheet('ALL Shipment') }, [asOf])
   const data = useMemo(() => {
     if (!all) return null
@@ -58,7 +60,9 @@ export default function Linimasa() {
     <div className="flex flex-wrap items-center gap-2 mb-2 text-xs no-print">{sc.ui}<select aria-label="Filter wilayah" value={reg} onChange={e => setReg(e.target.value)}><option value="">Semua wilayah</option>{REGIONS.map(r => <option key={r}>{r}</option>)}</select>
       <select aria-label="Filter status" value={st} onChange={e => setSt(e.target.value)}><option value="">Semua status</option>{STATUSES.filter(s => s.key !== 'carryOver').map(s => <option key={s.key} value={s.key}>{s.label}</option>)}</select>
       <label><input type="checkbox" checked={late} onChange={e => setLate(e.target.checked)} /> hanya yang melewati P75 di salah satu tahap</label><span className="text-slate-500">{rows.length} shipment</span></div>
-    <Card title="Tahap per Shipment (angka = hari) — klik baris untuk analisis"><DataTable rows={rows} cols={cols} name="linimasa-shipment" onRow={setSel} /></Card>
+    <div className="vsw mb-3" role="tablist" aria-label="Tampilan linimasa">{([['tabel', 'Tabel'], ['gantt', 'Gantt']] as const).map(([k, l]) => <button key={k} role="tab" aria-selected={vw === k} onClick={() => setVw(k)} className={'vsw-b' + (vw === k ? ' on' : '')}><span>{l}</span></button>)}</div>
+    {vw === 'tabel' ? <Card title="Tahap per Shipment (angka = hari) — klik baris untuk analisis"><DataTable rows={rows} cols={cols} name="linimasa-shipment" onRow={setSel} /></Card>
+      : <Card title="Gantt linimasa — klik baris untuk analisis"><Gantt ships={all.ships.filter(s => rows.some((r: any) => r.id === s.id))} today={asOf ? Date.parse(asOf) : todayRef()} onSelect={s => { const r = rows.find((x: any) => x.id === s.id); if (r) setSel(r) }} /></Card>}
     {sel && <Card title={`Analisis tahap — ${sel.pltu} · SI ${sel.si || '—'}`} right={<button className="text-xs text-slate-300" onClick={() => setSel(null)}>Tutup</button>}><AnalisisBox a={sel.an} /><p className="text-[10px] text-slate-400 mt-2">Dugaan dari lama tiap tahap dibanding median/P75 seluruh shipment dan catatan sheet; konfirmasi dengan tim lapangan.</p></Card>}
     <p className="text-[11px] text-slate-500">{fmtNum(all.ships.length)} shipment terbaca; {fmtNum(data.rows.length)} punya minimal satu tahap bertanggal lengkap. {data.neg} shipment punya urutan tanggal terbalik (tahap itu dikosongkan). Tanggal di luar 2025–2027 atau format tidak dikenal dianggap kosong.</p>
   </>

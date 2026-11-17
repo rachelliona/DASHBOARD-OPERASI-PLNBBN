@@ -1,26 +1,11 @@
-import fs from 'node:fs'
-import path from 'node:path'
-import { parseCsv, Parsed } from '../src/domain/csv'
-import { SOURCES } from '../src/config/sources'
-import { buildSnapshot, sheetsNeeded } from '../src/domain/snapshot'
-import { nowWib } from '../src/domain/format'
-import { updateEtaHistory, EtaHist } from '../src/domain/eta'
-const out = process.argv[2] ?? 'snapshots'
-async function main() {
-  const now = new Date(), tables: Record<string, Parsed> = {}
-  for (const n of sheetsNeeded(now)) {
-    const s = SOURCES.find(x => x.name === n)!
-    for (let k = 1; ; k++) { try { const r = await fetch(s.url); if (!r.ok) throw new Error('HTTP ' + r.status); tables[n] = parseCsv(await r.text()); break } catch (e) { if (k >= 3) throw new Error(`Gagal mengambil sheet ${n}: ${e}`); await new Promise(r => setTimeout(r, 5000)) } }
-  }
-  const snap = buildSnapshot(n => tables[n], now, nowWib())
-  for (const [n, m] of [['ALL Shipment', snap.all], [snap.bulan, snap.months[snap.bulan]]] as const) if (m.missing.length || !m.ships.length) throw new Error(`Snapshot ditolak: sheet ${n} tidak lengkap (kolom hilang: ${m.missing.join(', ') || '-'}, shipment: ${m.ships.length})`)
-  // isi sheet DASHBOARD (angka kotak status, total 2026, dst.) ikut disimpan agar tanggal lama tetap sama persis dengan sheet saat itu; gagal tidak menggagalkan snapshot
-  const dsrc = SOURCES.find(x => x.name === 'Dashboard 1'); if (dsrc) { try { const r = await fetch(dsrc.url); if (r.ok) (snap as any).dashCsv = await r.text() } catch { /* opsional */ } }
-  fs.mkdirSync(out, { recursive: true }); fs.writeFileSync(path.join(out, `${snap.date}.json`), JSON.stringify(snap))
-  const ip = path.join(out, 'index.json'), dates = new Set<string>(fs.existsSync(ip) ? JSON.parse(fs.readFileSync(ip, 'utf8')).dates : [])
-  dates.add(snap.date); fs.writeFileSync(ip, JSON.stringify({ dates: [...dates].sort() }))
-  const hp = path.join(out, 'eta-history.json'); const hist: EtaHist = fs.existsSync(hp) ? JSON.parse(fs.readFileSync(hp, 'utf8')) : {}
-  fs.writeFileSync(hp, JSON.stringify(updateEtaHistory(hist, Object.values(snap.months).flatMap(m => m.ships), snap.date)))
-  console.log(`Snapshot ${snap.date}: ${snap.all.ships.length} shipment (ALL), bulan ${snap.bulan} ${snap.months[snap.bulan].ships.length} shipment`)
+import type { Parsed } from './csv'
+import { BULAN, parseMonthly } from './monthly'
+/** Foto keadaan data pada satu hari: sheet ALL Shipment + semua sheet bulanan sampai bulan berjalan, sudah diolah. */
+export function buildSnapshot(get: (name: string) => Parsed, now: Date, at: string) {
+  const wib = new Date(now.getTime() + 7 * 36e5), mi = wib.getUTCMonth()
+  const pack = (t: Parsed, b: string) => { const m = parseMonthly(t, b); return { ships: m.ships, sub: m.sub, skipped: m.skipped, missing: m.missing } }
+  const months: Record<string, ReturnType<typeof pack>> = {}
+  for (const b of BULAN.slice(0, mi + 1)) months[b] = pack(get(b), b)
+  return { v: 1, date: wib.toISOString().slice(0, 10), at, bulan: BULAN[mi], all: pack(get('ALL Shipment'), 'Januari'), months }
 }
-main().catch(e => { console.error(e); process.exit(1) })
+export const sheetsNeeded = (now: Date) => ['ALL Shipment', ...BULAN.slice(0, new Date(now.getTime() + 7 * 36e5).getUTCMonth() + 1)]

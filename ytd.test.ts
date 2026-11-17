@@ -1,4 +1,4 @@
-import { it, expect } from 'vitest'
+import { it, expect, describe } from 'vitest'
 import { ytdFromSheet, ytdFromGrid, csvGrid } from '../domain/view'
 it('membaca total complete 2026 dari sheet DASHBOARD', () => {
   const h = ['Carry Over NOVEMBER (MT)', 'Konfirmasi Pasokan NOVEMBER (MT)', 'Complete Loading NOVEMBER (MT)', 'Complete Unloading NOVEMBER (MT)', 'TOTAL COMPLETE LOADING 2026 (MT)', 'TOTAL COMPLETE UNLOADING 2026 (MT)']
@@ -27,4 +27,17 @@ it('format nyata DASHBOARD (13 Nov 2026): blok bulan, 6 status, dan total 2026 t
   expect(monthFromGrid(g)).toEqual({ bulan: 'november', carry: 71000, konf: 1881500, bl: 679026, ds: 150429 })
   expect(countsFromGrid(g)).toEqual({ terjadwal: 49, loading: 5, sailing: 40, tiba: 17, bongkar: 3, unloading: 15 })
   expect(ytdFromGrid(g)).toMatchObject({ bl: 13284352, blPct: 89, ds: 12837384, dsPct: 86 })
+})
+it('DASHBOARD 16 Nov 2026 (57/1/46/23/5/24): sama persis dengan sheet', () => {
+  const g = csvGrid(readFileSync(new URL('./fixtures/dashboard-2026-11-16.csv', import.meta.url), 'utf8'))
+  expect(countsFromGrid(g)).toEqual({ terjadwal: 57, loading: 1, sailing: 46, tiba: 23, bongkar: 5, unloading: 24 })
+  expect(monthFromGrid(g)).toEqual({ bulan: 'november', carry: 91000, konf: 1889000, bl: 999226, ds: 223828 })
+  expect(ytdFromGrid(g)).toMatchObject({ bl: 14263637, blPct: 96, ds: 13252738, dsPct: 89 })
+})
+
+import { rincianFromGrid, umpireFromGrid, csvGrid as _g } from '../domain/view'
+describe('rincian & umpire', () => {
+  const g = _g('x,PLN GROUP,,,,,,,,,,IPP,,,,,,,,,,CARRY OVER\n\n,KONFIRMASI,,,,,REALISASI\n\n,"1.304.000",,,,,560.394,,,43%,,600.000,,,,,317.622,,,53%,,91.000,,,,,83.735,,,92%\n\n,TOTAL UMPIRE,,UMPIRE SELESAI,,,PROSES UMPIRE\n,21,,18,,,3')
+  it('rincian', () => { expect(rincianFromGrid(g)).toEqual({ pln: { konf: 1304000, real: 560394, pct: 43 }, ipp: { konf: 600000, real: 317622, pct: 53 }, co: { konf: 91000, real: 83735, pct: 92 } }) })
+  it('umpire', () => { expect(umpireFromGrid(g)).toEqual({ total: 21, selesai: 18, proses: 3 }) })
 })

@@ -6,7 +6,8 @@ import { kebutuhan, pct } from '../domain/kpi'
 import { compactSumber } from '../domain/view'
 export { compactSumber }
 
-export type DeckIn = { bulan: string; updateTxt: string; plants: any[]; ships: any[]; counts?: Record<string, number>; month: { carry: number; konf: number; bl: number; ds: number }; ytd: { bl: number | null; ds: number | null; blPct?: number | null; dsPct?: number | null }; real: (number | null)[]; activeIdx: number; kpi: KpiTahunan }
+type Blk = { konf: number; real: number; pct: number | null }
+export type DeckIn = { bulan: string; updateTxt: string; plants: any[]; ships: any[]; counts?: Record<string, number>; rincian?: { pln: Blk; ipp: Blk; co: Blk; dariSheet: boolean }; umpire?: { total: number; selesai: number; proses: number } | null; month: { carry: number; konf: number; bl: number; ds: number }; ytd: { bl: number | null; ds: number | null; blPct?: number | null; dsPct?: number | null }; real: (number | null)[]; activeIdx: number; kpi: KpiTahunan }
 const C = { co: '#ff0000', loading: '#1fa2ff', sailing: '#ed7d31', tiba: '#1f3864', bongkar: '#a63fa6', unloading: '#4ea72e', terjadwal: '#a6a6a6', lain: '#d4d4d4' }
 const SER: [string, string, string][] = [['carryOver', 'Carry Over', C.co], ['loading', 'Loading', C.loading], ['sailing', 'Sailing', C.sailing], ['tiba', 'Tiba/Antri', C.tiba], ['bongkar', 'Proses Bongkar', C.bongkar], ['unloading', 'Unloading', C.unloading], ['terjadwal', 'Sudah Ada Jadwal Muat', C.terjadwal], ['lain', 'Belum ada status', C.lain]]
 const GREEN = '#2f8f2f'
@@ -17,9 +18,9 @@ export function measure(t: string, size: number, bold = false, italic = false) {
   _cx.font = `${italic ? 'italic ' : ''}${bold ? 700 : 400} ${size}px Poppins, Arial, sans-serif`; return _cx.measureText(t).width
 }
 /** Singkat teks sumber tambang agar muat utuh di kotak: tingkat penyingkatan bertahap (tanpa "ft"/"MT"), 1 baris lalu 2 baris, ukuran huruf mengecil; terpotong hanya sebagai jalan terakhir. */
-export function fitSumber(t: string, size: number, maxW: number, maxH = 0): { s: string; size: number } {
+export function fitSumber(t: string, size: number, maxW: number, maxH = 0, lock = false): { s: string; size: number } {
   if (!t) return { s: '', size }
-  const sizes = [size, size - 1, size - 2, size - 3].filter(v => v >= 6.5)
+  const sizes = lock ? [size] : [size, size - 1, size - 2, size - 3].filter(v => v >= 6.5)
   const twoOk = maxH >= 19
   for (let lv = 0; lv <= 3; lv++) {
     const c = compactSumber(t, lv)
@@ -99,6 +100,25 @@ function slide2(d: DeckIn): Slide {
   return { name: 'Monitoring Pasokan', els }
 }
 
+function slideRincian(d: DeckIn): Slide {
+  const els: El[] = [bg(), title(d.updateTxt)]; const r = d.rincian; const bm = d.bulan.toUpperCase()
+  els.push(S(11, 88, 1258, 44, '#4a4a2e'), T(11, 88, 1258, 44, `RINCIAN KONFIRMASI DAN REALISASI ${bm} 2026`, 24, { color: '#fff', align: 'c', va: 'm' }))
+  const cards: [string, Blk | undefined, string, string][] = [['PLN GROUP', r?.pln, '#3b5ea0', '#5b86d0'], ['IPP', r?.ipp, '#7a933e', '#9bb35e'], ['CARRY OVER', r?.co, '#9c1c14', '#c24a42']]
+  cards.forEach(([lab, b, dark, light], i) => { const x = 11 + i * 424
+    els.push(R(x, 150, 410, 40, dark), T(x, 150, 410, 40, lab, 24, { bold: true, color: '#fff', align: 'c', va: 'm' }),
+      R(x, 194, 410, 26, light), T(x, 194, 410, 26, 'Konfirmasi (MT)', 15, { color: '#fff', align: 'c', va: 'm' }), R(x, 220, 410, 70, '#f1f1f1'), T(x, 220, 410, 70, b ? n0(b.konf) : '—', 46, { bold: true, color: '#222', align: 'c', va: 'm' }),
+      R(x, 298, 410, 26, light), T(x, 298, 410, 26, 'Realisasi · Complete Loading (MT)', 15, { color: '#fff', align: 'c', va: 'm' }), R(x, 324, 290, 70, '#f1f1f1'), T(x, 324, 290, 70, b ? n0(b.real) : '—', 46, { bold: true, color: '#222', align: 'c', va: 'm' }),
+      R(x + 294, 324, 116, 70, dark), T(x + 294, 324, 116, 70, b ? pc0(b.pct ?? pct(b.real, b.konf)) : '—', 36, { bold: true, italic: true, color: '#fff', align: 'c', va: 'm' })) })
+  const tk = r ? r.pln.konf + r.ipp.konf + r.co.konf : 0, tr = r ? r.pln.real + r.ipp.real + r.co.real : 0
+  els.push(R(11, 420, 622, 40, '#5486e8'), T(11, 420, 622, 40, 'TOTAL KONFIRMASI + CARRY OVER (MT)', 18, { bold: true, color: '#fff', align: 'c', va: 'm' }), R(11, 460, 622, 60, '#e8efff'), T(11, 460, 622, 60, r ? n0(tk) : '—', 40, { bold: true, color: '#1f3864', align: 'c', va: 'm' }),
+    R(647, 420, 622, 40, '#f0a030'), T(647, 420, 622, 40, 'TOTAL REALISASI (MT)', 18, { bold: true, color: '#fff', align: 'c', va: 'm' }), R(647, 460, 622, 60, '#fff3e0'), T(647, 460, 622, 60, r ? `${n0(tr)}  (${pc0(pct(tr, tk))})` : '—', 40, { bold: true, color: '#8a4a14', align: 'c', va: 'm' }))
+  const u = d.umpire
+  els.push(S(11, 545, 1258, 32, '#4a4a2e'), T(11, 545, 1258, 32, 'MONITORING UMPIRE TAHUN 2026', 18, { color: '#fff', align: 'c', va: 'm' }))
+  ;([['TOTAL UMPIRE', u?.total, '#3b5ea0'], ['UMPIRE SELESAI', u?.selesai, '#4ea72e'], ['PROSES UMPIRE', u?.proses, '#ed7d31']] as [string, number | undefined, string][]).forEach(([l, v, c], i) => { const x = 11 + i * 424; els.push(R(x, 582, 410, 28, c), T(x, 582, 410, 28, l, 15, { color: '#fff', align: 'c', va: 'm' }), R(x, 610, 410, 52, '#f1f1f1'), T(x, 610, 410, 52, v == null ? '—' : String(v), 36, { bold: true, color: '#222', align: 'c', va: 'm' })) })
+  els.push(T(11, 670, 1258, 16, r?.dariSheet ? 'Angka dari sheet DASHBOARD.' : `Dihitung dari shipment bulan ${d.bulan} (PLN Group = di luar PLTU IPP). Umpire hanya tersedia dari sheet DASHBOARD bulan berjalan.`, 10, { italic: true, color: '#555', align: 'c' }))
+  return { name: 'Rincian', els }
+}
+
 function nice(max: number) { const st = [5000, 10000, 20000, 25000, 50000, 100000, 200000]; const s = st.find(v => max / v <= 9) ?? 500000; return { step: s, top: Math.max(s, Math.ceil(max / s) * s) } }
 function region(d: DeckIn, reg: string): Slide {
   const els: El[] = [bg()]; const rows = d.plants.filter(r => r.wilayah === reg).map(r => ({ r, keb: kebutuhan(r), tot: SER.reduce((a, s) => a + (r[s[0]] ?? 0), 0), txt: r.__sumber as string }))
@@ -106,6 +126,7 @@ function region(d: DeckIn, reg: string): Slide {
   const n = Math.max(rows.length, 1); const top = 99, pitch = Math.min(48, 480 / n), BH = Math.min(25, pitch * 0.72), X0 = 259, PW = 557, LX = 16, LW = 100
   const mx = Math.max(1, ...rows.map(r => r.tot)); const { step, top: AX } = nice(mx); const sc = PW / AX
   els.push(R(905, 95, 348, 503, 'none', { stroke: '#2f6f4f', dash: true, sw: 1, r: 10 }), T(930, 598, 300, 22, 'Sumber Tambang', 14, { bold: true, color: GREEN, align: 'c', va: 'm' }))
+  const bwid0 = 317, bh0 = Math.min(26, pitch * 0.76); const uni = Math.min(9.5, ...rows.filter(x => x.txt).map(x => fitSumber(x.txt, 9.5, bwid0 - 14, bh0).size))
   rows.forEach(({ r, keb, tot, txt }, i) => {
     const cy = top + pitch * (i + 0.5); const y = cy - BH / 2
     els.push(T(120, cy - 10, 134, 20, r.pltu, r.pltu.length > 17 ? 9 : 11, { align: 'r', va: 'm', color: '#222' }))
@@ -116,7 +137,7 @@ function region(d: DeckIn, reg: string): Slide {
     // kanan: volume per tahapan
     let x = X0; for (const s of SER) { const v = r[s[0]] ?? 0; if (!v) continue; const w = v * sc; els.push(S(x, y, w, BH, s[2])); if (measure(fmtNum(v), 10, true) + 6 < w) els.push(T(x, y, w, BH, fmtNum(v), 10, { bold: true, align: 'c', va: 'm', color: s[0] === 'terjadwal' || s[0] === 'lain' ? '#222' : '#fff' })); x += w }
     const bx = 923, bwid = 317, bh = Math.min(26, pitch * 0.76)
-    els.push({ t: 'line', x1: Math.max(X0 + 2, x + 3), y1: cy, x2: bx - 4, y2: cy, w: 1, arrows: true }, R(bx, cy - bh / 2, bwid, bh, '#ffffff', { stroke: '#8a8a8a', r: 6 }), (() => { const f = fitSumber(txt || '', 9.5, bwid - 14, bh); return T(bx + 4, cy - bh / 2, bwid - 8, bh, f.s, f.size, { va: 'm', color: '#222' }) })())
+    els.push({ t: 'line', x1: Math.max(X0 + 2, x + 3), y1: cy, x2: bx - 4, y2: cy, w: 1, arrows: true }, R(bx, cy - bh / 2, bwid, bh, '#ffffff', { stroke: '#8a8a8a', r: 6 }), (() => { const f = fitSumber(txt || '', uni, bwid - 14, bh, true); return T(bx + 4, cy - bh / 2, bwid - 8, bh, f.s, f.size, { va: 'm', color: '#222' }) })())
   })
   for (let v = 0; v <= AX; v += step) { const x = X0 + v * sc; els.push(T(x - 28, 590, 56, 12, fmtNum(v), 8, { align: 'c', color: '#666' })) }
   ;[0, 50, 100].forEach(p => els.push(T(LX + LW * p / 100 - 18, 590, 36, 12, p + '%', 8, { align: 'c', color: '#666' })))
@@ -127,4 +148,4 @@ function region(d: DeckIn, reg: string): Slide {
   ;([['terjadwal', 'terjadwal', '#111', false], ['loading', 'loading', '#2e75b6', true], ['sailing', 'sailing', '#ed7d31', true], ['tiba', 'sandar', '#111', false], ['bongkar', 'bongkar', GREEN, false]] as [string, string, string, boolean][]).forEach(([k, l, c, it], i) => { const x = 487 + i * 99; els.push(T(x - 7, 641, 107, 24, l, 15, { bold: true, italic: it, color: c, align: 'c', va: 'm' }), R(x, 667, 93, 35, '#ffffff', { stroke: '#222', sw: 1.6, r: 8 }), T(x, 667, 93, 35, String(cn(k)), 26, { bold: true, align: 'c', va: 'm' })) })
   return { name: reg, els }
 }
-export function buildDeck(d: DeckIn): Slide[] { return [slide1(d), slide2(d), ...REGIONS.map(r => region(d, r))] }
+export function buildDeck(d: DeckIn): Slide[] { return [slide1(d), slide2(d), slideRincian(d), ...REGIONS.map(r => region(d, r))] }
