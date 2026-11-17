@@ -729,4 +729,13 @@ html[data-theme=light]{--lrc:#0891b2;--mrc:#7c3aed;--hrc:#db2777}
 .kpc:hover,.kpc.on{border-color:#e6b457;transform:translateY(-1px)}.kpc.on{box-shadow:0 0 0 1px #e6b457 inset;background:rgba(230,180,87,.08)}
 .kms{display:flex;height:6px;border-radius:4px;overflow:hidden;gap:2px;margin:8px 0}.kms i{display:block}
 .kins{border:1px solid rgba(var(--ink),.1);border-left:3px solid var(--ic,#e6b457);border-radius:12px;padding:10px 12px;background:rgba(var(--ink),.03);font-size:12.5px;line-height:1.5}.kins b{display:block;font-size:12px;letter-spacing:.2px;color:var(--ic,#e6b457);margin-bottom:2px}
+/* v42 side-by-side */
+.sbs-lg{display:flex;flex-wrap:wrap;gap:14px;font-size:11px;color:var(--muted,#94a3b8);margin-bottom:6px}.sbs-lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.sbs-r{display:grid;grid-template-columns:minmax(150px,230px) 1fr 108px;gap:14px;align-items:center;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid rgba(var(--ink),.07);padding:9px 6px;color:var(--text);font:inherit;cursor:pointer;border-radius:8px;transition:background .15s}
+.sbs-r:hover:not(:disabled){background:rgba(var(--ink),.05)}.sbs-r:disabled{cursor:default}
+.sbs-nm{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sbs-b{display:flex;flex-direction:column;gap:5px;min-width:0}.sbs-l{display:flex;align-items:center;gap:8px}.sbs-l span{font-size:11px;min-width:54px;font-variant-numeric:tabular-nums;color:var(--muted,#94a3b8)}
+.sbs-t{flex:1;height:9px;border-radius:5px;background:rgba(var(--ink),.06);overflow:hidden}.sbs-f{height:100%;border-radius:5px;min-width:2px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.sbs-p{text-align:right;display:flex;flex-direction:column;line-height:1.25}.sbs-p b{font-size:16px;font-variant-numeric:tabular-nums}.sbs-p span{font-size:11px;color:var(--muted,#94a3b8)}.sbs-p .kb-neg{color:#fbbf24}
+@media(max-width:640px){.sbs-r{grid-template-columns:1fr auto;gap:6px 10px}.sbs-b{grid-column:1/-1;order:3}}
 @media(max-width:640px){.kb{grid-template-columns:1fr}.ktab{padding:7px 12px}}
