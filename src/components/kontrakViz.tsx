@@ -58,20 +58,20 @@ export function Bullet({ name, sub, kontrak, real, color, onClick, tag }: { name
 }
 export { CLUSTERS }
 
-export type SbsItem = { key: string; name: string; sub?: string; kontrak: number; real: number; color: string; onClick?: () => void }
+export type SbsItem = { key: string; name: string; sub?: string; tag?: ReactNode; kontrak: number; real: number; color: string; onClick?: () => void }
 /** Kontrak dan realisasi berdampingan (satu skala) per baris. */
-export function SideBySide({ items, mk }: { items: SbsItem[]; mk: string }) {
+export function SideBySide({ items, mk, compact }: { items: SbsItem[]; mk: string; compact?: boolean }) {
   const mx = Math.max(1, ...items.flatMap(i => [i.kontrak, i.real]))
-  return <div className="sbs" role="list">
+  return <div className={"sbs" + (compact ? " compact" : "")} role="list">
     <div className="sbs-lg" aria-hidden><span><i style={{ background: 'rgba(var(--ink),.28)' }} />Volume kontrak</span><span><i style={{ background: '#34d399' }} />Realisasi {mk}</span><span><i style={{ background: '#fbbf24' }} />Melebihi kontrak</span></div>
     {items.map(i => { const pct = i.kontrak > 0 ? i.real / i.kontrak * 100 : null, sisa = i.kontrak - i.real, over = sisa < 0
       return <button type="button" role="listitem" key={i.key} className="sbs-r" onClick={i.onClick} disabled={!i.onClick}>
-        <div className="sbs-n"><div className="sbs-nm" title={i.name}>{i.name}</div>{i.sub && <div className="kb-sub">{i.sub}</div>}</div>
+        <div className="sbs-n"><div className="sbs-nm" title={i.name}>{i.name}{i.tag}</div>{i.sub && <div className="kb-sub">{i.sub}</div>}</div>
         <div className="sbs-b">
           <div className="sbs-l"><div className="sbs-t"><div className="sbs-f" style={{ width: `${i.kontrak / mx * 100}%`, background: 'rgba(var(--ink),.26)' }} /></div><span><em>Kontrak</em><b>{shortMT(i.kontrak)} MT</b></span></div>
           <div className="sbs-l"><div className="sbs-t"><div className="sbs-f" style={{ width: `${i.real / mx * 100}%`, background: over ? 'linear-gradient(90deg,#34d399,#fbbf24)' : `linear-gradient(90deg,${i.color},color-mix(in srgb,${i.color} 60%,#fff))` }} /></div><span><em>Realisasi</em><b>{shortMT(i.real)} MT</b></span></div>
         </div>
-        <div className="sbs-p"><b style={{ color: over ? '#fbbf24' : undefined }}>{pct == null ? '—' : pct.toLocaleString('id-ID', { maximumFractionDigits: 1 }) + '%'}</b><span className={over ? 'kb-neg' : ''}>{over ? 'lebih ' + shortMT(-sisa) : 'belum ' + shortMT(sisa)}</span></div>
+        <div className="sbs-p"><b style={{ color: over ? '#fbbf24' : undefined }}>{pct == null ? '—' : pct.toLocaleString('id-ID', { maximumFractionDigits: 1 }) + '%'}</b><span className={over ? 'kb-neg' : ''}>{over ? 'lebih ' + shortMT(-sisa) : 'belum ' + shortMT(sisa)}</span></div>{i.onClick && <span className="sbs-go" aria-hidden>›</span>}
       </button> })}
   </div>
 }

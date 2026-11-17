@@ -6,13 +6,15 @@ import { useDetail } from '../components/Detail'
 import { ClusterTag, Donut, GarBars, KTabs, Scatter, shortMT } from '../components/kontrakViz'
 import { CLUSTERS, CLUSTER_VAR, Cluster, STATUS_LABEL } from '../domain/kontrak'
 import { fmtNum, fmtPct } from '../domain/format'
-import { kontrakSpec, useBanding } from './useBanding'
+import { useBanding } from './useBanding'
+import { useKModal } from '../components/KontrakModal'
+import { makeViews } from './kontrakViews'
 const OUTLIER = 5e6
 const sum = (a: { vol: number }[]) => a.reduce((s, r) => s + r.vol, 0)
 function agg<T extends { vol: number }>(rs: T[], f: (r: T) => string) { const m = new Map<string, number>(); rs.forEach(r => m.set(f(r), (m.get(f(r)) ?? 0) + r.vol)); return [...m].sort((a, b) => b[1] - a[1]) }
 
 export default function Kontrak() {
-  const { b, sc, k } = useBanding(); const dt = useDetail()
+  const { b, sc, k } = useBanding(); const km = useKModal()
   const [q, setQ] = useState(''), [cl, setCl] = useState<Cluster | ''>(''), [st, setSt] = useState<'' | '0' | '1'>(''), [ex, setEx] = useState(false), [pl, setPl] = useState('')
   const real = useMemo(() => new Map((b?.kontrak ?? []).map(x => [x.id, x])), [b])
   const base = useMemo(() => k.rows.filter(r => !(ex && r.vol > OUTLIER) && (!cl || r.cluster === cl) && (!st || String(r.status) === st) && (!q || `${r.pelanggan} ${r.tambang} ${r.gar} ${r.cluster} ${STATUS_LABEL[r.status]}`.toLowerCase().includes(q.toLowerCase()))), [k.rows, ex, cl, st, q])
@@ -23,7 +25,10 @@ export default function Kontrak() {
   const garRows = useMemo(() => { const m = new Map<number, { v: number; c: Cluster }>(); pool.forEach(r => { const a = m.get(r.gar) ?? { v: 0, c: r.cluster }; a.v += r.vol; m.set(r.gar, a) }); return [...m].sort((x, y) => x[0] - y[0]).map(([gar, a]) => ({ gar, ...a })) }, [pool])
   const cust = agg(pool, r => r.pelanggan), mine = agg(pool.filter(r => !/^blending/i.test(r.tambang)), r => r.tambang.replace(/^(PT|CV)\s+/i, ''))
   const plantCards = useMemo(() => { const m = new Map<string, typeof base>(); base.forEach(r => m.set(r.pelanggan, [...(m.get(r.pelanggan) ?? []), r])); return [...m].map(([n, v]) => ({ n, v, t: sum(v) })).sort((a, b) => b.t - a.t) }, [base])
-  const showK = (id: string) => { const r = real.get(id); if (r && b) dt.open(kontrakSpec(r, b, 'ds', sc.label)) }
+  const V = b ? makeViews(b, 'ds', sc.label) : null
+  const showK = (id: string) => { const r = real.get(id); if (r && V) km.open(V.contractView(r)) }
+  const poolK = (b?.kontrak ?? []).filter(c => pool.some(r => r.id === c.id))
+  const kOpen = (f: () => any) => V ? () => km.open(f()) : undefined
   const rows = pool.map(r => { const x = real.get(r.id); const ds = x?.real.ds ?? 0; return { ...r, ds, pct: r.vol > 0 && b ? ds / r.vol * 100 : null, statusTxt: STATUS_LABEL[r.status] } })
   const cols: Col[] = [{ key: 'no', label: 'No' }, { key: 'pelanggan', label: 'PLTU / Pelanggan' }, { key: 'tambang', label: 'Sumber tambang' }, { key: 'gar', label: 'GAR' }, { key: 'cluster', label: 'Cluster', fmt: v => <ClusterTag c={v} /> }, { key: 'vol', label: 'Volume (MT)', fmt: v => fmtNum(v) },
     { key: 'ds', label: `Realisasi D/S · ${sc.label}`, tip: 'Estimasi alokasi shipment pemasok ke kontrak (lihat Kontrak vs Realisasi)', fmt: v => b ? fmtNum(v) : '…' }, { key: 'pct', label: 'Pemenuhan', fmt: v => v == null ? '—' : <span style={{ color: v > 100 ? '#fbbf24' : undefined }}>{fmtPct(v)}</span> },
@@ -42,9 +47,10 @@ export default function Kontrak() {
     </div>
     {!pool.length ? <Empty text="Tidak ada kontrak yang cocok" hint="Ubah kata kunci atau reset filter." /> : <>
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2 mb-3">
-        <Kpi label="Total volume" value={fmtNum(tot)} unit="MT" accent="#e6b457" /><Kpi label="Jumlah kontrak" value={fmtNum(pool.length)} unit="baris kontrak" accent="#38bdf8" /><Kpi label="GAR rata-rata tertimbang" value={fmtNum(gar)} unit="kcal/kg" accent="#a78bfa" />
-        <Kpi label="Pelanggan unik" value={fmtNum(new Set(pool.map(r => r.pelanggan)).size)} unit="PLTU / entitas" accent="#34d399" /><Kpi label="Pemasok" value={fmtNum(new Set(pool.map(r => r.tambang)).size)} unit="sumber tambang" accent="#f472b6" /><Kpi label="Dalam proses kontrak baru" value={fmtNum(open)} unit={`MT (${tot ? fmtNum(open / tot * 100, 1) : 0}%)`} accent="#fbbf24" />
+        <Kpi label="Total volume" value={fmtNum(tot)} unit="MT" accent="#e6b457" onClick={kOpen(() => V!.contracts('Total volume kontrak', poolK, { sort: 'kontrak-desc' }))} /><Kpi label="Jumlah kontrak" value={fmtNum(pool.length)} unit="baris kontrak" accent="#38bdf8" onClick={kOpen(() => V!.contracts('Semua kontrak', poolK, { sort: 'kontrak-desc', color: '#38bdf8' }))} /><Kpi label="GAR rata-rata tertimbang" value={fmtNum(gar)} unit="kcal/kg" accent="#a78bfa" />
+        <Kpi label="Pelanggan unik" value={fmtNum(new Set(pool.map(r => r.pelanggan)).size)} unit="PLTU / entitas" accent="#34d399" onClick={kOpen(() => V!.pltuList({ cs: poolK }))} /><Kpi label="Pemasok" value={fmtNum(new Set(pool.map(r => r.tambang)).size)} unit="sumber tambang" accent="#f472b6" onClick={kOpen(() => V!.pemasokList())} /><Kpi label="Dalam proses kontrak baru" value={fmtNum(open)} unit={`MT (${tot ? fmtNum(open / tot * 100, 1) : 0}%)`} accent="#fbbf24" onClick={kOpen(() => V!.contracts('Dalam proses kontrak baru', poolK.filter(c => c.status === 1), { color: '#fbbf24', sub: 'Status On Progress Kontrak Baru' }))} />
       </div>
+      {km.node}
       <div className="grid lg:grid-cols-3 gap-3 mb-3">
         <Card title="Komposisi cluster kalori"><Donut items={byCl} center={shortMT(tot)} sub="MT total" active={cl || undefined} onPick={c => setCl(cl === c ? '' : c as Cluster)} /></Card>
         <Card title="Status kontrak">{([0, 1] as const).map(s => { const v = sum(pool.filter(r => r.status === s)), n = pool.filter(r => r.status === s).length, c = s ? '#fbbf24' : '#34d399'; return <button key={s} className="block w-full text-left my-3" onClick={() => setSt(st === String(s) ? '' : String(s) as any)}><div className="flex justify-between text-[13px]"><span style={{ color: c }}>● {STATUS_LABEL[s]}</span><b>{shortMT(v)} MT</b></div><div className="h-2.5 rounded-full bg-white/10 mt-1.5 overflow-hidden"><div style={{ width: `${v / (tot || 1) * 100}%`, background: c }} className="h-full rounded-full" /></div><div className="text-[11px] text-slate-400 mt-1">{n} kontrak</div></button> })}<p className="text-[11px] text-slate-400">Klik untuk memfilter. Kontrak baru yang masih proses bersumber dari KBS (Jawa-7) dan Blending BBS ITM (Jeneponto).</p></Card>

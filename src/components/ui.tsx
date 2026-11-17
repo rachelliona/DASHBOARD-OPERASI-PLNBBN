@@ -22,9 +22,9 @@ function Anim({ v }: { v: string }) {
   if (!m || target == null || cur == null) return <>{v}</>
   return <>{fmtNum(cur, m[2]?.length ?? 0)}{m[3]}</>
 }
-export const Kpi = ({ label, value, unit, note, tip, accent }: { label: string; value: string; unit?: string; note?: string; tip?: string; accent?: string }) => (
-  <div title={tip} className="kpi" style={{ ['--ac' as any]: accent ?? '#2a2f3a' }}><div className="text-[10.5px] uppercase tracking-wider text-slate-400 leading-tight">{label}</div>
-    <div className="text-[22px] font-bold num mt-1 leading-none"><Anim v={value} /> <span className="text-[11px] font-normal text-slate-400">{unit}</span></div>{note && <div className="text-[11px] text-slate-400 mt-1">{note}</div>}</div>)
+export const Kpi = ({ label, value, unit, note, tip, accent, onClick }: { label: string; value: string; unit?: string; note?: string; tip?: string; accent?: string; onClick?: () => void }) => (
+  <div title={tip} className={'kpi' + (onClick ? ' kpi-click' : '')} {...(onClick ? { role: 'button', tabIndex: 0, onClick, onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() } } } : {})} style={{ ['--ac' as any]: accent ?? '#2a2f3a' }}><div className="text-[10.5px] uppercase tracking-wider text-slate-400 leading-tight">{label}</div>
+    <div className="text-[22px] font-bold num mt-1 leading-none"><Anim v={value} /> <span className="text-[11px] font-normal text-slate-400">{unit}</span></div>{note && <div className="text-[11px] text-slate-400 mt-1">{note}</div>}{onClick && <div className="kpi-more">Lihat detail ›</div>}</div>)
 /** Pil filter wilayah: teks netral + titik warna wilayah, supaya tidak bertabrakan dengan warna tahapan. */
 export const RegionChip = ({ label, color, on, onClick }: { label: string; color?: string; on: boolean; onClick: () => void }) => (
   <button onClick={onClick} aria-pressed={on} className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs" style={{ borderColor: on ? 'var(--text)' : 'rgba(var(--ink),.22)', background: on ? 'var(--text)' : 'rgba(var(--ink),.03)', color: on ? 'var(--s1)' : 'var(--text)', fontWeight: on ? 600 : 400 }}>
