@@ -120,7 +120,7 @@ export default function Map3D({ rows, color, sel, onSel, showShips: ships0, reg 
   }, [maxV])
   const onSelRef = useRef(onSel); onSelRef.current = onSel
   const chip = 'rounded-full border px-2.5 py-0.5 text-[11px] backdrop-blur whitespace-nowrap shrink-0 '
-  return <div ref={wrap} className="map3d relative h-[62vh] min-h-[380px] md:h-[560px] rounded-xl overflow-hidden border border-white/10 select-none" style={{ touchAction: 'none' }}>
+  return <div ref={wrap} className="map3d relative h-[62vh] min-h-[380px] md:h-[calc(100vh-300px)] md:min-h-[540px] rounded-xl overflow-hidden border border-white/10 select-none" style={{ touchAction: 'none' }}>
     <canvas ref={cv} aria-label="Peta 3D PLTU dan kapal" role="img" className="absolute inset-0" style={{ cursor: 'grab' }} />
     <div className="absolute left-2 top-2 right-2 pointer-events-none"><div className="flex gap-1.5 pointer-events-auto overflow-x-auto no-scrollbar pb-1">
       <button className={chip + (!reg ? 'bg-[#e6b457] text-black border-[#e6b457]' : 'bg-black/40 border-white/20')} onClick={() => fly('')}>Seluruh Indonesia</button>

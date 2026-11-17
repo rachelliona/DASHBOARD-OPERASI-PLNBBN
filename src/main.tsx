@@ -5,6 +5,7 @@ import App from './App'
 import { StoreProvider } from './store'
 import { DetailProvider } from './components/Detail'
 import { AuthProvider } from './auth'
+import '@fontsource-variable/inter'
 import './index.css'
 createRoot(document.getElementById('root')!).render(<React.StrictMode><HashRouter><AuthProvider><StoreProvider><DetailProvider><App /></DetailProvider></StoreProvider></AuthProvider></HashRouter></React.StrictMode>)
 if ('serviceWorker' in navigator && import.meta.env.PROD && (location.protocol === 'https:' || location.hostname === 'localhost')) window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => { /* tanpa offline cache: aplikasi tetap jalan */ }) })

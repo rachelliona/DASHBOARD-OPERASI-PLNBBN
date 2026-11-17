@@ -2,7 +2,7 @@ import FoldInit from './components/FoldInit'
 import PltuDetail from './pages/PltuDetail'
 import { useEffect, useState } from 'react'
 import { NavLink, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
-import { Activity, Download, Search, ChevronDown, ChevronsLeft, ChevronsRight, Circle, Database, FileText, LayoutDashboard, LogOut, Map as MapIcon, Menu, Users, X } from 'lucide-react'
+import { Activity, Download, Search, ChevronDown, ChevronsLeft, ChevronsRight, Circle, Database, FileSignature, FileText, LayoutDashboard, LogOut, Map as MapIcon, Menu, Users, X } from 'lucide-react'
 import { useStore } from './store'
 import Ringkasan from './pages/Ringkasan'
 import Laporan from './pages/Laporan'
@@ -12,6 +12,10 @@ import Linimasa from './pages/Linimasa'
 import Eta from './pages/Eta'
 import GanttPage from './pages/Gantt'
 import Analisis from './pages/Analisis'
+import KinerjaMitra from './pages/KinerjaMitra'
+import Kontrak from './pages/Kontrak'
+import KontrakBanding from './pages/KontrakBanding'
+import KontrakData from './pages/KontrakData'
 import Simulasi from './pages/Simulasi'
 import { MonitoringShipment, MonitoringPltu, SheetPage } from './pages/Monitoring'
 import { RealisasiBulan, RealisasiRingkasan } from './pages/Realisasi'
@@ -29,7 +33,7 @@ import { fmtDate } from './domain/format'
 import { setTheme, useTheme } from './theme'
 import { Moon, Sun } from 'lucide-react'
 const TABS: [string, string, any][] = [['/', 'Ringkasan', LayoutDashboard], ['/peta', 'Peta', MapIcon], ['/laporan/harian', 'Laporan', FileText], ['/dashboard', 'Interaktif', Activity]]
-const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: FileText, activity: Activity, users: Users, db: Database }
+const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: FileText, activity: Activity, users: Users, db: Database, contract: FileSignature }
 const B = import.meta.env.BASE_URL
 const Img = ({ mark, cls }: { mark?: boolean; cls: string }) => <><img src={B + (mark ? 'logo-mark-dark.png' : 'logo-dark.png')} alt="PLN Batubara Niaga" className={cls + ' lg-d'} /><img src={B + (mark ? 'logo-mark-light.png' : 'logo-light.png')} alt="PLN Batubara Niaga" className={cls + ' lg-l'} /></>
 function ThemeBtn() { const t = useTheme(); const light = t === 'light'; return <button aria-label={light ? 'Ganti ke mode gelap' : 'Ganti ke mode terang'} title={light ? 'Mode gelap' : 'Mode terang'} onClick={() => setTheme(light ? 'dark' : 'light')} className="theme-btn">{light ? <Moon size={16} /> : <Sun size={16} />}<span className="hidden xl:inline text-[11px]">{light ? 'Gelap' : 'Terang'}</span></button> }
@@ -79,7 +83,7 @@ export default function App() {
       <div key={'p' + pathname} className="p-3 md:p-4 lg:p-6 page page-in pb-24 lg:pb-8"><Routes>
         <Route path="/" element={<Ringkasan />} /><Route path="/peta" element={<Peta />} />
         <Route path="/laporan" element={<Navigate to="/laporan/harian" replace />} /><Route path="/laporan/harian" element={<Laporan />} />
-        <Route path="/eta" element={<Eta />} /><Route path="/analisis" element={<Analisis />} /><Route path="/gantt" element={<GanttPage />} /><Route path="/simulasi" element={<Simulasi />} /><Route path="/linimasa" element={<Linimasa />} /><Route path="/dashboard" element={<Dashboard />} /><Route path="/shipment" element={<MonitoringShipment />} /><Route path="/pltu" element={<MonitoringPltu />} /><Route path="/pltu/:nama" element={<PltuDetail />} />
+        <Route path="/eta" element={<Eta />} /><Route path="/analisis" element={<Analisis />} /><Route path="/kinerja-mitra" element={<KinerjaMitra />} /><Route path="/kontrak" element={<Kontrak />} /><Route path="/kontrak/banding" element={<KontrakBanding />} /><Route path="/kontrak/data" element={<KontrakData />} /><Route path="/gantt" element={<GanttPage />} /><Route path="/simulasi" element={<Simulasi />} /><Route path="/linimasa" element={<Linimasa />} /><Route path="/dashboard" element={<Dashboard />} /><Route path="/shipment" element={<MonitoringShipment />} /><Route path="/pltu" element={<MonitoringPltu />} /><Route path="/pltu/:nama" element={<PltuDetail />} />
         <Route path="/realisasi" element={<RealisasiRingkasan />} /><Route path="/realisasi/:bulan" element={<RealisasiBulan />} />
         <Route path="/sheet/:name" element={<SheetGuard admin={isAdmin(user)} />} /><Route path="/sumber-data" element={isAdmin(user) ? <Sumber /> : <Navigate to="/" replace />} /><Route path="/pengaturan" element={isAdmin(user) ? <Pengaturan /> : <Navigate to="/" replace />} />
       </Routes></div></main>

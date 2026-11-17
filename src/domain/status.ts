@@ -14,4 +14,4 @@ export const STATUS_ALIASES: Record<string, string> = { ...Object.fromEntries(ST
   [norm('Sudah Ada Jadwal Muat')]: 'terjadwal', [norm('Proses Loading')]: 'loading', [norm('Selesai Muat/Sailing')]: 'sailing', [norm('Selesai Bongkar')]: 'unloading' }
 export const stageOf = (raw: unknown): string | null => STATUS_ALIASES[norm(raw)] ?? null
 export const stageLabel = (k: string | null) => STATUSES.find(s => s.key === k)?.label ?? 'Belum Dipetakan'
-export const REGIONS = ['JAMALI', 'Sumatra', 'Kalimantan', 'Sulmapana 1', 'Sulmapana 2', 'PLTU IPP']
+export const REGIONS = ['JAMALI', 'Sumatra', 'Kalimantan', 'Sulmapana 1', 'Sulmapana 2', 'PLTU IPP', 'Lainnya']
