@@ -1,6 +1,9 @@
 import { fmtNum } from './format'
 export const tone = (p: number | null) => p == null ? '#6b7280' : p >= 100 ? '#86efac' : p >= 85 ? '#34d399' : p >= 60 ? '#2dd4bf' : p >= 30 ? '#22d3ee' : '#60a5fa'
 /** "22 Oktober 2026 pukul 15.23 WIB" -> "22 OKTOBER 2026, 15.23 WIB" */
+/** Ganti jam pada teks "8 November 2026 pukul 07.27 WIB" dengan jam pilihan ("HH:MM"). Tanpa jam di teks → tambahkan. */
+export const withJam = (at: string, jam: string) => { const m = /^(\d{1,2}):(\d{2})$/.exec(jam); if (!m) return at; const j = `${m[1].padStart(2, '0')}.${m[2]} WIB`; const d = (at || '').split(' pukul ')[0].trim(); return d ? `${d} pukul ${j}` : at }
+export const jamDari = (at: string) => { const m = /pukul\s+(\d{1,2})[.:](\d{2})/.exec(at || ''); return m ? `${m[1].padStart(2, '0')}:${m[2]}` : '' }
 export const fmtUpdate = (at: string) => at.replace(' pukul ', ', ').toUpperCase()
 /** Gaya kolom "Sumber Tambang" laporan harian: BIB (6 tongkang 300ft; 45,1rb MT) */
 export function sumberText(rows: any[]) {

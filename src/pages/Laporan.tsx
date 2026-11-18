@@ -9,12 +9,12 @@ import { STAGES, REGIONS, norm } from '../domain/status'
 import { BULAN, aggregatePlants, toShipRows } from '../domain/monthly'
 import { pct, plantActual, kebutuhan, sum } from '../domain/kpi'
 import { fmtNum, fmtPct } from '../domain/format'
-import { compactSumber, fmtUpdate, sumberText, tone } from '../domain/view'
+import { compactSumber, fmtUpdate, jamDari, sumberText, tone, withJam } from '../domain/view'
 import { REGION_COLOR } from '../config/regions'
 import LaporanSlide from './LaporanSlide'
 import DateSelector from '../components/DateSelector'
 import { useDetail } from '../components/Detail'
-import { Copy, Check, Maximize2 } from 'lucide-react'
+import { Copy, Check, Clock, Maximize2 } from 'lucide-react'
 const SEG = [...STAGES, { key: 'terjadwal', label: 'Sudah Ada Jadwal Muat', color: '#94a3b8' }, { key: 'lain', label: 'Belum ada status', color: '#64748b' }]
 const ACTIVE = ['loading', 'sailing', 'tiba', 'bongkar']; const ROW = 30; const M = { top: 5, right: 64, left: 0, bottom: 5 }
 const SORTS: Record<string, (a: any, b: any) => number> = { urut: () => 0, rendah: (a, b) => (a.p ?? -1) - (b.p ?? -1), tinggi: (a, b) => (b.p ?? -1) - (a.p ?? -1), besar: (a, b) => b.keb - a.keb }
@@ -23,9 +23,13 @@ export default function Laporan() {
   useEffect(() => { if (!asOf && b !== bulanAktif && BULAN.includes(b) && !raw[b] && !status[b]) fetchSheet(b) }, [b, asOf])
   const dt = useDetail(); const [copied, setCopied] = useState(false)
   const mm = months[b]; const alt = b !== bulanAktif && mm && !mm.missing.length
-  const ds = useMemo(() => alt ? { rows: aggregatePlants(mm.ships), source: `Sheet ${b}`, at: mm.at } as any : kinds.plant, [alt, mm, kinds.plant]); const sh = useMemo(() => alt ? toShipRows(mm.ships) as any[] : kinds.shipment?.rows ?? [], [alt, mm, kinds.shipment])
+  const [jam, setJam] = useState('')
+  const ds0 = useMemo(() => alt ? { rows: aggregatePlants(mm.ships), source: `Sheet ${b}`, at: mm.at } as any : kinds.plant, [alt, mm, kinds.plant])
+  const ds = useMemo(() => ds0 && jam ? { ...ds0, at: withJam(ds0.at, jam) } : ds0, [ds0, jam]); const sh = useMemo(() => alt ? toShipRows(mm.ships) as any[] : kinds.shipment?.rows ?? [], [alt, mm, kinds.shipment])
   const [basis, setBasis] = useState<'bl' | 'ds'>('bl'); const [view, setView] = useState<'slide' | 'interaktif'>('slide'); const [reg, setReg] = useState(REGIONS[0]); const [q, setQ] = useState(''); const [stage, setStage] = useState(''); const [mode, setMode] = useState<'grafik' | 'tabel'>('grafik'); const [sort, setSort] = useState('urut')
-  const tglBar = <div className="flex flex-wrap items-center gap-2 mb-3 no-print"><span className="text-[11px] text-slate-400">Tanggal data:</span><DateSelector /><span className="text-[11px] text-slate-500">{asOf ? 'Menampilkan keadaan data pada tanggal itu' : 'Langsung dari sheet, diperbarui otomatis'}</span></div>
+  const tglBar = <div className="flex flex-wrap items-center gap-2 mb-3 no-print"><span className="text-[11px] text-slate-400">Tanggal data:</span><DateSelector /><span className="inline-flex items-center gap-1.5 ml-2"><Clock size={13} className="text-slate-400" /><span className="text-[11px] text-slate-400">Jam update:</span><input type="time" aria-label="Jam update laporan" value={jam || jamDari(ds0?.at ?? '')} onChange={e => setJam(e.target.value)} className="!w-[96px]" />
+      <button type="button" className="pbtn" data-tip="Pakai jam sekarang (WIB)" onClick={() => setJam(new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' }))}>Sekarang</button>
+      {jam && <button type="button" className="pbtn" data-tip="Kembali ke jam dari sheet" onClick={() => setJam('')}>Otomatis</button>}</span><span className="text-[11px] text-slate-500">{asOf ? 'Menampilkan keadaan data pada tanggal itu' : 'Langsung dari sheet, diperbarui otomatis'}</span></div>
   const bulanBar = <div className="chips flex flex-wrap gap-1.5 mb-3 no-print"><span className="text-[11px] text-slate-400 self-center">Bulan:</span>{BULAN.map(x => { const ok = !!months[x] && !months[x].missing.length; return <button key={x} disabled={!ok && x !== bulanAktif && !!asOf} onClick={() => setBln(x === bulanAktif ? '' : x)} className={'fchip' + (b === x ? ' on' : '')} style={{ ['--c' as any]: ok || x === bulanAktif ? '#34d399' : '#64748b' }}>{x}</button> })}</div>
   if (!ds) return <Empty />
   if (b !== bulanAktif && !alt) return <>{bulanBar}<Card><p className="text-xs">{asOf ? 'Data Belum Tersedia pada tanggal ini.' : status[b]?.state === 'Gagal Diakses' ? 'Gagal Mengambil Data' : 'Memuat Data…'}</p></Card></>

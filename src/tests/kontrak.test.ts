@@ -25,3 +25,12 @@ describe('kontrak', () => {
   it('tempel dari Excel', () => { const r = parsePaste('4\tPLN/PNP\tPT Artha Tunggal Mandiri\t3700\tLRC\t687,000\tTerkontrak\n9\tX\tY\t5200\t\t1.000\tOn Progress'); expect(r.length).toBe(2); expect(r[0].vol).toBe(687000); expect(r[1].cluster).toBe('HRC'); expect(r[1].status).toBe(1) })
 })
 function sumSeed() { return 687000 + 52500 + 30000 + 70000 + 30000 + 105000 + 50000 + 11608000 + 226000 * 5 + 400000 + 250000 + 400000 + 165000 + 580000 + 544500 + 1075500 + 200000 + 30000 + 45000 + 35000 + 500000 + 350000 + 15000 + 7500 * 5 + 7500 + 15000 + 22500 + 100000 + 40000 + 400000 + 1050000 + 480000 + 77000 + 100000 + 100000 + 23000 + 1150000 + 150000 + 150000 + 351915 + 50000 + 150000 }
+
+import { withJam, jamDari, fmtUpdate } from '../domain/view'
+describe('jam update laporan', () => {
+  it('mengganti jam dan menjaga tanggal', () => {
+    expect(withJam('8 November 2026 pukul 07.27 WIB', '15:05')).toBe('8 November 2026 pukul 15.05 WIB')
+    expect(fmtUpdate(withJam('8 November 2026 pukul 07.27 WIB', '09:00'))).toBe('8 NOVEMBER 2026, 09.00 WIB')
+    expect(jamDari('8 November 2026 pukul 07.27 WIB')).toBe('07:27'); expect(withJam('x', 'bad')).toBe('x')
+  })
+})
