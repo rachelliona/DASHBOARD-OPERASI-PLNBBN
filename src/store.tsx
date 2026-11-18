@@ -15,7 +15,7 @@ export type MD = PM & { at: string }
 export type Snap = { v: number; date: string; at: string; dashCsv?: string; bulan: string; all: PM; months: Record<string, PM> }
 type St = { kinds: Record<string, DS>; raw: Record<string, DS>; status: Record<string, Stat>; threshold: number; intervalSec: number; bulanAktif: string
   monthly: MD | null; all: MD | null; months: Record<string, MD>; asOf: string; setAsOf: (d: string) => void; snapList: string[] | null; snapState: string; snapDashCsv?: string
-  fetchSheet: (name: string) => Promise<void>; setKind: (k: string, d: DS) => void; setRaw: (n: string, d: DS) => void; setStatus: (n: string, s: Stat) => void; setThreshold: (n: number) => void; setIntervalSec: (n: number) => void; clear: () => void }
+  refreshNow: () => Promise<void>; refreshing: boolean; lastRefresh: number; fetchSheet: (name: string) => Promise<void>; setKind: (k: string, d: DS) => void; setRaw: (n: string, d: DS) => void; setStatus: (n: string, s: Stat) => void; setThreshold: (n: number) => void; setIntervalSec: (n: number) => void; clear: () => void }
 const Ctx = createContext<St>(null as any)
 export const useStore = () => useContext(Ctx)
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -47,6 +47,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     } catch (e: any) { setS(prev => ({ ...prev, [name]: { ...prev[name], state: 'Gagal Diakses', msg: (e.name === 'AbortError' ? 'Waktu habis (30 dtk)' : e.message) + ' — kemungkinan diblokir CORS/jaringan' } })) } finally { clearTimeout(t); inflight.current.delete(name) } }
   const refreshAll = async () => { if (busy.current || asOfRef.current) return; busy.current = true; try { for (const [n, x] of Object.entries(rawRef.current)) if (x.source === 'URL CSV') await fetchSheet(n) } finally { busy.current = false } }
   const refreshRef = useRef(refreshAll); refreshRef.current = refreshAll
+  const [refreshing, setRefreshing] = useState(false); const [lastRefresh, setLast] = useState(0)
+  /** Muat ulang manual: ambil ulang semua sheet yang sudah termuat + beri tahu halaman yang memuat datanya sendiri. */
+  const refreshNow = async () => { if (asOfRef.current || refreshing) return; setRefreshing(true); window.dispatchEvent(new Event('pln-refresh')); try { for (let i = 0; i < 40 && busy.current; i++) await new Promise(r => setTimeout(r, 250)); await refreshRef.current(); await new Promise(r => setTimeout(r, 400)) } finally { setRefreshing(false); setLast(Date.now()) } }
   const setAsOf = async (d: string) => {
     setAsOfS(d); setSnap(null); if (!d) { setSnapState(''); return }
     setSnapState('Memuat Snapshot…')
@@ -55,7 +58,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (user) fetchSheet(liveBulan) }, [user])
   useEffect(() => { if (!user) return; (async () => { try { const r = await fetch(snapBase() + '/index.json', { cache: 'no-store' }); if (!r.ok) throw new Error(); const j = await r.json(); setSnapList([...(j.dates ?? [])].sort()) } catch { setSnapList([]) } })() }, [user])
   useEffect(() => { const tick = () => { if (document.visibilityState === 'visible') refreshRef.current() }; const id = setInterval(tick, intervalSec * 1000); document.addEventListener('visibilitychange', tick); return () => { clearInterval(id); document.removeEventListener('visibilitychange', tick) } }, [intervalSec])
-  return <Ctx.Provider value={{ fetchSheet, kinds, raw, status, threshold, intervalSec, bulanAktif, monthly, all, months, asOf, setAsOf, snapList, snapState, snapDashCsv: snapMode ? snap?.dashCsv : undefined,
+  return <Ctx.Provider value={{ refreshNow, refreshing, lastRefresh, fetchSheet, kinds, raw, status, threshold, intervalSec, bulanAktif, monthly, all, months, asOf, setAsOf, snapList, snapState, snapDashCsv: snapMode ? snap?.dashCsv : undefined,
     setIntervalSec: (n: number) => { localStorage.setItem('pln-interval', String(n)); setI(n) },
     setKind: (k, x) => setK(p => ({ ...p, [k]: x })), setRaw: (n, x) => setR(p => ({ ...p, [n]: x })), setStatus: (n, s) => setS(p => ({ ...p, [n]: s })),
     setThreshold: n => { localStorage.setItem('pln-threshold', String(n)); setT(n) }, clear: () => { setK({}); setR({}); setS({}) } }}>{children}</Ctx.Provider>

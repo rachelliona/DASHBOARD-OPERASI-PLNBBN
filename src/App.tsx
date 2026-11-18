@@ -31,11 +31,15 @@ import { useAuth } from './auth'
 import { navFor, isAdmin, DATA_SHEETS, NavItem } from './config/nav'
 import { fmtDate } from './domain/format'
 import { setTheme, useTheme } from './theme'
-import { Moon, Sun } from 'lucide-react'
+import { Moon, RefreshCw, Sun } from 'lucide-react'
 const TABS: [string, string, any][] = [['/', 'Ringkasan', LayoutDashboard], ['/peta', 'Peta', MapIcon], ['/laporan/harian', 'Laporan', FileText], ['/dashboard', 'Interaktif', Activity]]
 const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: FileText, activity: Activity, users: Users, db: Database, contract: FileSignature }
 const B = import.meta.env.BASE_URL
 const Img = ({ mark, cls }: { mark?: boolean; cls: string }) => <><img src={B + (mark ? 'logo-mark-dark.png' : 'logo-dark.png')} alt="PLN Batubara Niaga" className={cls + ' lg-d'} /><img src={B + (mark ? 'logo-mark-light.png' : 'logo-light.png')} alt="PLN Batubara Niaga" className={cls + ' lg-l'} /></>
+function RefreshBtn() { const { refreshNow, refreshing, lastRefresh, asOf, setAsOf } = useStore(); const [, tick] = useState(0); useEffect(() => { const id = setInterval(() => tick(x => x + 1), 15000); return () => clearInterval(id) }, [])
+  const ago = lastRefresh ? Math.max(0, Math.round((Date.now() - lastRefresh) / 60000)) : null
+  const tip = asOf ? `Sedang melihat salinan data ${asOf}. Klik untuk kembali ke data terkini dari sheet` : refreshing ? 'Memuat ulang data dari sheet…' : `Muat ulang data dari sheet sekarang${ago != null ? ` · terakhir ${ago < 1 ? 'baru saja' : ago + ' menit lalu'}` : ' · otomatis tiap menit'}`
+  return <button type="button" aria-label="Muat ulang data" title={tip} data-tip={tip} disabled={refreshing} onClick={() => asOf ? setAsOf('') : refreshNow()} className="theme-btn"><RefreshCw size={16} className={refreshing ? 'spin-r' : ''} /><span className="hidden xl:inline text-[11px]">{refreshing ? 'Memuat…' : asOf ? 'Data terkini' : 'Refresh'}</span></button> }
 function ThemeBtn() { const t = useTheme(); const light = t === 'light'; return <button aria-label={light ? 'Ganti ke mode gelap' : 'Ganti ke mode terang'} title={light ? 'Mode gelap' : 'Mode terang'} onClick={() => setTheme(light ? 'dark' : 'light')} className="theme-btn">{light ? <Moon size={16} /> : <Sun size={16} />}<span className="hidden xl:inline text-[11px]">{light ? 'Gelap' : 'Terang'}</span></button> }
 function SheetGuard({ admin }: { admin: boolean }) { const { name = '' } = useParams(); let n = name; try { n = decodeURIComponent(name) } catch { /* apa adanya */ } return !admin && DATA_SHEETS.has(n) ? <Navigate to="/" replace /> : <SheetPage /> }
 function Item({ item, depth, rail, onExpand }: { item: NavItem; depth: number; rail?: boolean; onExpand?: () => void }) {
@@ -73,7 +77,7 @@ export default function App() {
             <Img mark cls="lg:hidden h-8 w-auto" /><div className="min-w-0"><h1 className="text-sm font-bold leading-tight truncate"><span className="lg:hidden">Dashboard Operasi PLN BBN</span><span className="hidden lg:inline">Dashboard Operasi PLN Batubara Niaga</span></h1>
               <div className="hidden lg:flex items-center gap-2 mt-0.5 min-w-0">{asOf ? <span className="badge past">◷ Data per {fmtDate(asOf)}</span> : <span className="badge live"><i className="pulse" />Langsung · {last ?? 'memuat…'}</span>}</div></div></div>
           <button aria-label="Cari (Ctrl+K)" onClick={() => setPal(true)} className="top-search hidden lg:flex"><Search size={15} /><span>Cari halaman, PLTU, shipment…</span><kbd>Ctrl K</kbd></button>
-          <div className="top-r"><span className="lg:hidden"><button aria-label="Cari" onClick={() => setPal(true)} className="theme-btn"><Search size={16} /></button></span><NotifBell /><ThemeBtn /><div className="hidden lg:block"><DateSelector /></div></div>
+          <div className="top-r"><span className="lg:hidden"><button aria-label="Cari" onClick={() => setPal(true)} className="theme-btn"><Search size={16} /></button></span><NotifBell /><RefreshBtn /><ThemeBtn /><div className="hidden lg:block"><DateSelector /></div></div>
         </div>
         <div className="flex items-center gap-2 mt-2 lg:hidden overflow-x-auto no-scrollbar"><DateSelector />
           {asOf ? <span className="badge past">◷ Data per {fmtDate(asOf)}</span> : <span className="badge live"><i className="pulse" />Langsung · {last ?? 'memuat…'}</span>}</div>

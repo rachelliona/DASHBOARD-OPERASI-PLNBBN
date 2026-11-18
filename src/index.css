@@ -795,3 +795,4 @@ html[data-theme=light] .km-back{background:rgba(30,36,50,.38)}html[data-theme=li
 @keyframes kmSide{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
 @media(max-width:700px){.km-back.side{align-items:flex-end}.km.side{height:auto;max-height:92vh;border-radius:22px 22px 0 0;animation:kmSheet .28s cubic-bezier(.2,.9,.25,1) both}}
 .km.side .km-hero-r{width:100%}.km.side .sbs.compact .sbs-r{grid-template-columns:1fr}.km.side .km-hero{gap:14px}
+.spin-r{animation:spinR .8s linear infinite}@keyframes spinR{to{transform:rotate(360deg)}}.theme-btn:disabled{opacity:.55;cursor:default}
