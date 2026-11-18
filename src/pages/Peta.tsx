@@ -10,7 +10,7 @@ import { fmtNum, fmtPct } from '../domain/format'
 import { REGION_COLOR } from '../config/regions'
 import { tone } from '../domain/view'
 import { BULAN, aggregateYtd } from '../domain/monthly'
-import { Box, Grid2x2, Map as MapIc, Waves, Info, Trophy, Layers, RotateCcw } from 'lucide-react'
+import { Box, Grid2x2, Map as MapIc, Waves, Info, Trophy, Layers, RotateCcw, SlidersHorizontal } from 'lucide-react'
 import { useDetail } from '../components/Detail'
 import Map3D from '../components/map/Map3D'
 import FlowLanes from '../components/map/FlowLanes'
@@ -19,6 +19,7 @@ type VW = 'd3' | 'jalur' | 'region' | 'klasik'
 const VIEWS: [VW, string, any][] = [['d3', 'Peta 3D', Box], ['jalur', 'Jalur Laut–Darat', Waves], ['region', 'Per Region', Grid2x2], ['klasik', 'Peta Klasik', MapIc]]
 const MODES: Record<string, string> = { wilayah: 'Wilayah', pemenuhan: 'Pemenuhan', status: 'Status dominan' }
 export default function Peta() {
+  const [fopen, setFopen] = useState(false)
   const th = useTheme(); const dt = useDetail()
   const { kinds, all, raw, status, fetchSheet, asOf } = useStore(); const plants = kinds.plant?.rows ?? [], ships = kinds.shipment?.rows ?? [], lok = kinds.lokasi?.rows ?? []
   const [view, setView] = useState<'existing' | 'rekap'>('existing'); const [reg, setReg] = useState(''); const [mode, setMode] = useState('wilayah'); const [on, setOn] = useState<string[]>(STATUSES.map(s => s.key)); const [only, setOnly] = useState(true); const [sel, setSel] = useState(''); const [vw, setVw] = useState<VW>('d3')
@@ -42,6 +43,8 @@ export default function Peta() {
     <div className="vsw mb-3" role="tablist" aria-label="Pilih tampilan peta">{VIEWS.map(([k, l, I]) => <button key={k} role="tab" aria-selected={vw === k} onClick={() => setVw(k)} className={'vsw-b' + (vw === k ? ' on' : '')}><I size={16} /><span>{l}</span></button>)}</div>
     <div className="flex gap-2 mb-2">{([['existing', 'Shipment Berjalan'], ['rekap', 'Rekap Tahun Berjalan']] as const).map(([k, l]) => <button key={k} onClick={() => { setView(k); setSel('') }} className={'fchip' + (view === k ? ' on' : '')} style={{ ['--c' as any]: '#e6b457' }}>{l}</button>)}</div>
     {view === 'rekap' && !all && <p className="text-xs text-slate-400 mb-2">{status['ALL Shipment']?.state === 'Gagal Diakses' ? 'Gagal Mengambil Data ALL Shipment.' : 'Memuat Data… (sheet ALL Shipment cukup besar)'}</p>}
+    <button type="button" className="pfold-t lg:hidden no-print" aria-expanded={fopen} onClick={() => setFopen(!fopen)}><SlidersHorizontal size={15} />Filter dan tampilan<span>{fopen ? 'Tutup' : 'Atur'}</span></button>
+    <div className={'pfold' + (fopen ? ' open' : '')}>
     <div className="ptool">
       <div className="ptool-g"><span className="ptool-l">Wilayah</span><select aria-label="Filter wilayah" value={reg} onChange={e => setReg(e.target.value)}><option value="">Semua wilayah</option>{REGIONS.map(r => <option key={r}>{r}</option>)}</select></div>
       <div className="ptool-g"><span className="ptool-l">Warna</span><div className="seg">{Object.keys(MODES).filter(k => view === 'existing' || k !== 'status').map(k => <button key={k} onClick={() => setMode(k)} className={m === k ? 'on' : ''}>{MODES[k]}</button>)}</div></div>
@@ -52,6 +55,7 @@ export default function Peta() {
       <button className="pbtn" onClick={() => dt.open({ variant: 'modal', title: 'Catatan peta', color: '#94a3b8', icon: Info, body: <ul className="dlg-notes"><li>Tinggi balok = volume shipment pada tahap terpilih.</li><li>Kapal digambar ilustratif menuju PLTU, bukan posisi GPS nyata.</li><li>Peta Jalur hanya memakai shipment berjalan; mode Rekap tidak berlaku.</li><li>Peta Klasik memakai basemap OpenStreetMap; tidak ada posisi kapal waktu nyata.</li><li>PLTU tanpa koordinat tercantum di panel samping.</li></ul> })}><Info size={14} />Catatan</button></div>
     {view === 'existing' && <div className="pstage" role="group" aria-label="Tahap shipment yang ditampilkan"><span className="ptool-l">Tahap</span>{STATUSES.filter(s => s.key !== 'carryOver').map(s => { const n = ships.filter(x => x.status === s.key && (!reg || x.wilayah === reg)).length; return <button key={s.key} aria-pressed={on.includes(s.key)} className={'fchip' + (on.includes(s.key) ? ' on' : '')} style={{ ['--c' as any]: s.color }} onClick={() => toggle(s.key)}>{s.label}<b>{n}</b></button> })}
       <button className="pbtn ghost" onClick={() => setOn(on.length === STATUSES.length - 1 ? [] : STATUSES.filter(s => s.key !== 'carryOver').map(s => s.key))}><RotateCcw size={13} />{on.length >= STATUSES.length - 1 ? 'Kosongkan' : 'Pilih semua'}</button></div>}
+    </div>
     <div className="grid lg:grid-cols-[minmax(0,1fr)_300px] gap-3"><div className="min-w-0">
       {vw === 'd3' && <Map3D rows={rows} color={color} sel={sel} onSel={pick} showShips={view === 'existing'} reg={reg} />}
       {vw === 'jalur' && <FlowLanes ships={flowShips} reg={reg} sel={sel} onSel={pick} />}

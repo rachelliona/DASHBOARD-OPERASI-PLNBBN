@@ -31,8 +31,9 @@ import { useAuth } from './auth'
 import { navFor, isAdmin, DATA_SHEETS, NavItem } from './config/nav'
 import { fmtDate } from './domain/format'
 import { setTheme, useTheme } from './theme'
+import { InstallBanner, MobileMenu, PullToRefresh, usePageTitle } from './components/MobileApp'
 import { Moon, RefreshCw, Sun } from 'lucide-react'
-const TABS: [string, string, any][] = [['/', 'Ringkasan', LayoutDashboard], ['/peta', 'Peta', MapIcon], ['/laporan/harian', 'Laporan', FileText], ['/dashboard', 'Interaktif', Activity]]
+const TABS: [string, string, any][] = [['/', 'Ringkasan', LayoutDashboard], ['/peta', 'Peta', MapIcon], ['/laporan/harian', 'Laporan', FileText], ['/kontrak', 'Kontrak', FileSignature]]
 const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: FileText, activity: Activity, users: Users, db: Database, contract: FileSignature }
 const B = import.meta.env.BASE_URL
 const Img = ({ mark, cls }: { mark?: boolean; cls: string }) => <><img src={B + (mark ? 'logo-mark-dark.png' : 'logo-dark.png')} alt="PLN Batubara Niaga" className={cls + ' lg-d'} /><img src={B + (mark ? 'logo-mark-light.png' : 'logo-light.png')} alt="PLN Batubara Niaga" className={cls + ' lg-l'} /></>
@@ -52,7 +53,7 @@ function Item({ item, depth, rail, onExpand }: { item: NavItem; depth: number; r
   return <div><button style={pad} onClick={() => setOpen(!open)} aria-expanded={open} className={'navitem grp w-full flex items-center gap-2.5 text-left rounded-xl py-2 pr-2 text-[13px] font-semibold mb-0.5 ' + (has(item) ? 'text-[#f2c76b]' : 'text-slate-100')}>{lab}<ChevronDown size={14} className={'ml-auto text-slate-400 chev ' + (open ? 'open' : '')} /></button><div className={'cg ' + (open ? 'open' : '')}><div className="ml-3.5 pl-1 border-l border-white/10">{item.children!.map(c => <Item key={c.label} item={c} depth={depth + 1} />)}</div></div></div>
 }
 export default function App() {
-  const { kinds, raw, intervalSec, asOf } = useStore(); const { user, logout } = useAuth(); const { pathname } = useLocation(); const [drawer, setDrawer] = useState(false); const [pal, setPal] = useState(false); const [inst, setInst] = useState<any>(null)
+  const { kinds, raw, intervalSec, asOf } = useStore(); const { user, logout } = useAuth(); const { pathname } = useLocation(); const [drawer, setDrawer] = useState(false); const [sheet, setSheet] = useState(false); const pageTitle = usePageTitle(navFor(isAdmin(user))); const [pal, setPal] = useState(false); const [inst, setInst] = useState<any>(null)
   const [rail, setRail] = useState(() => { try { return localStorage.getItem('pln-side') === '1' } catch { return false } })
   const toggleRail = (v: boolean) => { setRail(v); try { localStorage.setItem('pln-side', v ? '1' : '0') } catch { /* tanpa penyimpanan */ } }
   useEffect(() => { const k = (e: KeyboardEvent) => { const t = e.target as HTMLElement; const typing = /INPUT|TEXTAREA|SELECT/.test(t?.tagName ?? ''); if ((e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey)) || (e.key === '/' && !typing)) { e.preventDefault(); setPal(p => !p) } }; const b = (e: Event) => { e.preventDefault(); setInst(e) }; window.addEventListener('keydown', k); window.addEventListener('beforeinstallprompt', b); return () => { window.removeEventListener('keydown', k); window.removeEventListener('beforeinstallprompt', b) } }, [])
@@ -73,11 +74,11 @@ export default function App() {
     <main className="flex-1 min-w-0">
       <header className="topbar no-print px-3 lg:px-5 py-2">
         <div className="topgrid">
-          <div className="top-l"><button aria-label="Buka menu" className="lg:hidden -ml-1 p-2 rounded-lg hover:bg-white/10" onClick={() => setDrawer(true)}><Menu size={20} /></button>
-            <Img mark cls="lg:hidden h-8 w-auto" /><div className="min-w-0"><h1 className="text-sm font-bold leading-tight truncate"><span className="lg:hidden">Dashboard Operasi PLN BBN</span><span className="hidden lg:inline">Dashboard Operasi PLN Batubara Niaga</span></h1>
+          <div className="top-l"><button aria-label="Buka menu" className="lg:hidden -ml-1 p-2 rounded-lg hover:bg-white/10" onClick={() => setSheet(true)}><Menu size={20} /></button>
+            <Img mark cls="lg:hidden h-8 w-auto" /><div className="min-w-0"><h1 className="text-sm font-bold leading-tight truncate"><span className="lg:hidden">{pageTitle}</span><span className="hidden lg:inline">Dashboard Operasi PLN Batubara Niaga</span></h1>
               <div className="hidden lg:flex items-center gap-2 mt-0.5 min-w-0">{asOf ? <span className="badge past">◷ Data per {fmtDate(asOf)}</span> : <span className="badge live"><i className="pulse" />Langsung · {last ?? 'memuat…'}</span>}</div></div></div>
           <button aria-label="Cari (Ctrl+K)" onClick={() => setPal(true)} className="top-search hidden lg:flex"><Search size={15} /><span>Cari halaman, PLTU, shipment…</span><kbd>Ctrl K</kbd></button>
-          <div className="top-r"><span className="lg:hidden"><button aria-label="Cari" onClick={() => setPal(true)} className="theme-btn"><Search size={16} /></button></span><NotifBell /><RefreshBtn /><ThemeBtn /><div className="hidden lg:block"><DateSelector /></div></div>
+          <div className="top-r"><span className="lg:hidden"><button aria-label="Cari" onClick={() => setPal(true)} className="theme-btn"><Search size={16} /></button></span><NotifBell /><RefreshBtn /><span className="hidden lg:contents"><ThemeBtn /></span><div className="hidden lg:block"><DateSelector /></div></div>
         </div>
         <div className="flex items-center gap-2 mt-2 lg:hidden overflow-x-auto no-scrollbar"><DateSelector />
           {asOf ? <span className="badge past">◷ Data per {fmtDate(asOf)}</span> : <span className="badge live"><i className="pulse" />Langsung · {last ?? 'memuat…'}</span>}</div>
@@ -92,5 +93,6 @@ export default function App() {
         <Route path="/sheet/:name" element={<SheetGuard admin={isAdmin(user)} />} /><Route path="/sumber-data" element={isAdmin(user) ? <Sumber /> : <Navigate to="/" replace />} /><Route path="/pengaturan" element={isAdmin(user) ? <Pengaturan /> : <Navigate to="/" replace />} />
       </Routes></div></main>
     <FoldInit /><Palette open={pal} onClose={() => setPal(false)} />
-    <nav className="no-print tabbar lg:hidden" aria-label="Menu utama">{TABS.map(([to, l, Ic]) => <NavLink key={to} to={to} end className={({ isActive }) => 'tab' + (isActive ? ' active' : '')}><Ic size={19} /><span>{l}</span></NavLink>)}<button className="tab" onClick={() => setDrawer(true)}><Menu size={19} /><span>Menu</span></button></nav></div>
+    <MobileMenu open={sheet} onClose={() => setSheet(false)} nav={navFor(isAdmin(user))} user={user} onLogout={logout} onSearch={() => setPal(true)} /><InstallBanner /><PullToRefresh />
+    <nav className="no-print tabbar lg:hidden" aria-label="Menu utama">{TABS.map(([to, l, Ic]) => <NavLink key={to} to={to} end className={({ isActive }) => 'tab' + (isActive ? ' active' : '')}><Ic size={19} /><span>{l}</span></NavLink>)}<button className={'tab' + (sheet ? ' active' : '')} onClick={() => setSheet(true)}><Menu size={19} /><span>Menu</span></button></nav></div>
 }
