@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useState } from 'react'
+import UnduhRingkasan from '../components/UnduhRingkasan'
 import { useSheetYtd } from './useSheetYtd'
 import { ArrowRight, CalendarCheck, History, Target, Ship, PackageCheck } from 'lucide-react'
 import { Gauge, Layer, useCountUp, Donut, StatTile } from '../components/Anim'
@@ -43,7 +44,7 @@ export default function Ringkasan() {
   const chip = (on: boolean, c: string) => ({ borderColor: c, background: on ? c : 'transparent', color: on ? '#15130d' : c })
   return <>
     <header className="rhead"><div><h1 className="rhead-t">Ringkasan Pasokan</h1><p className="rhead-m">{bulanAktif} 2026</p></div>
-      <button className={'rhead-y' + (yr ? ' on' : '')} aria-expanded={yr} onClick={() => setYr(v => !v)}>Ringkasan tahunan <ChevronDown size={15} style={{ transform: yr ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} /></button></header>
+      <div className="flex flex-wrap items-center gap-2"><UnduhRingkasan /><button className={'rhead-y' + (yr ? ' on' : '')} aria-expanded={yr} onClick={() => setYr(v => !v)}>Ringkasan tahunan <ChevronDown size={15} style={{ transform: yr ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} /></button></div></header>
     {yr && <YearPanel />}
     <div className="chips flex flex-wrap gap-1.5 mb-3">{[{ r: '', c: undefined as string | undefined }, ...REGIONS.map(r => ({ r, c: REGION_COLOR[r] as string | undefined }))].map(g => <RegionChip key={g.r} label={g.r || 'Semua wilayah'} color={g.c} on={reg === g.r} onClick={() => { setReg(reg === g.r ? '' : g.r); setPl('') }} />)}</div>
     <section className="rhero mb-3"><div className="rhero-g"><Gauge value={P} color={tone(P)} label="Pemenuhan" /></div>
