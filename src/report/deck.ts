@@ -148,4 +148,4 @@ function region(d: DeckIn, reg: string): Slide {
   ;([['terjadwal', 'terjadwal', '#111', false], ['loading', 'loading', '#2e75b6', true], ['sailing', 'sailing', '#ed7d31', true], ['tiba', 'sandar', '#111', false], ['bongkar', 'bongkar', GREEN, false]] as [string, string, string, boolean][]).forEach(([k, l, c, it], i) => { const x = 487 + i * 99; els.push(T(x - 7, 641, 107, 24, l, 15, { bold: true, italic: it, color: c, align: 'c', va: 'm' }), R(x, 667, 93, 35, '#ffffff', { stroke: '#222', sw: 1.6, r: 8 }), T(x, 667, 93, 35, String(cn(k)), 26, { bold: true, align: 'c', va: 'm' })) })
   return { name: reg, els }
 }
-export function buildDeck(d: DeckIn): Slide[] { return [slide1(d), slide2(d), slideRincian(d), ...REGIONS.map(r => region(d, r))] }
+export function buildDeck(d: DeckIn): Slide[] { return [slide1(d), slide2(d), slideRincian(d), ...REGIONS.filter(r => r !== 'Lainnya').map(r => region(d, r))] }

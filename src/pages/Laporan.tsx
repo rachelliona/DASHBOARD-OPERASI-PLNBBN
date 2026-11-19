@@ -52,7 +52,7 @@ export default function Laporan() {
   return <>
     <PageHead icon={FileBarChart} color="#e6b457" title="Update Monitoring Pasokan PLTU" month={`${b} 2026`} sub={`PT PLN BATUBARA NIAGA · UPDATE ${fmtUpdate(ds.at)} · Satuan: MT · Sumber: ${ds.source}`} />
     {tglBar}{bulanBar}{viewBar}
-    <div className="chips flex flex-wrap gap-1.5 mb-2 no-print">{REGIONS.map(g => <RegionChip key={g} label={g} color={REGION_COLOR[g]} on={reg === g} onClick={() => setReg(g)} />)}</div>
+    <div className="chips flex flex-wrap gap-1.5 mb-2 no-print">{REGIONS.filter(g => g !== 'Lainnya').map(g => <RegionChip key={g} label={g} color={REGION_COLOR[g]} on={reg === g} onClick={() => setReg(g)} />)}</div>
     <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
       <Kpi label="Konfirmasi" value={fmtNum(T.t)} unit="MT" accent={col} /><Kpi label="Carry Over" value={fmtNum(T.c)} unit="MT" accent="#ef4444" /><Kpi label="Complete Loading (B/L)" value={fmtNum(T.bl)} unit="MT" accent="#38bdf8" />
       <Kpi label="Complete Unloading (D/S)" value={fmtNum(T.ds)} unit="MT" accent="#22c55e" /><div className="kpi" style={{ ['--ac' as any]: tone(P) }}><div className="text-[10.5px] uppercase tracking-wider text-slate-400">Pemenuhan {reg} · {basis === 'bl' ? 'Loading' : 'Unloading'}</div><div className="text-[22px] font-bold num mt-1 mb-2" style={{ color: tone(P) }}>{fmtPct(P)}</div><Bar pct={P} color={tone(P)} /></div></div>
