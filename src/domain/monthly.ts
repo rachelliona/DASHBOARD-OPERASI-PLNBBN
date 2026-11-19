@@ -67,7 +67,7 @@ export function aggregatePlants(ships: Ship[]) {
   for (const s of ships) { const a = get(s.plant); a.n++; if (s.konf === 'bulan') a.target += s.jumlah ?? 0; if (s.konf === 'carry') a.carryOver += s.jumlah ?? 0; a[s.stage ?? 'lain'] += s.vol; a.bl += s.bl ?? 0; a.ds += s.ds ?? 0; if (s.mitraReal) a.sumberSet.add(s.mitraReal) }
   return [...m.values()].map(({ sumberSet, ...a }) => ({ ...a, sumber: [...sumberSet].join(', ') || null, keterangan: null }))
 }
-export const toShipRows = (ships: Ship[]) => ships.map(s => ({ id: s.id, si: s.si || null, pltu: s.plant, wilayah: regionOf(s.plant), ...lokasiOf(s.plant), asal: s.jetty || null, mitraTambang: s.sumber || null, mitraTransport: s.transport || null, mitra: s.mitraReal || null, moda: s.moda || null, konf: s.konf, jumlah: s.jumlah, kapal: s.tbbg || null, volume: s.vol, status: s.stage, statusRaw: s.status || null, eta: null, keterangan: null }))
+export const toShipRows = (ships: Ship[]) => ships.map(s => ({ id: s.id, si: s.si || null, pltu: s.plant, wilayah: regionOf(s.plant), ...lokasiOf(s.plant), asal: s.jetty || null, mitraTambang: s.sumber || null, mitraTransport: s.transport || null, mitra: s.mitraReal || null, moda: s.moda || null, konf: s.konf, jumlah: s.jumlah, kapal: s.tbbg || null, volume: s.vol, bl: s.bl, ds: s.ds, status: s.stage, statusRaw: s.status || null, eta: null, keterangan: null }))
 export function groupBy(ships: Ship[], key: (s: Ship) => string) {
   const m = new Map<string, any>()
   for (const s of ships) { const k = key(s) || '—'; const a = m.get(k) ?? { nama: k, n: 0, konf: 0, co: 0, bl: 0, ds: 0 }; a.n++; if (s.konf === 'bulan') a.konf += s.jumlah ?? 0; if (s.konf === 'carry') a.co += s.jumlah ?? 0; a.bl += s.bl ?? 0; a.ds += s.ds ?? 0; m.set(k, a) }
