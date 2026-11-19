@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useStore } from '../store'
 import { fmtNum, parseIdNumber } from '../domain/format'
 export const Card = ({ title, children, right }: { title?: string; children: ReactNode; right?: ReactNode }) => (
-  <section className="gcard">{(title || right) && <div className="flex justify-between items-center mb-3 gap-2"><h2 className="gcard-t">{title}</h2>{right}</div>}{children}</section>)
+  <section className="gcard">{(title || right) && <div className="gcard-h flex justify-between items-center mb-3 gap-2"><h2 className="gcard-t">{title}</h2>{right}</div>}{children}</section>)
 export const PageHead = ({ title, sub, right, month }: { icon?: any; title: string; sub?: ReactNode; right?: ReactNode; color?: string; month?: string | false }) => {
   const { bulanAktif } = useStore(); const m = month === false ? null : month ?? `${bulanAktif} 2026`
   return <header className="rhead"><div className="min-w-0"><h1 className="rhead-t">{title}</h1>{m && <p className="rhead-m">{m}</p>}{sub && <p className="rhead-s">{sub}</p>}</div>{right && <div className="phead-r">{right}</div>}</header>
