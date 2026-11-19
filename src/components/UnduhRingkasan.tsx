@@ -18,7 +18,7 @@ export default function UnduhRingkasan({ className = 'rhead-y' }: { className?: 
     try {
       const { buildRingkasanPdf } = await import('../report/ringkasanPdf')
       const target = sum(plants, 'target'), co = sum(plants, 'carryOver'), bl = sum(plants, 'bl'), ds = sum(plants, 'ds')
-      const tahap = STATUSES.filter(s => s.key !== 'carryOver').map(s => { const x = ships.filter(h => h.status === s.key); return { label: s.label, n: x.length, vol: sum(x, 'volume') } })
+      const tahap = STATUSES.filter(s => s.key !== 'carryOver').map(s => { const x = ships.filter(h => h.status === s.key); return { key: s.key, label: s.label, n: x.length, vol: sum(x, 'volume') } })
       const sp = (months[bulanAktif] && !months[bulanAktif].missing?.length ? months[bulanAktif].ships : []) as any[]; const isIpp = (s: any) => regionOf(s.plant) === 'PLTU IPP'
       const bk = (xs: any[], kf: string) => { const f = xs.filter(s => s.konf === kf); return { konf: f.reduce((a, s) => a + (s.jumlah ?? 0), 0), real: f.reduce((a, s) => a + (s.bl ?? 0), 0) } }
       const rincian = [{ label: 'PLN Group', ...bk(sp.filter(s => !isIpp(s)), 'bulan') }, { label: 'IPP', ...bk(sp.filter(isIpp), 'bulan') }, { label: 'Carry over', ...bk(sp, 'carry') }]
