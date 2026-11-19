@@ -838,3 +838,43 @@ html[data-theme=light] .tabbar{background:rgba(255,255,255,.86)}
 .pfold-t{display:flex;align-items:center;gap:8px;width:100%;margin-bottom:10px;padding:0 14px;height:44px;border-radius:14px;border:1px solid rgba(var(--ink),.14);background:rgba(var(--ink),.05);color:var(--text);font:inherit;font-weight:700;font-size:14px}.pfold-t svg{color:#e6b457}.pfold-t span{margin-left:auto;font-size:12px;font-weight:600;opacity:.7}
 @media(max-width:1023px){.pfold:not(.open){display:none}}
 .theme-btn,.tab,.ma-tile,.ma-act,.ma-go,.pbtn,.fchip,.vsw-b,.kpi-click{touch-action:manipulation}.theme-btn:active:not(:disabled){transform:scale(.92)}
+/* v53 cangkang aplikasi di ponsel */
+.splash{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:radial-gradient(120% 80% at 50% 30%,#1b1708,#0a0c10 70%);color:#f5efe0;animation:splashOut .35s ease .8s both}
+.splash img{width:84px;height:84px;border-radius:22px;margin-bottom:10px;animation:splashIn .6s cubic-bezier(.2,.9,.25,1) both}.splash b{font-size:20px;letter-spacing:-.01em}.splash small{opacity:.6;font-size:12px}
+.splash-bar{display:block;width:90px;height:3px;border-radius:9px;margin-top:18px;background:linear-gradient(90deg,transparent,#e6b457,transparent);background-size:200% 100%;animation:splashBar 1s linear infinite}
+@keyframes splashIn{from{opacity:0;transform:scale(.8)}}@keyframes splashOut{to{opacity:0;visibility:hidden}}@keyframes splashBar{to{background-position:-200% 0}}
+@keyframes appIn{from{opacity:0;transform:translateX(16px)}}
+@media(max-width:1023px){
+  body{user-select:none;-webkit-user-select:none}input,textarea,.sel-ok,table td,table th{user-select:text;-webkit-user-select:text}
+  /* bilah atas: satu baris tipis ala aplikasi */
+  .topbar{padding:calc(6px + env(safe-area-inset-top)) 12px 6px!important;background:rgba(10,12,16,.78)!important;backdrop-filter:blur(24px) saturate(1.5);border-bottom:1px solid rgba(var(--ink),.06);box-shadow:none!important}
+  .topbar .theme-btn{border:0;background:transparent;width:40px;height:40px;border-radius:99px}.topbar .theme-btn:active{background:rgba(var(--ink),.1)}
+  .topbar .top-r{gap:0}.topbar .top-l{gap:10px}
+  .topbar h1{transition:opacity .2s,transform .2s}
+  html:has(.rhead-t) .topbar h1{opacity:0;transform:translateY(8px)}html.scrolled:has(.rhead-t) .topbar h1{opacity:1;transform:none}
+  .topbar>div:last-child{margin-top:4px!important;gap:8px}.topbar .datebtn{height:32px!important;padding:0 10px!important;font-size:12.5px!important;border-radius:99px!important}
+  .topbar .badge{font-size:11px;padding:4px 9px}
+  /* judul besar halaman */
+  .rhead{padding:6px 2px 2px;margin-bottom:10px}.rhead-t{font-size:30px!important;line-height:1.1;font-weight:800;letter-spacing:-.025em}.rhead-m{font-size:13px!important;margin-top:2px}.rhead-s{font-size:13px!important;opacity:.7}
+  /* kartu */
+  .gcard{border-radius:20px!important}.page{padding-inline:12px!important}
+  .page .gcard{padding:14px}
+  /* transisi halaman */
+  .page-in{animation:appIn .28s cubic-bezier(.2,.8,.25,1) both}
+  /* bilah tab melayang */
+  .tabbar{left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));padding:6px;border-radius:26px;border:1px solid rgba(var(--ink),.12);background:rgba(18,21,28,.78);backdrop-filter:blur(26px) saturate(1.6);box-shadow:0 18px 40px -14px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.06)}
+  html[data-theme=light] .tabbar{background:rgba(255,255,255,.82);box-shadow:0 16px 36px -14px rgba(15,23,42,.35)}
+  .tab{min-height:50px;gap:1px;border-radius:20px}.tab.active::before{display:none}
+  .tab-ic{display:grid;place-items:center;width:46px;height:28px;border-radius:99px;font-style:normal;transition:background .25s,transform .25s}
+  .tab.active .tab-ic{background:rgba(230,180,87,.2);transform:translateY(-1px)}.tab.active svg{filter:none}
+  .tab span{font-size:10px}
+  .page{padding-bottom:calc(104px + env(safe-area-inset-bottom))!important}
+  .ma-banner{bottom:calc(86px + env(safe-area-inset-bottom))}
+  /* baris filter bisa digeser, tidak turun baris */
+  .page .fchips,.page .chips{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none}.page .fchips::-webkit-scrollbar,.page .chips::-webkit-scrollbar{display:none}
+}
+@media(max-width:1023px){
+  .lap-hide{display:none!important}.lap-tgl{margin-bottom:8px}.lap-jam{margin:0!important;width:100%;padding:8px 12px;border-radius:16px;background:rgba(var(--ink),.05);border:1px solid rgba(var(--ink),.1)}.lap-jam input{flex:1;min-width:0;background:transparent;border:0;font-size:16px}
+  .page .chips{margin-inline:-12px;padding-inline:12px;padding-bottom:2px}.page .chips .fchip{flex:none;scroll-snap-align:start}
+}
+@media(max-width:1023px){.rhead-s{display:none!important}}

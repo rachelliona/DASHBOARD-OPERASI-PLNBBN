@@ -31,7 +31,7 @@ import { useAuth } from './auth'
 import { navFor, isAdmin, DATA_SHEETS, NavItem } from './config/nav'
 import { fmtDate } from './domain/format'
 import { setTheme, useTheme } from './theme'
-import { InstallBanner, MobileMenu, PullToRefresh, usePageTitle } from './components/MobileApp'
+import { InstallBanner, MobileMenu, PullToRefresh, Splash, usePageTitle } from './components/MobileApp'
 import { Moon, RefreshCw, Sun } from 'lucide-react'
 const TABS: [string, string, any][] = [['/', 'Ringkasan', LayoutDashboard], ['/peta', 'Peta', MapIcon], ['/laporan/harian', 'Laporan', FileText], ['/kontrak', 'Kontrak', FileSignature]]
 const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: FileText, activity: Activity, users: Users, db: Database, contract: FileSignature }
@@ -58,6 +58,7 @@ export default function App() {
   const toggleRail = (v: boolean) => { setRail(v); try { localStorage.setItem('pln-side', v ? '1' : '0') } catch { /* tanpa penyimpanan */ } }
   useEffect(() => { const k = (e: KeyboardEvent) => { const t = e.target as HTMLElement; const typing = /INPUT|TEXTAREA|SELECT/.test(t?.tagName ?? ''); if ((e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey)) || (e.key === '/' && !typing)) { e.preventDefault(); setPal(p => !p) } }; const b = (e: Event) => { e.preventDefault(); setInst(e) }; window.addEventListener('keydown', k); window.addEventListener('beforeinstallprompt', b); return () => { window.removeEventListener('keydown', k); window.removeEventListener('beforeinstallprompt', b) } }, [])
   useEffect(() => { setDrawer(false); window.scrollTo(0, 0) }, [pathname])
+  useEffect(() => { const f = () => document.documentElement.classList.toggle('scrolled', window.scrollY > 52); f(); window.addEventListener('scroll', f, { passive: true }); return () => window.removeEventListener('scroll', f) }, [])
   if (pathname === '/buat-hash') return <BuatHash />
   if (!user) return <Login />
   const last = [...Object.values(kinds), ...Object.values(raw)].map(d => d.at).filter(a => a !== '—').slice(-1)[0]
@@ -74,8 +75,7 @@ export default function App() {
     <main className="flex-1 min-w-0">
       <header className="topbar no-print px-3 lg:px-5 py-2">
         <div className="topgrid">
-          <div className="top-l"><button aria-label="Buka menu" className="lg:hidden -ml-1 p-2 rounded-lg hover:bg-white/10" onClick={() => setSheet(true)}><Menu size={20} /></button>
-            <Img mark cls="lg:hidden h-8 w-auto" /><div className="min-w-0"><h1 className="text-sm font-bold leading-tight truncate"><span className="lg:hidden">{pageTitle}</span><span className="hidden lg:inline">Dashboard Operasi PLN Batubara Niaga</span></h1>
+          <div className="top-l"><Img mark cls="lg:hidden h-8 w-auto" /><div className="min-w-0"><h1 className="text-sm font-bold leading-tight truncate"><span className="lg:hidden">{pageTitle}</span><span className="hidden lg:inline">Dashboard Operasi PLN Batubara Niaga</span></h1>
               <div className="hidden lg:flex items-center gap-2 mt-0.5 min-w-0">{asOf ? <span className="badge past">◷ Data per {fmtDate(asOf)}</span> : <span className="badge live"><i className="pulse" />Langsung · {last ?? 'memuat…'}</span>}</div></div></div>
           <button aria-label="Cari (Ctrl+K)" onClick={() => setPal(true)} className="top-search hidden lg:flex"><Search size={15} /><span>Cari halaman, PLTU, shipment…</span><kbd>Ctrl K</kbd></button>
           <div className="top-r"><span className="lg:hidden"><button aria-label="Cari" onClick={() => setPal(true)} className="theme-btn"><Search size={16} /></button></span><NotifBell /><RefreshBtn /><span className="hidden lg:contents"><ThemeBtn /></span><div className="hidden lg:block"><DateSelector /></div></div>
@@ -93,6 +93,6 @@ export default function App() {
         <Route path="/sheet/:name" element={<SheetGuard admin={isAdmin(user)} />} /><Route path="/sumber-data" element={isAdmin(user) ? <Sumber /> : <Navigate to="/" replace />} /><Route path="/pengaturan" element={isAdmin(user) ? <Pengaturan /> : <Navigate to="/" replace />} />
       </Routes></div></main>
     <FoldInit /><Palette open={pal} onClose={() => setPal(false)} />
-    <MobileMenu open={sheet} onClose={() => setSheet(false)} nav={navFor(isAdmin(user))} user={user} onLogout={logout} onSearch={() => setPal(true)} /><InstallBanner /><PullToRefresh />
-    <nav className="no-print tabbar lg:hidden" aria-label="Menu utama">{TABS.map(([to, l, Ic]) => <NavLink key={to} to={to} end className={({ isActive }) => 'tab' + (isActive ? ' active' : '')}><Ic size={19} /><span>{l}</span></NavLink>)}<button className={'tab' + (sheet ? ' active' : '')} onClick={() => setSheet(true)}><Menu size={19} /><span>Menu</span></button></nav></div>
+    <MobileMenu open={sheet} onClose={() => setSheet(false)} nav={navFor(isAdmin(user))} user={user} onLogout={logout} onSearch={() => setPal(true)} /><InstallBanner /><PullToRefresh /><Splash />
+    <nav className="no-print tabbar lg:hidden" aria-label="Menu utama">{TABS.map(([to, l, Ic]) => <NavLink key={to} to={to} end onClick={() => { try { navigator.vibrate?.(6) } catch { /* abaikan */ } }} className={({ isActive }) => 'tab' + (isActive ? ' active' : '')}><i className="tab-ic"><Ic size={20} /></i><span>{l}</span></NavLink>)}<button className={'tab' + (sheet ? ' active' : '')} onClick={() => setSheet(true)}><i className="tab-ic"><Menu size={20} /></i><span>Menu</span></button></nav></div>
 }

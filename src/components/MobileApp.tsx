@@ -84,3 +84,13 @@ export function PullToRefresh() {
   const show = pull > 6 || refreshing
   return <div className="ma-ptr lg:hidden no-print" aria-hidden style={{ transform: `translate(-50%, ${show ? (refreshing ? 14 : pull - 34) : -60}px)`, opacity: show ? 1 : 0 }}><RefreshCw size={16} className={refreshing ? 'spin-r' : ''} style={{ transform: refreshing ? undefined : `rotate(${pull * 3}deg)` }} /><span>{refreshing ? 'Memuat…' : pull >= 64 ? 'Lepas untuk memuat ulang' : 'Tarik untuk memuat ulang'}</span></div>
 }
+
+/** Layar pembuka singkat saat dibuka sebagai aplikasi terpasang (sekali per sesi). */
+export function Splash() {
+  const standalone = typeof window !== 'undefined' && (window.matchMedia?.('(display-mode: standalone)').matches || (navigator as any).standalone === true)
+  const [show, setShow] = useState(() => { if (!standalone) return false; try { if (sessionStorage.getItem('pln-splash')) return false; sessionStorage.setItem('pln-splash', '1') } catch { /* tanpa penyimpanan */ } return true })
+  useEffect(() => { if (!show) return; const t = setTimeout(() => setShow(false), 1100); return () => clearTimeout(t) }, [show])
+  if (!show) return null
+  const B = import.meta.env.BASE_URL
+  return <div className="splash" aria-hidden><img src={B + 'logo-mark-dark.png'} alt="" /><b>Dashboard Operasi</b><small>PLN Batubara Niaga</small><i className="splash-bar" /></div>
+}
