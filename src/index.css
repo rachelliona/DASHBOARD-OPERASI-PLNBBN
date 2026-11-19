@@ -837,3 +837,4 @@ html[data-theme=light] .tabbar{background:rgba(255,255,255,.86)}
 @media(display-mode:standalone){.ma-banner{display:none}}
 .pfold-t{display:flex;align-items:center;gap:8px;width:100%;margin-bottom:10px;padding:0 14px;height:44px;border-radius:14px;border:1px solid rgba(var(--ink),.14);background:rgba(var(--ink),.05);color:var(--text);font:inherit;font-weight:700;font-size:14px}.pfold-t svg{color:#e6b457}.pfold-t span{margin-left:auto;font-size:12px;font-weight:600;opacity:.7}
 @media(max-width:1023px){.pfold:not(.open){display:none}}
+.theme-btn,.tab,.ma-tile,.ma-act,.ma-go,.pbtn,.fchip,.vsw-b,.kpi-click{touch-action:manipulation}.theme-btn:active:not(:disabled){transform:scale(.92)}

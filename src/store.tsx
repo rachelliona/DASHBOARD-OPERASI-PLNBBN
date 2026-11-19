@@ -24,7 +24,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [threshold, setT] = useState(() => Number(localStorage.getItem('pln-threshold')) || 70)
   const [intervalSec, setI] = useState(() => Number(localStorage.getItem('pln-interval')) || 60)
   const [asOf, setAsOfS] = useState(''); const [snap, setSnap] = useState<Snap | null>(null); const [snapList, setSnapList] = useState<string[] | null>(null); const [snapState, setSnapState] = useState('')
-  const inflight = useRef(new Set<string>()); const busy = useRef(false); const rawRef = useRef<Record<string, DS>>({}); rawRef.current = raw; const asOfRef = useRef(''); asOfRef.current = asOf
+  const inflight = useRef(new Set<string>()); const busy = useRef(false); const textRef = useRef<Record<string, string>>({}); const rawRef = useRef<Record<string, DS>>({}); rawRef.current = raw; const asOfRef = useRef(''); asOfRef.current = asOf
   const liveBulan = BULAN[new Date(Date.now() + 7 * 36e5).getUTCMonth()]
   const monthsLive = useMemo(() => Object.fromEntries(BULAN.filter(b => raw[b]?.headers).map(b => [b, { ...parseMonthly({ headers: raw[b].headers!, rows: raw[b].rows }, b), at: raw[b].at }])) as Record<string, MD>, [raw])
   const dAll = raw['ALL Shipment']
@@ -42,14 +42,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const fetchSheet = async (name: string) => {
     const src = SOURCES.find(x => x.name === name); if (!src || inflight.current.has(name)) return
     inflight.current.add(name); setS(p => ({ ...p, [name]: { ...p[name], state: 'Memuat Data…' } })); const c = new AbortController(); const t = setTimeout(() => c.abort(), 30000)
-    try { const r = await fetch(src.url, { signal: c.signal, cache: 'no-store' }); if (!r.ok) throw new Error('HTTP ' + r.status); const p = parseCsv(await r.text()); if (!p.headers.length) throw new Error('Header tidak ditemukan'); const at = nowWib()
+    try { const r = await fetch(src.url, { signal: c.signal, cache: 'no-store' }); if (!r.ok) throw new Error('HTTP ' + r.status); const txt = await r.text(); if (textRef.current[name] === txt && rawRef.current[name]) { setS(prev => ({ ...prev, [name]: { state: 'Terhubung', at: nowWib() } })); return } const p = parseCsv(txt); if (!p.headers.length) throw new Error('Header tidak ditemukan'); const at = nowWib(); textRef.current[name] = txt
       setR(prev => ({ ...prev, [name]: { rows: p.rows, rejected: [], source: 'URL CSV', at, headers: p.headers, headerRow: p.headerRow, errorCells: p.errorCells } })); setS(prev => ({ ...prev, [name]: { state: 'Terhubung', at } }))
     } catch (e: any) { setS(prev => ({ ...prev, [name]: { ...prev[name], state: 'Gagal Diakses', msg: (e.name === 'AbortError' ? 'Waktu habis (30 dtk)' : e.message) + ' — kemungkinan diblokir CORS/jaringan' } })) } finally { clearTimeout(t); inflight.current.delete(name) } }
   const refreshAll = async () => { if (busy.current || asOfRef.current) return; busy.current = true; try { for (const [n, x] of Object.entries(rawRef.current)) if (x.source === 'URL CSV') await fetchSheet(n) } finally { busy.current = false } }
   const refreshRef = useRef(refreshAll); refreshRef.current = refreshAll
   const [refreshing, setRefreshing] = useState(false); const [lastRefresh, setLast] = useState(0)
   /** Muat ulang manual: ambil ulang semua sheet yang sudah termuat + beri tahu halaman yang memuat datanya sendiri. */
-  const refreshNow = async () => { if (asOfRef.current || refreshing) return; setRefreshing(true); window.dispatchEvent(new Event('pln-refresh')); try { for (let i = 0; i < 40 && busy.current; i++) await new Promise(r => setTimeout(r, 250)); await refreshRef.current(); await new Promise(r => setTimeout(r, 400)) } finally { setRefreshing(false); setLast(Date.now()) } }
+  const refreshNow = async () => { if (asOfRef.current || refreshing) return; setRefreshing(true); window.dispatchEvent(new Event('pln-refresh'))
+    try { for (let i = 0; i < 32 && inflight.current.has(liveBulan); i++) await new Promise(r => setTimeout(r, 250)); await fetchSheet(liveBulan); await new Promise(r => setTimeout(r, 350)) }
+    finally { setRefreshing(false); setLast(Date.now()); setTimeout(() => { refreshRef.current() }, 50) } /* sheet lain diperbarui di latar belakang, tanpa menahan tombol */ }
   const setAsOf = async (d: string) => {
     setAsOfS(d); setSnap(null); if (!d) { setSnapState(''); return }
     setSnapState('Memuat Snapshot…')
