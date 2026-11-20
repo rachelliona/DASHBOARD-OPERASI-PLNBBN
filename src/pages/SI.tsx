@@ -23,7 +23,7 @@ export default function SIPage() {
   const tahunIni = new Date().getFullYear(); const thn = st.rows.filter(r => r.tahun === tahunIni && r.tahap !== 'pengajuan')
   const lewat = thn.filter(r => statusOf(r, today, sup) === 'lewat').length, rev = thn.filter(r => r.revisiKe > 0).length, revArmada = thn.filter(r => r.alasan === 'armada').length, antre = st.rows.filter(r => r.tahap === 'pengajuan').length
   return <>
-    <PageHead icon={FileText} title="Shipping Instruction" month={false} sub="Penomoran SI otomatis tanpa dobel, monitoring laycan & revisi, dan cetak dokumen." right={<button className="fchip on !text-[13px] !px-4 !py-1.5" onClick={() => setBuat({ awal: null })} aria-label="Buat SI baru">+ Buat SI</button>} />
+    <PageHead icon={FileText} title="Shipping Instruction" month={false} sub="Penomoran SI otomatis tanpa dobel, monitoring laycan & revisi, dan cetak dokumen." right={<button className="fchip on !text-[16px] !font-bold !px-6 !py-3 !rounded-2xl" onClick={() => setBuat({ awal: null })} aria-label="Buat SI baru">+ Buat SI</button>} />
     {info && <div className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-[12px] mb-3 flex justify-between gap-2"><span>{info}</span><button onClick={() => setInfo('')} aria-label="Tutup">×</button></div>}
     {!st.rows.length && <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-[12px] mb-3">Registri SI masih kosong. Buka tab <b>Sinkron &amp; impor</b> untuk memuat riwayat SI (Databas SI + sheet 2026) agar nomor berikutnya tepat.</div>}
     <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
