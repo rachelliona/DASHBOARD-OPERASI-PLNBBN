@@ -22,7 +22,7 @@ export async function buatPdf(s: SI, draft = false, paraf: 'ada' | 'kosong' = ((
   d.setFont('helvetica', 'normal'); d.setFontSize(10.5); d.setTextColor(0)
   const T = (t: string, x: number, y: number, o?: any) => d.text(t, m(x), m(y + 5), o)
   const wrap = (t: string, w: number) => d.splitTextToSize(t, m(w)) as string[]
-  const nomor = fmtNomor(s.nomor, s.tahun); const rev = s.revisiKe > 0; const lay = rentangId(s.laycanMulai, s.laycanSelesai) || s.laycanTeks
+  const nomor = s.nomor == null ? `……….SI/EPI.03.01/DIR/${s.tahun}` : fmtNomor(s.nomor, s.tahun); const rev = s.revisiKe > 0; const lay = rentangId(s.laycanMulai, s.laycanSelesai) || s.laycanTeks
   const perihal = rev ? ['Revisi Shipping Instruction', s.sebelumnyaNomor != null ? fmtNomor(s.sebelumnyaNomor, s.tahun) : '', `Revisi ke-${s.revisiKe}${s.alasan ? ` (${ALASAN[s.alasan]})` : ''}`, `Laycan ${lay}\ndi ${s.muat}`].filter(Boolean) : ['Shipping Instruction', `Laycan ${lay}\ndi ${s.muat}`]
   T('Nomor', 75, 152); T(':', 145, 152); T(nomor, 160, 152); T('Lampiran', 75, 169); T(':', 145, 169); T('-', 160, 169); T('Perihal', 75, 185); T(':', 145, 185)
   let y = 185; perihal.forEach((t, i) => { d.setFont('helvetica', i === 0 ? 'italic' : 'normal'); t.split('\n').flatMap(x => wrap(x, 255)).forEach((ln, j) => { if (j === 0) { T('•', 165, y) } T(ln, 187, y); y += 15.5 }) }); d.setFont('helvetica', 'normal'); const yPer = y
