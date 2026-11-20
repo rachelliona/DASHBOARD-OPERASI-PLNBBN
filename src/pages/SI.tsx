@@ -87,11 +87,11 @@ function Form({ v, set, kunci }: { v: SI; set: (s: SI) => void; kunci?: boolean 
   const jt = (n: string) => { const m = ref?.jetty.find(x => x[0].toLowerCase() === n.toLowerCase()); p({ muat: m ? `${m[0]}, ${m[1]}` : n }) }
   return <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
     <Fld l="Skema"><select {...t('skema')}><option>FOB</option><option>CIF</option><option>Freight</option></select></Fld>
-    <Fld l="Pemohon"><select {...t('pemohon')}><option value="">— pilih —</option>{['Andi', 'Billy', 'Racel', 'Rendi'].map(x => <option key={x}>{x}</option>)}</select></Fld>
+    <Fld l="Pemohon"><input list="dl-pemohon" {...t('pemohon')} placeholder="pilih / ketik nama" /><datalist id="dl-pemohon">{['Andi', 'Billy', 'Racel', 'Rendi'].map(x => <option key={x} value={x} />)}</datalist></Fld>
     <Fld l="Jenis"><label className="mr-3"><input type="checkbox" checked={v.kelistrikan} onChange={e => p({ kelistrikan: e.target.checked })} /> Kelistrikan</label><label><input type="checkbox" checked={v.bib} onChange={e => p({ bib: e.target.checked })} /> BIB</label></Fld>
     <Fld l="Shipper / mitra batubara"><input list="dl-mitra" value={v.mitra} onChange={e => mt(e.target.value)} /></Fld>
     <Fld l="Kontrak PJBB"><input {...t('kontrak')} /></Fld>
-    <Fld l="Sumber tambang"><input list="dl-tambang" {...t('tambang')} placeholder="pilih / ketik" /></Fld>
+    <Fld l="Sumber tambang"><input list="dl-tambang" {...t('tambang')} placeholder="pilih atau ketik sendiri" /></Fld>
     <Fld l="Transporter (Kepada)"><input list="dl-tr" value={v.transporter} onChange={e => tr(e.target.value)} /></Fld>
     <Fld l="Nama kapal / tongkang"><input {...t('kapal')} placeholder="TB … / BG …" /></Fld>
     <Fld l="Moda"><input list="dl-moda" {...t('moda')} /></Fld>
