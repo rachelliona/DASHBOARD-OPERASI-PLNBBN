@@ -2,6 +2,9 @@ import { SI, ALASAN } from './types'
 import { fmtNomor, rentangId, tglId } from './logic'
 import { namaFile } from './pdf'
 const BASE = import.meta.env.BASE_URL
+export type Paraf = 'ada' | 'kosong'
+export const getParaf = (): Paraf => { try { return localStorage.getItem('pln-si-paraf') === 'kosong' ? 'kosong' : 'ada' } catch { return 'ada' } }
+export const setParaf = (p: Paraf) => { try { localStorage.setItem('pln-si-paraf', p) } catch { /* abaikan */ } }
 const WNS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
 /** Pilih file template sesuai skema / kelistrikan / BIB / revisi — memakai Word asli buatan Racel. */
 export function pilihTemplate(s: SI): string {
@@ -59,14 +62,27 @@ function isiTabelRinci(tb: Element, s: SI) {
     ps.forEach((p, i) => { if (i === 0) setP(p, lines[0] ?? '-'); else if (i < lines.length) setP(p, lines[i]); else if (txt(p).trim()) c[2].removeChild(p) })
     for (let i = ps.length; i < lines.length; i++) { const np = ps[0].cloneNode(true) as Element; setP(np, lines[i]); c[2].appendChild(np) } })
 }
-export async function buatDocx(s: SI): Promise<{ blob: Blob; nama: string; template: string }> {
+export async function buatDocx(s: SI, paraf: Paraf = getParaf()): Promise<{ blob: Blob; nama: string; template: string }> {
   const JSZip = (await import('jszip')).default; const tpl = pilihTemplate(s)
   const buf = await (await fetch(`${BASE}si/templates/${tpl}.docx`)).arrayBuffer(); const zip = await JSZip.loadAsync(buf)
   const xml = await zip.file('word/document.xml')!.async('string'); const doc = new DOMParser().parseFromString(xml, 'application/xml')
   els(doc, 'tbl').forEach(tb => { const first = txt(rowsOf(tb)[0] ?? tb).trim(); if (/^nomor/i.test(first)) isiTabelAtas(tb, s); else if (/^shipper/i.test(first)) isiTabelRinci(tb, s) })
+  const A = 'http://schemas.openxmlformats.org/drawingml/2006/main'; const blips = (n: Element | Document) => Array.from(n.getElementsByTagNameNS(A, 'blip')); const ada = blips(doc).length > 0
+  if (paraf === 'kosong') { // buang gambar paraf bawaan template (logo ada di header, tidak tersentuh); garis "Paraf : ……" tetap untuk paraf basah
+    const alt = Array.from(doc.getElementsByTagNameNS('http://schemas.openxmlformats.org/markup-compatibility/2006', 'AlternateContent')).filter(a => blips(a).length && !els(a, 'txbxContent').length)
+    alt.forEach(a => a.parentNode?.removeChild(a)); els(doc, 'drawing').filter(d => blips(d).length && !els(d, 'txbxContent').length).forEach(d => { const r = d.parentNode as Element | null; if (r && r.localName === 'r') r.parentNode?.removeChild(r) })
+  } else if (!ada) { // sisipkan gambar paraf di samping teks "Paraf :" pada template yang belum punya
+    const img = await (await fetch(BASE + 'si/paraf.png')).arrayBuffer(); zip.file('word/media/paraf_si.png', img)
+    const relP = 'word/_rels/document.xml.rels'; let rel = await zip.file(relP)!.async('string'); if (!rel.includes('rIdParafSI')) rel = rel.replace('</Relationships>', '<Relationship Id="rIdParafSI" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/paraf_si.png"/></Relationships>'); zip.file(relP, rel)
+    let ct = await zip.file('[Content_Types].xml')!.async('string'); if (!/Extension="png"/i.test(ct)) ct = ct.replace('</Types>', '<Default Extension="png" ContentType="image/png"/></Types>'); zip.file('[Content_Types].xml', ct)
+    const frag = `<w:r xmlns:w="${WNS}" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:drawing><wp:anchor distT="0" distB="0" distL="114300" distR="114300" simplePos="0" relativeHeight="251670528" behindDoc="1" locked="0" layoutInCell="1" allowOverlap="1"><wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="column"><wp:posOffset>5000000</wp:posOffset></wp:positionH><wp:positionV relativeFrom="paragraph"><wp:posOffset>20000</wp:posOffset></wp:positionV><wp:extent cx="600710" cy="513080"/><wp:effectExtent l="0" t="0" r="8890" b="0"/><wp:wrapNone/><wp:docPr id="9001" name="Paraf SI"/><wp:cNvGraphicFramePr/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="9001" name="paraf_si.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdParafSI"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="600710" cy="513080"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r>`
+    // jangkar di paragraf isi (bukan di dalam kotak teks, karena kotak teks memotong gambar) — posisi sama dengan template Revisi FOB Kelistrikan
+    const luar = els(doc, 'p').filter(p => p.parentNode === doc.getElementsByTagNameNS(WNS, 'body')[0] && els(p, 'txbxContent').some(t => /Paraf\s*:/.test(txt(t))))
+    luar.slice(0, 1).forEach(p => p.appendChild(doc.importNode(new DOMParser().parseFromString(frag, 'application/xml').documentElement, true)))
+  }
   zip.file('word/document.xml', new XMLSerializer().serializeToString(doc))
   const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })
   return { blob, nama: namaFile(s).replace(/\.pdf$/, '.docx'), template: tpl }
 }
 const simpan = (blob: Blob, nama: string) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nama; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000) }
-export async function unduhDocx(s: SI) { const { blob, nama } = await buatDocx(s); simpan(blob, nama) }
+export async function unduhDocx(s: SI) { const { blob, nama } = await buatDocx(s, getParaf()); simpan(blob, nama) }

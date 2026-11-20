@@ -14,7 +14,7 @@ export function barisSurat(s: SI): [string, string][] {
 }
 async function img(u: string) { try { const b = await (await fetch(u)).blob(); return await new Promise<string>(ok => { const f = new FileReader(); f.onload = () => ok(String(f.result)); f.readAsDataURL(b) }) } catch { return '' } }
 export function namaFile(s: SI) { return `${s.revisiKe ? 'Revisi ' : ''}SI ${String(s.nomor ?? 'draft').padStart(4, '0')}-${s.tahun} ${(s.mitra || s.tambang || '').replace(/^PT\.?\s*/i, '').replace(/[^\w ]/g, '').trim()}`.trim() + '.pdf' }
-export async function buatPdf(s: SI, draft = false): Promise<{ blob: Blob; nama: string }> {
+export async function buatPdf(s: SI, draft = false, paraf: 'ada' | 'kosong' = (() => { try { return localStorage.getItem('pln-si-paraf') === 'kosong' ? 'kosong' : 'ada' } catch { return 'ada' } })()): Promise<{ blob: Blob; nama: string }> {
   const { jsPDF } = await import('jspdf'); const d = new jsPDF({ unit: 'mm', format: 'a4' }); const L = 20, R = 190, W = R - L
   const logo = await img(BASE + 'logo-light.png'); if (logo) { try { d.addImage(logo, 'PNG', L, 12, 41, 13) } catch { /* tanpa logo */ } }
   d.setDrawColor(0, 120, 160); d.setLineWidth(.6); d.line(L, 29, R, 29)
@@ -30,6 +30,7 @@ export async function buatPdf(s: SI, draft = false): Promise<{ blob: Blob; nama:
   y += 6; d.text('Demikian disampaikan atas perhatiannya diucapkan terimakasih.', L, y); y += 14
   d.text('PLT DIREKTUR NIAGA & OPERASI', 130, y); d.setFont('helvetica', 'bold'); d.text('RAHMAT DIAN AMIR', 130, y + 24); d.setFont('helvetica', 'normal')
   d.setFontSize(9); d.text('Tembusan :', L, y + 16); d.text('Direktur Utama PT PLN Batubara Niaga', L, y + 21); d.text('Paraf : ………………..', L, y + 30)
+  if (paraf === 'ada') { const pi = await img(BASE + 'si/paraf.png'); if (pi) { try { d.addImage(pi, 'PNG', L + 20, y + 24, 14, 11.2) } catch { /* tanpa paraf */ } } }
   if (draft) { d.setTextColor(210, 60, 60); d.setFontSize(60); d.setFont('helvetica', 'bold'); d.text('DRAFT', 105, 160, { align: 'center', angle: 35 }) }
   return { blob: d.output('blob'), nama: namaFile(s) }
 }

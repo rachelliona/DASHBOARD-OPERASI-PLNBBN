@@ -8,7 +8,7 @@ import { ALASAN, Alasan, SI, kosong } from '../si/types'
 import { STATUS_LABEL, Status, bandingkan, cekKoreksi, fmtNomor, iso, nomorBerikut, periksa, rantai, rentangId, statusOf, supersededIds, tglId, FIELDS } from '../si/logic'
 import { dariDatabas, dariSheet, gabung } from '../si/legacy'
 import { unduhPdf } from '../si/pdf'
-import { unduhDocx } from '../si/docx'
+import { getParaf, setParaf, unduhDocx } from '../si/docx'
 import { APPS_SCRIPT } from '../si/appsscript'
 const B = import.meta.env.BASE_URL
 type Ref = { pltu: string[][]; mitra: string[][]; transport: string[][]; jetty: string[][]; moda: string[] }
@@ -33,6 +33,7 @@ export default function SIPage() {
       <Kpi label="Antrean pengajuan" value={String(antre)} accent="#8aa0b8" note="menunggu Racel" />
     </div>
     <div className="vsw mb-3" role="tablist" aria-label="Modul SI">{([['monitor', 'Monitoring SI'], ['buat', 'Buat SI'], ['nomor', 'Nomor & celah'], ['sinkron', 'Sinkron & impor']] as [Tab, string][]).map(([v, l]) => <button key={v} role="tab" aria-selected={tab === v} className={'vsw-b' + (tab === v ? ' on' : '')} onClick={() => setTab(v)}>{l}{v === 'buat' && antre ? ` (${antre})` : ''}</button>)}</div>
+    <div className="flex items-center gap-2 mb-3 text-[12px]"><span className="text-slate-400">Dokumen hasil unduhan:</span><ParafPilih /></div>
     {tab === 'monitor' && <Monitor today={today} sup={sup} onAksi={(mode, si) => setDlg({ mode, si })} admin={admin} />}
     {tab === 'buat' && <Buat admin={admin} nama={user?.nama || user?.id || ''} />}
     {tab === 'nomor' && <Nomor admin={admin} />}
@@ -40,6 +41,7 @@ export default function SIPage() {
     {dlg && <Aksi mode={dlg.mode} lama={dlg.si} nama={user?.nama || user?.id || ''} admin={admin} tutup={() => setDlg(null)} />}
   </>
 }
+function ParafPilih() { const [p, setP] = useState(getParaf()); return <span className="inline-flex gap-1.5">{([['ada', 'Dengan paraf template'], ['kosong', 'Kosongan (tanpa paraf)']] as const).map(([v, l]) => <button key={v} className={'fchip' + (p === v ? ' on' : '')} onClick={() => { setParaf(v); setP(v) }}>{l}</button>)}</span> }
 function Monitor({ today, sup, onAksi, admin }: { today: string; sup: Set<string>; onAksi: (m: 'revisi' | 'koreksi', s: SI) => void; admin: boolean }) {
   const { rows, blok } = useSI(); const cek = useMemo(() => periksa(rows, blok), [rows, blok]); const [q, setQ] = useState(''); const [th, setTh] = useState(String(new Date().getFullYear())); const [f, setF] = useState<string>('semua'); const [pm, setPm] = useState(''); const [buka, setBuka] = useState('')
   const masalah = useMemo(() => new Map(cek.masalah.map(m => [m.id, m])), [cek])
