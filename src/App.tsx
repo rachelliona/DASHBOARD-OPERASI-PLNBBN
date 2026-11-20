@@ -7,6 +7,7 @@ import { useStore } from './store'
 import Ringkasan from './pages/Ringkasan'
 import Laporan from './pages/Laporan'
 import Peta from './pages/Peta'
+import SIPage from './pages/SI'
 import Dashboard from './pages/Dashboard'
 import Linimasa from './pages/Linimasa'
 import Eta from './pages/Eta'
@@ -88,7 +89,7 @@ export default function App() {
       <div key={'p' + pathname} className="p-3 md:p-4 lg:p-6 page page-in pb-24 lg:pb-8"><Routes>
         <Route path="/" element={<Ringkasan />} /><Route path="/peta" element={<Peta />} />
         <Route path="/laporan" element={<Navigate to="/laporan/harian" replace />} /><Route path="/laporan/harian" element={<Laporan />} />
-        <Route path="/eta" element={<Eta />} /><Route path="/analisis" element={<Analisis />} /><Route path="/kinerja-mitra" element={<KinerjaMitra />} /><Route path="/kontrak" element={<Kontrak />} /><Route path="/kontrak/banding" element={<KontrakBanding />} /><Route path="/kontrak/data" element={<KontrakData />} /><Route path="/gantt" element={<GanttPage />} /><Route path="/simulasi" element={<Simulasi />} /><Route path="/linimasa" element={<Linimasa />} /><Route path="/dashboard" element={<Dashboard />} /><Route path="/shipment" element={<MonitoringShipment />} /><Route path="/pltu" element={<MonitoringPltu />} /><Route path="/pltu/:nama" element={<PltuDetail />} />
+        <Route path="/si" element={<SIPage />} /><Route path="/eta" element={<Eta />} /><Route path="/analisis" element={<Analisis />} /><Route path="/kinerja-mitra" element={<KinerjaMitra />} /><Route path="/kontrak" element={<Kontrak />} /><Route path="/kontrak/banding" element={<KontrakBanding />} /><Route path="/kontrak/data" element={<KontrakData />} /><Route path="/gantt" element={<GanttPage />} /><Route path="/simulasi" element={<Simulasi />} /><Route path="/linimasa" element={<Linimasa />} /><Route path="/dashboard" element={<Dashboard />} /><Route path="/shipment" element={<MonitoringShipment />} /><Route path="/pltu" element={<MonitoringPltu />} /><Route path="/pltu/:nama" element={<PltuDetail />} />
         <Route path="/realisasi" element={<RealisasiRingkasan />} /><Route path="/realisasi/:bulan" element={<RealisasiBulan />} />
         <Route path="/sheet/:name" element={<SheetGuard admin={isAdmin(user)} />} /><Route path="/sumber-data" element={isAdmin(user) ? <Sumber /> : <Navigate to="/" replace />} /><Route path="/pengaturan" element={isAdmin(user) ? <Pengaturan /> : <Navigate to="/" replace />} />
       </Routes></div></main>

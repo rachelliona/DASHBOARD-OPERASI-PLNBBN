@@ -8,3 +8,4 @@ export const GROUPS = {
   si: ['Nomor SI','Realisasi Penugasan Mitra','Pengalihan Shipment','ALL Shipment'],
 }
 export const TARGET_TAHUNAN = 13100000 // MT, sel TARGET pada sheet realisasi bulanan
+export const SI_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTNubBR6mjW_E_aD78ZK64jqZw-in5h9qa_6fbgCh2hOgzTl1PjFMeVO_2jij8SsDHUDOVcQngIZ5SB/pub?gid=275104604&single=true&output=csv'
