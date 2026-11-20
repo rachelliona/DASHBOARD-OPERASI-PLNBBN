@@ -106,7 +106,7 @@ function Form({ v, set, kunci }: { v: SI; set: (s: SI) => void; kunci?: boolean 
     {kunci && null}
   </div>
 }
-const wajib = (s: SI) => { const e: string[] = []; if (!s.pemohon) e.push('pemohon'); if (!s.mitra) e.push('shipper'); if (!s.transporter) e.push('transporter'); if (!s.kapal) e.push('nama kapal'); if (!(s.volume && s.volume > 0)) e.push('volume'); if (!s.muat) e.push('pelabuhan muat'); if (!s.laycanMulai || !s.laycanSelesai) e.push('laycan'); else if (s.laycanSelesai < s.laycanMulai) e.push('laycan terbalik'); if (!s.etaMulai) e.push('ETA'); if (!s.pltu) e.push('PLTU'); return e }
+const wajib = (s: SI) => { const e: string[] = []; if (!s.pemohon) e.push('pemohon'); if (!s.mitra) e.push('shipper'); if (s.skema === 'FOB' && !s.transporter) e.push('transporter'); if (!s.kapal) e.push('nama kapal'); if (!(s.volume && s.volume > 0)) e.push('volume'); if (!s.muat) e.push('pelabuhan muat'); if (!s.laycanMulai || !s.laycanSelesai) e.push('laycan'); else if (s.laycanSelesai < s.laycanMulai) e.push('laycan terbalik'); if (!s.etaMulai) e.push('ETA'); if (!s.pltu) e.push('PLTU'); return e }
 function BuatModal({ awal, admin, nama, tutup, info }: { awal: SI | null; admin: boolean; nama: string; tutup: () => void; info: (t: string) => void }) {
   const [v, setV] = useState<SI>(() => awal ?? ({ ...kosong(), pemohon: /andi|billy|racel|rendi/i.exec(nama)?.[0].replace(/^./, c => c.toUpperCase()) ?? '' })); const [msg, setMsg] = useState(''); const [busy, setBusy] = useState(false); const kurang = wajib(v)
   const jalan = async (fn: () => Promise<string>) => { setBusy(true); setMsg(''); try { info(await fn()); tutup() } catch (e: any) { setMsg(e.message || String(e)) } setBusy(false) }
