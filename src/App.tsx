@@ -34,6 +34,7 @@ import { navFor, isAdmin, DATA_SHEETS, NavItem } from './config/nav'
 import { fmtDate } from './domain/format'
 import { setTheme, useTheme } from './theme'
 import { InstallBanner, MobileMenu, PullToRefresh, Splash, usePageTitle } from './components/MobileApp'
+import { WelcomePopup } from './components/WelcomePopup'
 import { Moon, RefreshCw, Sun } from 'lucide-react'
 const TABS: [string, string, any][] = [['/', 'Ringkasan', LayoutDashboard], ['/peta', 'Peta', MapIcon], ['/laporan/harian', 'Laporan', FileText], ['/kontrak', 'Kontrak', FileSignature]]
 const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: FileText, activity: Activity, users: Users, db: Database, contract: FileSignature }
@@ -95,6 +96,6 @@ export default function App() {
         <Route path="/sheet/:name" element={<SheetGuard admin={isAdmin(user)} />} /><Route path="/sumber-data" element={isAdmin(user) ? <Sumber /> : <Navigate to="/" replace />} /><Route path="/pengaturan" element={isAdmin(user) ? <Pengaturan /> : <Navigate to="/" replace />} />
       </Routes></div></main>
     <FoldInit /><Palette open={pal} onClose={() => setPal(false)} />
-    <MobileMenu open={sheet} onClose={() => setSheet(false)} nav={navFor(isAdmin(user))} user={user} onLogout={logout} onSearch={() => setPal(true)} /><InstallBanner /><PullToRefresh /><Splash />
+    <MobileMenu open={sheet} onClose={() => setSheet(false)} nav={navFor(isAdmin(user))} user={user} onLogout={logout} onSearch={() => setPal(true)} /><InstallBanner /><PullToRefresh /><Splash /><WelcomePopup user={user} />
     <nav className="no-print tabbar lg:hidden" aria-label="Menu utama">{TABS.map(([to, l, Ic]) => <NavLink key={to} to={to} end onClick={() => { try { navigator.vibrate?.(6) } catch { /* abaikan */ } }} className={({ isActive }) => 'tab' + (isActive ? ' active' : '')}><i className="tab-ic"><Ic size={20} /></i><span>{l}</span></NavLink>)}<button className={'tab' + (sheet ? ' active' : '')} onClick={() => setSheet(true)}><i className="tab-ic"><Menu size={20} /></i><span>Menu</span></button></nav></div>
 }
