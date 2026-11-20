@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Ship, STEPS, regionOf } from '../domain/monthly'
 import { REGION_COLOR } from '../config/regions'
@@ -61,15 +62,15 @@ export default function Gantt({ ships, today: ref, cmp = 6, onSelect, selId, fla
             </div></div>
         })}
       </div></div>
-    {tip && <GanttTip t={tip} cmp={cmp} />}
+    {tip && createPortal(<GanttTip t={tip} cmp={cmp} />, document.body)}
     {hidden > 0 && <p className="text-[11px] text-slate-500 mt-1">{hidden} shipment tidak ditampilkan karena belum punya tanggal milestone maupun ETA.</p>}
   </div>
 }
 
 function GanttTip({ t, cmp }: { t: { x: number; y: number; s: Ship; nm: string }; cmp: number }) {
-  const { s, nm } = t; const W = 280; const left = Math.min(t.x + 14, window.innerWidth - W - 8), flip = t.y > window.innerHeight - 280
+  const { s, nm } = t; const W = 280; const left = Math.min(t.x + 10, window.innerWidth - W - 8), flip = t.y > window.innerHeight - 280
   const steps = STEPS.map((n, k) => ({ n, v: s.ms[k] })).filter(x => x.v != null) as { n: string; v: number }[]
-  return <div className="no-print" style={{ position: 'fixed', left, top: flip ? undefined : t.y + 16, bottom: flip ? window.innerHeight - t.y + 12 : undefined, width: W, zIndex: 8000, pointerEvents: 'none', background: 'var(--s1,#12161d)', color: 'var(--tx,#e8ecf2)', border: '1px solid rgba(255,255,255,.16)', borderRadius: 10, padding: '10px 12px', fontSize: 12, lineHeight: 1.45, boxShadow: '0 10px 30px rgba(0,0,0,.45)' }}>
+  return <div className="no-print" style={{ position: 'fixed', left, top: flip ? undefined : t.y + 10, bottom: flip ? window.innerHeight - t.y + 8 : undefined, width: W, zIndex: 8000, pointerEvents: 'none', background: 'var(--s1,#12161d)', color: 'var(--tx,#e8ecf2)', border: '1px solid rgba(255,255,255,.16)', borderRadius: 10, padding: '10px 12px', fontSize: 12, lineHeight: 1.45, boxShadow: '0 10px 30px rgba(0,0,0,.45)' }}>
     <div style={{ fontWeight: 700, fontSize: 13 }}>{nm}</div>
     <div style={{ opacity: .75 }}>{s.plant}{s.mitraReal || s.sumber ? ' · ' + (s.mitraReal || s.sumber) : ''}</div>
     <div style={{ margin: '4px 0', opacity: .9 }}>{s.vol ? fmtNum(s.vol) + ' MT' : s.jumlah ? fmtNum(s.jumlah) + ' MT' : 'Volume —'} · {s.eta != null ? 'ETA ' + dm(s.eta) : 'ETA —'} · {s.stage ? (s.stage === 'terjadwal' ? 'Terjadwal' : stageLabel(s.stage)) : 'Menunggu'}</div>
