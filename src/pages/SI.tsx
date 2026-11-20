@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { FileText } from 'lucide-react'
 import { Card, Kpi, PageHead } from '../components/ui'
 import { useAuth } from '../auth'
-import { isAdmin } from '../config/nav'
+import { bisaBuatSI, isAdmin } from '../config/nav'
 import { useSI, siActions } from '../si/store'
 import { ALASAN, Alasan, SI, kosong } from '../si/types'
 import { STATUS_LABEL, Status, bandingkan, cekKoreksi, fmtNomor, iso, nomorBerikut, periksa, rantai, rentangId, statusOf, supersededIds, tglId, FIELDS } from '../si/logic'
@@ -19,12 +19,12 @@ const WARNA: Record<Status, string> = { pengajuan: '#8aa0b8', batal: '#6b7280', 
 const Chip = ({ s }: { s: Status }) => <span className="inline-block rounded-full px-2 py-0.5 text-[10.5px] font-semibold whitespace-nowrap" style={{ background: WARNA[s] + '26', color: WARNA[s], border: `1px solid ${WARNA[s]}66` }}>{STATUS_LABEL[s]}</span>
 type Tab = 'monitor' | 'antrean' | 'nomor' | 'sinkron'
 export default function SIPage() {
-  const st = useSI(); const { user } = useAuth(); const admin = isAdmin(user); const [tab, setTab] = useState<Tab>('monitor'); const nav = useNavigate(); const [info, setInfo] = useState('')
+  const st = useSI(); const { user } = useAuth(); const admin = isAdmin(user); const bisa = bisaBuatSI(user) || admin; const [tab, setTab] = useState<Tab>('monitor'); const nav = useNavigate(); const [info, setInfo] = useState('')
   const today = iso(new Date()); const sup = useMemo(() => supersededIds(st.rows), [st.rows]); const cek = useMemo(() => periksa(st.rows, st.blok), [st.rows, st.blok])
   const tahunIni = new Date().getFullYear(); const thn = st.rows.filter(r => r.tahun === tahunIni && r.tahap !== 'pengajuan')
   const lewat = thn.filter(r => statusOf(r, today, sup) === 'lewat').length, rev = thn.filter(r => r.revisiKe > 0).length, revArmada = thn.filter(r => r.alasan === 'armada').length, antre = st.rows.filter(r => r.tahap === 'pengajuan').length
   return <>
-    <PageHead icon={FileText} title="Shipping Instruction" month={false} sub="Penomoran SI otomatis tanpa dobel, monitoring laycan & revisi, dan cetak dokumen." right={<button className="fchip on !text-[16px] !font-bold !px-6 !py-3 !rounded-2xl" onClick={() => nav('/si/baru')} aria-label="Buat SI baru">+ Buat SI</button>} />
+    <PageHead icon={FileText} title="Shipping Instruction" month={false} sub="Penomoran SI otomatis tanpa dobel, monitoring laycan & revisi, dan cetak dokumen." right={bisa ? <button className="fchip on !text-[16px] !font-bold !px-6 !py-3 !rounded-2xl" onClick={() => nav('/si/baru')} aria-label="Buat SI baru">+ Buat SI</button> : undefined} />
     {info && <div className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-[12px] mb-3 flex justify-between gap-2"><span>{info}</span><button onClick={() => setInfo('')} aria-label="Tutup">×</button></div>}
     {!st.rows.length && <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-[12px] mb-3">Registri SI masih kosong. Buka tab <b>Sinkron &amp; impor</b> untuk memuat riwayat SI (Databas SI + sheet 2026) agar nomor berikutnya tepat.</div>}
     <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
@@ -36,14 +36,14 @@ export default function SIPage() {
     </div>
     <div className="vsw mb-3" role="tablist" aria-label="Modul SI">{([['monitor', 'Monitoring SI'], ['antrean', 'Antrean pengajuan'], ['nomor', 'Nomor & celah'], ['sinkron', 'Sinkron & impor']] as [Tab, string][]).map(([v, l]) => <button key={v} role="tab" aria-selected={tab === v} className={'vsw-b' + (tab === v ? ' on' : '')} onClick={() => setTab(v)}>{l}{v === 'antrean' && antre ? ` (${antre})` : ''}</button>)}</div>
     <div className="flex items-center gap-2 mb-3 text-[12px]"><span className="text-slate-400">Dokumen hasil unduhan:</span><ParafPilih /></div>
-    {tab === 'monitor' && <Monitor today={today} sup={sup} onAksi={(mode, si) => nav(`/si/${mode}/${si.id}`)} admin={admin} />}
-    {tab === 'antrean' && <Antrean admin={admin} onBuka={x => nav(`/si/edit/${x.id}`)} info={setInfo} />}
+    {tab === 'monitor' && <Monitor today={today} sup={sup} onAksi={(mode, si) => nav(`/si/${mode}/${si.id}`)} admin={admin} bisa={bisa} />}
+    {tab === 'antrean' && <Antrean admin={bisa} onBuka={x => nav(`/si/edit/${x.id}`)} info={setInfo} />}
     {tab === 'nomor' && <Nomor admin={admin} />}
     {tab === 'sinkron' && <Sinkron admin={admin} />}
   </>
 }
 function ParafPilih() { const [p, setP] = useState(getParaf()); return <span className="inline-flex gap-1.5">{([['ada', 'Dengan paraf template'], ['kosong', 'Kosongan (tanpa paraf)']] as const).map(([v, l]) => <button key={v} className={'fchip' + (p === v ? ' on' : '')} onClick={() => { setParaf(v); setP(v) }}>{l}</button>)}</span> }
-function Monitor({ today, sup, onAksi, admin }: { today: string; sup: Set<string>; onAksi: (m: 'revisi' | 'koreksi', s: SI) => void; admin: boolean }) {
+function Monitor({ today, sup, onAksi, admin, bisa }: { today: string; sup: Set<string>; onAksi: (m: 'revisi' | 'koreksi', s: SI) => void; admin: boolean; bisa: boolean }) {
   const { rows, blok } = useSI(); const cek = useMemo(() => periksa(rows, blok), [rows, blok]); const [q, setQ] = useState(''); const [th, setTh] = useState(String(new Date().getFullYear())); const [f, setF] = useState<string>('semua'); const [pm, setPm] = useState(''); const [buka, setBuka] = useState('')
   const masalah = useMemo(() => new Map(cek.masalah.map(m => [m.id, m])), [cek])
   const data = useMemo(() => rows.filter(r => r.tahap !== 'pengajuan').map(r => ({ r, s: statusOf(r, today, sup) })).filter(({ r, s }) => {
@@ -61,17 +61,17 @@ function Monitor({ today, sup, onAksi, admin }: { today: string; sup: Set<string
         <td className="px-2 whitespace-nowrap">{r.tanggal ? tglId(r.tanggal) : '—'}</td><td className="px-2">{r.pemohon || '—'}</td><td className="px-2">{r.tambang || r.mitra || '—'}</td><td className="px-2">{r.bongkar || r.pltu || '—'}</td>
         <td className="px-2 whitespace-nowrap">{rentangId(r.laycanMulai, r.laycanSelesai) || r.laycanTeks || '—'}</td><td className="px-2"><Chip s={s} /></td>
         <td className="px-2 whitespace-nowrap">{r.revisiKe > 0 ? <span title={r.alasan ? ALASAN[r.alasan] : ''}>Rev-{r.revisiKe}{r.alasan === 'armada' ? ' 🚢' : ''}</span> : ''}{r.koreksi.length ? <span className="text-slate-400 ml-1" title="Ada koreksi penulisan">✎{r.koreksi.length}</span> : ''}</td>
-        <td className="px-2 whitespace-nowrap text-right"><button className="fchip on" title="Revisi: nomor baru, tercatat apa yang berubah" onClick={e => { e.stopPropagation(); onAksi('revisi', r) }}>Revisi</button> <button className="fchip" title="Koreksi typo: nomor tetap" onClick={e => { e.stopPropagation(); onAksi('koreksi', r) }}>Koreksi</button> <button className="fchip" title="Word dari template asli" onClick={e => { e.stopPropagation(); unduhDocx(r) }}>Word</button> <button className="fchip" onClick={e => { e.stopPropagation(); unduhPdf(r) }}>PDF</button></td></tr>
-        {buka === r.id && <tr key={r.id + 'd'} className="bg-white/[.02]"><td colSpan={9} className="px-3 py-3"><Detail r={r} admin={admin} onAksi={onAksi} /></td></tr>}</>})}
+        <td className="px-2 whitespace-nowrap text-right">{bisa && <><button className="fchip on" title="Revisi: nomor baru, tercatat apa yang berubah" onClick={e => { e.stopPropagation(); onAksi('revisi', r) }}>Revisi</button> <button className="fchip" title="Koreksi typo: nomor tetap" onClick={e => { e.stopPropagation(); onAksi('koreksi', r) }}>Koreksi</button> </>}<button className="fchip" title="Word dari template asli" onClick={e => { e.stopPropagation(); unduhDocx(r) }}>Word</button> <button className="fchip" onClick={e => { e.stopPropagation(); unduhPdf(r) }}>PDF</button></td></tr>
+        {buka === r.id && <tr key={r.id + 'd'} className="bg-white/[.02]"><td colSpan={9} className="px-3 py-3"><Detail r={r} admin={admin} bisa={bisa} onAksi={onAksi} /></td></tr>}</>})}
       {!data.length && <tr><td colSpan={9} className="px-2 py-8 text-center text-slate-400">Tidak ada SI yang cocok.</td></tr>}</tbody></table></div>
     {data.length > 300 && <p className="text-[11px] text-slate-400 mt-2">Menampilkan 300 pertama — persempit dengan filter.</p>}
   </Card>
 }
-function Detail({ r, admin, onAksi }: { r: SI; admin: boolean; onAksi: (m: 'revisi' | 'koreksi', s: SI) => void }) {
+function Detail({ r, admin, bisa: boleh, onAksi }: { r: SI; admin: boolean; bisa: boolean; onAksi: (m: 'revisi' | 'koreksi', s: SI) => void }) {
   const { rows } = useSI(); const rt = rantai(rows, r); const bisa = r.sumber !== 'sheet-2026' || !!r.mitra
   return <div className="grid md:grid-cols-2 gap-4 text-[12px]">
     <div className="space-y-0.5"><div><span className="text-slate-400">Kapal:</span> {r.kapal || '—'}{r.moda ? ` (${r.moda})` : ''}</div><div><span className="text-slate-400">Volume:</span> {r.volume ?? '—'} ton</div><div><span className="text-slate-400">Muat:</span> {r.muat || '—'}</div><div><span className="text-slate-400">ETA:</span> {rentangId(r.etaMulai, r.etaSelesai) || r.etaTeks || '—'}</div><div><span className="text-slate-400">Transporter:</span> {r.transporter || '—'}</div><div><span className="text-slate-400">Shipper:</span> {r.mitra || '—'}</div>
-      <div className="pt-2 flex gap-2 flex-wrap"><button className="fchip" onClick={() => onAksi('revisi', r)}>Revisi SI (nomor baru)</button><button className="fchip" onClick={() => onAksi('koreksi', r)}>Koreksi penulisan (nomor tetap)</button>{admin && r.tahap === 'terbit' && <button className="fchip" onClick={() => siActions.simpan({ ...r, ttd: !r.ttd })}>{r.ttd ? '✓ Sudah ttd Dirop' : 'Tandai sudah ttd'}</button>}</div>{!bisa && <p className="text-[11px] text-amber-300 pt-1">Data impor sheet belum lengkap — lengkapi lewat Koreksi/Revisi sebelum cetak PDF.</p>}</div>
+      <div className="pt-2 flex gap-2 flex-wrap">{boleh && <><button className="fchip" onClick={() => onAksi('revisi', r)}>Revisi SI (nomor baru)</button><button className="fchip" onClick={() => onAksi('koreksi', r)}>Koreksi penulisan (nomor tetap)</button></>}{admin && r.tahap === 'terbit' && <button className="fchip" onClick={() => siActions.simpan({ ...r, ttd: !r.ttd })}>{r.ttd ? '✓ Sudah ttd Dirop' : 'Tandai sudah ttd'}</button>}</div>{!bisa && <p className="text-[11px] text-amber-300 pt-1">Data impor sheet belum lengkap — lengkapi lewat Koreksi/Revisi sebelum cetak PDF.</p>}</div>
     <div>{rt.length > 1 && <><div className="text-slate-400 mb-1">Rantai revisi</div><ol className="space-y-1">{rt.map(x => <li key={x.id} className={x.id === r.id ? 'font-semibold' : ''}>{fmtNomor(x.nomor, x.tahun)} — {x.revisiKe ? `Rev-${x.revisiKe}${x.alasan ? ' · ' + ALASAN[x.alasan] : ''}` : 'SI awal'}{x.perubahan.length > 0 && <ul className="text-slate-400 ml-4 list-disc">{x.perubahan.map((u, i) => <li key={i}>{u.label}: {u.dari} → <b className="text-slate-200">{u.ke}</b></li>)}</ul>}</li>)}</ol></>}
       {r.ketRevisi && <p className="mt-1 text-slate-300">Ket. revisi: {r.ketRevisi}</p>}
       {r.koreksi.length > 0 && <><div className="text-slate-400 mt-2 mb-1">Riwayat koreksi penulisan (bukan revisi)</div><ul className="list-disc ml-4">{r.koreksi.map((k, i) => <li key={i}>{new Date(k.at).toLocaleDateString('id-ID')} · {k.oleh}: {k.ubah.map(u => `${u.label} "${u.dari}"→"${u.ke}"`).join('; ')}</li>)}</ul></>}</div>
@@ -86,7 +86,7 @@ export function Form({ v, set, kunci }: { v: SI; set: (s: SI) => void; kunci?: b
   const jt = (n: string) => { const m = ref?.jetty.find(x => x[0].toLowerCase() === n.toLowerCase()); p({ muat: m ? `${m[0]}, ${m[1]}` : n }) }
   return <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
     <Fld l="Skema"><select {...t('skema')}><option>FOB</option><option>CIF</option><option>Freight</option></select></Fld>
-    <Fld l="Pemohon"><input list="dl-pemohon" {...t('pemohon')} placeholder="pilih / ketik nama" /><datalist id="dl-pemohon">{['Andi', 'Billy', 'Racel', 'Rendi'].map(x => <option key={x} value={x} />)}</datalist></Fld>
+    <Fld l="Pemohon"><input list="dl-pemohon" {...t('pemohon')} placeholder="pilih / ketik nama" /><datalist id="dl-pemohon">{['Andi', 'Billy', 'Racel', 'Rendi', 'Popi', 'Rully', 'Catur', 'Pras'].map(x => <option key={x} value={x} />)}</datalist></Fld>
     <Fld l="Jenis"><label className="mr-3"><input type="checkbox" checked={v.kelistrikan} onChange={e => p({ kelistrikan: e.target.checked })} /> Kelistrikan</label><label><input type="checkbox" checked={v.bib} onChange={e => p({ bib: e.target.checked })} /> BIB</label></Fld>
     <Fld l="Shipper / mitra batubara"><input list="dl-mitra" value={v.mitra} onChange={e => mt(e.target.value)} /></Fld>
     <Fld l="Kontrak PJBB"><input {...t('kontrak')} /></Fld>
@@ -108,7 +108,7 @@ export function Form({ v, set, kunci }: { v: SI; set: (s: SI) => void; kunci?: b
 export const wajib = (s: SI) => { const e: string[] = []; if (!s.pemohon) e.push('pemohon'); if (!s.mitra) e.push('shipper'); if (s.skema === 'FOB' && !s.transporter) e.push('transporter'); if (!s.kapal) e.push('nama kapal'); if (!(s.volume && s.volume > 0)) e.push('volume'); if (!s.muat) e.push('pelabuhan muat'); if (!s.laycanMulai || !s.laycanSelesai) e.push('laycan'); else if (s.laycanSelesai < s.laycanMulai) e.push('laycan terbalik'); if (!s.etaMulai) e.push('ETA'); if (!s.pltu) e.push('PLTU'); return e }
 function Antrean({ admin, onBuka, info }: { admin: boolean; onBuka: (s: SI) => void; info: (t: string) => void }) {
   const { rows } = useSI(); const antre = rows.filter(r => r.tahap === 'pengajuan')
-  const terbit = async (r: SI) => { try { const n = await siActions.terbitkan(r, { tanggal: iso(new Date()) }); await unduhDocx(n); await unduhPdf(n); info(`SI terbit: ${fmtNomor(n.nomor, n.tahun)}`) } catch (e: any) { info(e.message || String(e)) } }
+  const terbit = async (r: SI) => { try { const n = await siActions.terbitkan(r, { tanggal: iso(new Date()) }); info(`SI terbit: ${fmtNomor(n.nomor, n.tahun)}. Unduh Word/PDF dari baris SI di tab Monitoring.`) } catch (e: any) { info(e.message || String(e)) } }
   return <Card title={`Antrean pengajuan (${antre.length})`}>{!antre.length ? <p className="text-xs text-slate-400">Tidak ada pengajuan menunggu. Klik <b>+ Buat SI</b> di kanan atas untuk membuat yang baru.</p> : <div className="space-y-1.5">{antre.map(r => <div key={r.id} className="flex items-center gap-2 text-xs border-t border-white/5 pt-1.5 flex-wrap"><b>{r.pemohon || '—'}</b><span>{r.tambang || r.mitra}</span><span className="text-slate-400">→ {r.pltu}</span><span className="text-slate-400">laycan {rentangId(r.laycanMulai, r.laycanSelesai)}</span><span className="flex-1" />
     <button className="fchip" onClick={() => onBuka(r)}>Buka / edit</button>{admin && <button className="fchip" onClick={() => terbit(r)}>Terbitkan</button>}<button className="fchip" onClick={() => siActions.hapusPengajuan(r.id)}>Hapus</button></div>)}</div>}</Card>
 }

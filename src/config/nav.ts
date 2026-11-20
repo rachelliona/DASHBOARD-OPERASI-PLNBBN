@@ -20,6 +20,9 @@ export const NAV: NavItem[] = [
 
 /** Menu Data (sumber data, pengaturan, sheet mentah) hanya untuk akun admin; pengguna lain berhenti di "Mitra dan Kepatuhan". */
 export const ADMIN_IDS = ['racel']
+/** Yang boleh membuat SI (terbit, revisi, koreksi). Dicocokkan dengan User ID atau nama depan akun. */
+export const SI_PEMBUAT = ['racel', 'popi', 'billy', 'andi', 'rendi', 'rully', 'catur', 'pras']
+export const bisaBuatSI = (u?: { id: string; nama?: string } | null) => !!u && ((u.id ?? '') + ' ' + (u.nama ?? '')).toLowerCase().split(/[^a-z]+/).some(t => SI_PEMBUAT.includes(t))
 export const isAdmin = (u?: { id: string } | null) => !!u && ADMIN_IDS.includes(u.id.trim().toLowerCase())
 export const DATA_SHEETS = new Set(['Dashboard 1', 'Data Sheet', 'Pivot Table 2', 'MINI DAHSBOARD', 'Sheet13', ...BULAN])
 export const navFor = (admin: boolean) => admin ? NAV : NAV.filter(n => n.label !== 'Data')

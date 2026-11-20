@@ -39,7 +39,10 @@ export async function buatPdf(s: SI, draft = false, paraf: 'ada' | 'kosong' = ((
   const yn = ys + 107; d.setFont('times', 'normal'); d.setFontSize(9.5); T('Tembusan :', 75, yn - 6); T('1.', 80, yn + 8); T('Direktur Utama PT PLN Batubara Niaga', 100, yn + 8)
   d.setFont('helvetica', 'normal'); d.setFontSize(10.5); T('RAHMAT DIAN AMIR', 560, yn, { align: 'center' }); d.setFont('times', 'normal'); d.setFontSize(9.5); T('Paraf : ………………..', 500, yn + 41)
   if (paraf === 'ada') { const pi = await img(BASE + 'si/paraf.png'); if (pi) { try { d.addImage(pi, 'PNG', m(536), m(yn + 20), m(60), m(48)) } catch { /* tanpa paraf */ } } }
-  if (draft) { d.setTextColor(210, 60, 60); d.setFontSize(60); d.setFont('helvetica', 'bold'); d.text('DRAFT', 105, 160, { align: 'center', angle: 35 }) }
+  if (draft) { // cap DRAFT transparan miring 45° di atas dokumen
+    const D = d as any; d.saveGraphicsState(); D.setGState(new D.GState({ opacity: 0.13 })); d.setTextColor(200, 40, 40); d.setFont('helvetica', 'bold'); d.setFontSize(120)
+    d.text('DRAFT', 120, 185, { align: 'center', angle: 45 }); d.restoreGraphicsState()
+  }
   return { blob: d.output('blob'), nama: namaFile(s) }
 }
 export async function unduhPdf(s: SI, draft = false) { const { blob, nama } = await buatPdf(s, draft); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nama; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000) }
