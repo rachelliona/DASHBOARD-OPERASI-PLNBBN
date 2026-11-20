@@ -1,7 +1,7 @@
 import FoldInit from './components/FoldInit'
 import PltuDetail from './pages/PltuDetail'
 import { useEffect, useState } from 'react'
-import { NavLink, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { Link, NavLink, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { Activity, Download, Search, ChevronDown, ChevronsLeft, ChevronsRight, Circle, Database, FileSignature, FileText, LayoutDashboard, LogOut, Map as MapIcon, Menu, Users, X } from 'lucide-react'
 import { useStore } from './store'
 import Ringkasan from './pages/Ringkasan'
@@ -68,7 +68,7 @@ export default function App() {
   return <div className="flex min-h-screen">
     {drawer && <div className="no-print fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setDrawer(false)} />}
     <nav data-rail={rail} className={'no-print sidebar shrink-0 p-3 overflow-y-auto fixed inset-y-0 left-0 z-50 w-[19rem] transition-[transform,width] duration-300 lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:translate-x-0 ' + (rail ? 'lg:w-[84px]' : 'lg:w-[17rem]') + (drawer ? ' translate-x-0' : ' -translate-x-full')}>
-      <div className="side-head"><div className="logo-plate"><Img cls="logo-full" /><Img mark cls="logo-mark" /></div>
+      <div className="side-head"><Link to="/" aria-label="Ke beranda" className="logo-plate" style={{ display: 'block' }} onClick={() => setDrawer(false)}><Img cls="logo-full" /><Img mark cls="logo-mark" /></Link>
         <button aria-label="Tutup menu" className="absolute right-2 top-2 p-2 lg:hidden" onClick={() => setDrawer(false)}><X size={18} /></button></div>
       <div className="side-cap lbl"><i />Dashboard Operasi</div>
       {navFor(isAdmin(user)).map(i => <Item key={i.label} item={i} depth={0} rail={rail} onExpand={() => toggleRail(false)} />)}
@@ -78,7 +78,7 @@ export default function App() {
     <main className="flex-1 min-w-0">
       <header className="topbar no-print px-3 lg:px-5 py-2">
         <div className="topgrid">
-          <div className="top-l"><Img mark cls="lg:hidden h-8 w-auto" /><div className="min-w-0"><h1 className="text-sm font-bold leading-tight truncate"><span className="lg:hidden">{pageTitle}</span><span className="hidden lg:inline">Dashboard Operasi PLN Batubara Niaga</span></h1>
+          <div className="top-l"><button type="button" aria-label="Buka menu" className="lg:hidden" style={{ background: 'none', border: 0, padding: 0, display: 'flex' }} onClick={() => setSheet(true)}><Img mark cls="h-8 w-auto" /></button><div className="min-w-0"><h1 className="text-sm font-bold leading-tight truncate"><span className="lg:hidden">{pageTitle}</span><span className="hidden lg:inline">Dashboard Operasi PLN Batubara Niaga</span></h1>
               <div className="hidden lg:flex items-center gap-2 mt-0.5 min-w-0">{asOf ? <span className="badge past">◷ Data per {fmtDate(asOf)}</span> : <span className="badge live"><i className="pulse" />Langsung · {last ?? 'memuat…'}</span>}</div></div></div>
           <button aria-label="Cari (Ctrl+K)" onClick={() => setPal(true)} className="top-search hidden lg:flex"><Search size={15} /><span>Cari halaman, PLTU, shipment…</span><kbd>Ctrl K</kbd></button>
           <div className="top-r"><span className="lg:hidden"><button aria-label="Cari" onClick={() => setPal(true)} className="theme-btn"><Search size={16} /></button></span><NotifBell /><RefreshBtn /><span className="hidden lg:contents"><ThemeBtn /></span><div className="hidden lg:block"><DateSelector /></div></div>
