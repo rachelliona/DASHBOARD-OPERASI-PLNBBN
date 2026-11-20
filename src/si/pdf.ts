@@ -14,23 +14,31 @@ export function barisSurat(s: SI): [string, string][] {
 }
 async function img(u: string) { try { const b = await (await fetch(u)).blob(); return await new Promise<string>(ok => { const f = new FileReader(); f.onload = () => ok(String(f.result)); f.readAsDataURL(b) }) } catch { return '' } }
 export function namaFile(s: SI) { return `${s.revisiKe ? 'Revisi ' : ''}SI ${String(s.nomor ?? 'draft').padStart(4, '0')}-${s.tahun} ${(s.mitra || s.tambang || '').replace(/^PT\.?\s*/i, '').replace(/[^\w ]/g, '').trim()}`.trim() + '.pdf' }
+/** Tata letak mengikuti contoh SI asli (PDF dari Word): koordinat dalam px pada 90 dpi, A4 = 744 x 1052 px. */
+const PX = 210 / 744
 export async function buatPdf(s: SI, draft = false, paraf: 'ada' | 'kosong' = (() => { try { return localStorage.getItem('pln-si-paraf') === 'kosong' ? 'kosong' : 'ada' } catch { return 'ada' } })()): Promise<{ blob: Blob; nama: string }> {
-  const { jsPDF } = await import('jspdf'); const d = new jsPDF({ unit: 'mm', format: 'a4' }); const L = 20, R = 190, W = R - L
-  const logo = await img(BASE + 'logo-light.png'); if (logo) { try { d.addImage(logo, 'PNG', L, 12, 41, 13) } catch { /* tanpa logo */ } }
-  d.setDrawColor(0, 120, 160); d.setLineWidth(.6); d.line(L, 29, R, 29)
-  let y = 38; d.setFont('helvetica', 'normal'); d.setFontSize(10.5); d.setTextColor(0)
-  const nomor = fmtNomor(s.nomor, s.tahun); const rev = s.revisiKe > 0
-  const perihal = rev ? ['Revisi Shipping Instruction', `${s.sebelumnyaNomor != null ? fmtNomor(s.sebelumnyaNomor, s.tahun) + ' ' : ''}Revisi ke-${s.revisiKe}${s.alasan ? ` (${ALASAN[s.alasan]})` : ''}`, `Laycan ${rentangId(s.laycanMulai, s.laycanSelesai) || s.laycanTeks}`, `di ${s.muat}`] : ['Shipping Instruction', `Laycan ${rentangId(s.laycanMulai, s.laycanSelesai) || s.laycanTeks}`, `di ${s.muat}`]
-  d.text('Nomor', L, y); d.text(': ' + nomor, L + 24, y); d.text('Lampiran', L, y + 5.5); d.text(': -', L + 24, y + 5.5); d.text('Perihal', L, y + 11); const pw = 82
-  let py = y + 11; perihal.forEach((t, i) => { d.setFont('helvetica', i === 0 ? 'bold' : 'normal'); (d.splitTextToSize((i === 0 ? ': ' : '  ') + t, pw) as string[]).forEach(ln => { d.text(ln, L + 24, py); py += 5 }) }); d.setFont('helvetica', 'normal')
-  d.text(tglId(s.tanggal || ''), R, y, { align: 'right' }); const kepada = [...new Set([s.mitra, s.transporter].filter(Boolean))]; let ky = y + 11; d.text('Kepada :', 128, ky); kepada.forEach(k => { (d.splitTextToSize(k, 60) as string[]).forEach(ln => { ky += 5; d.text(ln, 128, ky) }) })
-  y = Math.max(py, ky) + 8; d.text('Mohon agar dapat dilakukan proses pengapalan batubara dengan informasi sebagai berikut:', L, y); y += 8
-  barisSurat(s).forEach(([k, v]) => { const ln = d.splitTextToSize(v, W - 58) as string[]; d.setFont('helvetica', 'normal'); d.text(k, L, y); d.text(':', L + 46, y); ln.forEach((t, i) => d.text(t, L + 52, y + i * 5)); y += Math.max(1, ln.length) * 5 + 1.6 })
-  if (rev && s.perubahan.length) { y += 2; d.setFont('helvetica', 'bold'); d.setFontSize(9.5); d.text('Perubahan dari SI sebelumnya:', L, y); d.setFont('helvetica', 'normal'); y += 5; s.perubahan.slice(0, 8).forEach(u => { const t = `• ${u.label}: ${u.dari}  menjadi  ${u.ke}`; (d.splitTextToSize(t, W) as string[]).forEach(ln => { d.text(ln, L + 2, y); y += 4.4 }) }); d.setFontSize(10.5) }
-  y += 6; d.text('Demikian disampaikan atas perhatiannya diucapkan terimakasih.', L, y); y += 14
-  d.text('PLT DIREKTUR NIAGA & OPERASI', 130, y); d.setFont('helvetica', 'bold'); d.text('RAHMAT DIAN AMIR', 130, y + 24); d.setFont('helvetica', 'normal')
-  d.setFontSize(9); d.text('Tembusan :', L, y + 16); d.text('Direktur Utama PT PLN Batubara Niaga', L, y + 21); d.text('Paraf : ………………..', L, y + 30)
-  if (paraf === 'ada') { const pi = await img(BASE + 'si/paraf.png'); if (pi) { try { d.addImage(pi, 'PNG', L + 20, y + 24, 14, 11.2) } catch { /* tanpa paraf */ } } }
+  const { jsPDF } = await import('jspdf'); const d = new jsPDF({ unit: 'mm', format: 'a4' }); const m = (px: number) => px * PX
+  const kop = await img(BASE + 'si/kop.png'); if (kop) { try { d.addImage(kop, 'PNG', 0, m(35), m(699), m(93.6)) } catch { /* tanpa kop */ } }
+  d.setFont('helvetica', 'normal'); d.setFontSize(10.5); d.setTextColor(0)
+  const T = (t: string, x: number, y: number, o?: any) => d.text(t, m(x), m(y + 5), o)
+  const wrap = (t: string, w: number) => d.splitTextToSize(t, m(w)) as string[]
+  const nomor = fmtNomor(s.nomor, s.tahun); const rev = s.revisiKe > 0; const lay = rentangId(s.laycanMulai, s.laycanSelesai) || s.laycanTeks
+  const perihal = rev ? ['Revisi Shipping Instruction', s.sebelumnyaNomor != null ? fmtNomor(s.sebelumnyaNomor, s.tahun) : '', `Revisi ke-${s.revisiKe}${s.alasan ? ` (${ALASAN[s.alasan]})` : ''}`, `Laycan ${lay}\ndi ${s.muat}`].filter(Boolean) : ['Shipping Instruction', `Laycan ${lay}\ndi ${s.muat}`]
+  T('Nomor', 75, 152); T(':', 145, 152); T(nomor, 160, 152); T('Lampiran', 75, 169); T(':', 145, 169); T('-', 160, 169); T('Perihal', 75, 185); T(':', 145, 185)
+  let y = 185; perihal.forEach((t, i) => { d.setFont('helvetica', i === 0 ? 'italic' : 'normal'); t.split('\n').flatMap(x => wrap(x, 255)).forEach((ln, j) => { if (j === 0) { T('•', 165, y) } T(ln, 187, y); y += 15.5 }) }); d.setFont('helvetica', 'normal'); const yPer = y
+  T(tglId(s.tanggal || ''), 453, 152); T('Kepada :', 453, 185); const kep = [...new Set([s.mitra, s.transporter].filter(Boolean))]; let ky = 200; kep.forEach((k, i) => { wrap(k, 220).forEach((ln, j) => { T(j ? ln : `${i + 1}.  ${ln}`, j ? 470 : 453, ky); ky += 15.5 }) })
+  y = Math.max(yPer, ky) + 33; d.text(wrap('Mohon agar dapat dilakukan proses pengapalan batubara dengan informasi sebagai berikut:', 498), m(167), m(y + 5), { maxWidth: m(498), align: 'justify' }); y += 16 * 2 + 17
+  barisSurat(s).forEach(([k, v]) => { const ln = wrap(v, 312); T(k, 183, y); T(':', 362, y)
+    if (ln.length === 1 && (k === 'Komoditi' || /draught|or subs/.test(v))) { // huruf miring seperti contoh: Steam Coal, draught, or subs
+      let x = 378; v.split(/(draught|or subs)/).filter(Boolean).forEach(seg => { d.setFont('helvetica', k === 'Komoditi' || seg === 'draught' || seg === 'or subs' ? 'italic' : 'normal'); T(seg.trim(), x + (/^\s/.test(seg) ? 5 : 0), y); const sp = 5; x += d.getTextWidth(seg.trim()) / PX + (/\s$/.test(seg) ? sp : 0); if (/^\s/.test(seg)) x += sp }); d.setFont('helvetica', 'normal')
+    } else ln.forEach((t, i) => T(t, 378, y + i * 15.6))
+    y += Math.max(1, ln.length) * 15.6 })
+  if (rev && s.perubahan.length) { y += 6; d.setFont('helvetica', 'bold'); d.setFontSize(9.5); T('Perubahan dari SI sebelumnya:', 183, y); d.setFont('helvetica', 'normal'); y += 14; s.perubahan.slice(0, 8).forEach(u => { wrap(`- ${u.label}: ${u.dari}  menjadi  ${u.ke}`, 480).forEach(ln => { T(ln, 190, y); y += 13.5 }) }); d.setFontSize(10.5) }
+  y += 14; T('Demikian disampaikan atas perhatiannya diucapkan terimakasih.', 164, y)
+  const ys = Math.max(y + 49, 642); T('PLT DIREKTUR NIAGA &', 608, ys, { align: 'center' }); T('OPERASI', 608, ys + 21, { align: 'center' })
+  const yn = ys + 107; d.setFont('times', 'normal'); d.setFontSize(9.5); T('Tembusan :', 167, yn - 6); T('1.', 172, yn + 8); T('Direktur Utama PT PLN Batubara Niaga', 194, yn + 8)
+  d.setFont('helvetica', 'normal'); d.setFontSize(10.5); T('RAHMAT DIAN AMIR', 636, yn, { align: 'center' }); d.setFont('times', 'normal'); d.setFontSize(9.5); T('Paraf : ………………..', 548, yn + 41)
+  if (paraf === 'ada') { const pi = await img(BASE + 'si/paraf.png'); if (pi) { try { d.addImage(pi, 'PNG', m(584), m(yn + 20), m(60), m(48)) } catch { /* tanpa paraf */ } } }
   if (draft) { d.setTextColor(210, 60, 60); d.setFontSize(60); d.setFont('helvetica', 'bold'); d.text('DRAFT', 105, 160, { align: 'center', angle: 35 }) }
   return { blob: d.output('blob'), nama: namaFile(s) }
 }

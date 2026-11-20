@@ -7,9 +7,9 @@ export const tglId = (s: string) => { const m = /^(\d{4})-(\d\d)-(\d\d)/.exec(s)
 /** "17-19 November 2026" / "29 Nov - 2 Des 2026" untuk surat */
 export function rentangId(a: string, b: string) {
   if (!a) return ''; if (!b || a === b) return tglId(a)
-  const [y1, m1, d1] = a.split('-').map(Number), [y2, m2, d2] = b.split('-').map(Number)
-  if (y1 === y2 && m1 === m2) return `${d1}-${d2} ${BLN[m1 - 1]} ${y1}`
-  if (y1 === y2) return `${d1} ${BLN[m1 - 1]} - ${d2} ${BLN[m2 - 1]} ${y1}`
+  const [y1, m1, d1] = a.split('-').map(Number), [y2, m2, d2] = b.split('-').map(Number); const z = (n: number) => String(n).padStart(2, '0')
+  if (y1 === y2 && m1 === m2) return `${z(d1)}-${z(d2)} ${BLN[m1 - 1]} ${y1}`
+  if (y1 === y2) return `${z(d1)} ${BLN[m1 - 1]} - ${z(d2)} ${BLN[m2 - 1]} ${y1}`
   return `${tglId(a)} - ${tglId(b)}`
 }
 /** Parser laycan teks bebas: "10-12/01", "25-27", "30/11-02/12", "17-19 Nov". refIso = tanggal acuan untuk bulan/tahun yang tidak tertulis. */

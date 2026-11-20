@@ -11,7 +11,7 @@ describe('SI numbering', () => {
 })
 describe('laycan & status', () => {
   it('parse rentang', () => { expect(parseRentang('10-12/01', '2026-01-09')).toEqual(['2026-01-10', '2026-01-12']); expect(parseRentang('25-27', '2026-11-20')).toEqual(['2026-11-25', '2026-11-27']); expect(parseRentang('30/11-02/12', '2026-11-20')).toEqual(['2026-11-30', '2026-12-02']); expect(parseRentang('30-02', '2026-11-20')).toEqual(['2026-11-30', '2026-12-02']); expect(parseRentang('abc', '')).toBeNull() })
-  it('rentang surat', () => { expect(rentangId('2026-11-17', '2026-11-19')).toBe('17-19 November 2026') })
+  it('rentang surat', () => { expect(rentangId('2026-11-17', '2026-11-19')).toBe('17-19 November 2026'); expect(rentangId('2026-12-07', '2026-12-08')).toBe('07-08 Desember 2026') })
   it('status lewat / segera / direvisi', () => {
     const a = mk({ id: 'a', nomor: 1, laycanMulai: '2026-11-10', laycanSelesai: '2026-11-12' }), b = mk({ id: 'b', nomor: 2, laycanMulai: '2026-11-22', laycanSelesai: '2026-11-24' }), c = mk({ id: 'c', nomor: 3, sebelumnyaId: 'a', revisiKe: 1, laycanMulai: '2026-12-10', laycanSelesai: '2026-12-12' })
     const sup = supersededIds([a, b, c]); expect(statusOf(a, '2026-11-20', sup)).toBe('direvisi'); expect(statusOf(b, '2026-11-20', sup)).toBe('segera'); expect(statusOf(c, '2026-11-20', sup)).toBe('aktif'); expect(statusOf({ ...b, laycanSelesai: '2026-11-19', laycanMulai: '2026-11-18' }, '2026-11-20', new Set())).toBe('lewat'); expect(statusOf({ ...b, laycanSelesai: '2026-09-19', laycanMulai: '2026-09-18' }, '2026-11-20', new Set())).toBe('arsip')
