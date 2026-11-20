@@ -12,6 +12,7 @@ const dm = (t: number) => { const d = new Date(t); return d.getUTCDate() + ' ' +
 export type GanttProps = { ships: Ship[]; today: number; cmp?: 1 | 6 | 8 | 9; onSelect?: (s: Ship) => void; selId?: string | null; flags?: Map<string, 'tinggi' | 'sedang' | 'rendah'>; group?: boolean; maxH?: number }
 type R = { k: 'reg'; n: string; plt: number; sh: number; vol: number } | { k: 'plt'; n: string; sh: number; vol: number } | { k: 's'; s: Ship }
 export default function Gantt({ ships, today: ref, cmp = 6, onSelect, selId, flags, group = true, maxH = 640 }: GanttProps) {
+  const [tip, setTip] = useState<{ x: number; y: number; s: Ship; nm: string } | null>(null)
   const [cw, setCw] = useState(26); const wrap = useRef<HTMLDivElement>(null)
   const items = useMemo(() => ships.filter(s => s.ms.some(x => x != null) || s.eta != null), [ships])
   const hidden = ships.length - items.length
@@ -47,12 +48,12 @@ export default function Gantt({ ships, today: ref, cmp = 6, onSelect, selId, fla
           if (r.k === 'plt') return <div key={'p' + r.n + i} className="tg-row tg-plt" style={{ height: ROW }}><div className="tg-fix"><b>{r.n}</b><span>{r.sh} shipment · {fmtNum(r.vol)} MT</span></div><div style={{ width: W, ...grid }} /></div>
           const s = r.s; const fl = flags?.get(s.id); const nm = s.tbbg.split(';')[0].trim() || (s.si ? 'SI ' + s.si : 'TBN'); const act = s.ms[9] == null && s.stage !== 'unloading'; const last = s.ms.reduce<number>((a, v, k) => v != null ? k : a, -1)
           const end = s.eta != null ? (s.ms[cmp] ?? (act && ref > s.eta ? ref : null)) : null
-          return <div key={s.id + i} className={'tg-row tg-sh' + (selId === s.id ? ' on' : '')} style={{ height: ROW }} onClick={() => onSelect?.(s)} title={`${s.plant} · ${nm}${s.eta != null ? ' · ETA ' + iso(s.eta) : ''}`}>
+          return <div key={s.id + i} className={'tg-row tg-sh' + (selId === s.id ? ' on' : '')} style={{ height: ROW }} onClick={() => onSelect?.(s)} onMouseMove={e => setTip({ x: e.clientX, y: e.clientY, s, nm })} onMouseLeave={() => setTip(null)}>
             <div className="tg-fix">{fl && <em className={'fl ' + fl} />}<span className="c-mitra">{s.mitraReal || s.sumber || '—'}</span><span className="c-kat">{s.konf === 'carry' ? <u className="co">Carry Over</u> : 'Konfirmasi'}</span><span className="c-ves">{nm}</span><span className="c-vol">{s.vol ? fmtNum(s.vol) : s.jumlah ? fmtNum(s.jumlah) : '—'}</span><span className="c-eta">{s.eta != null ? dm(s.eta) : '—'}</span><span className="c-st"><i className="sd" style={{ background: STATUSES.find(x => x.key === s.stage)?.color ?? '#94a3b8' }} />{s.stage ? (s.stage === 'terjadwal' ? 'Terjadwal' : stageLabel(s.stage)) : 'Menunggu'}</span></div>
             <div className="tg-tl" style={{ width: W, ...grid }}>
               {dayList.map(t => { const w = new Date(t).getUTCDay(); return w === 0 || w === 6 ? <b key={t} className="tg-we" style={{ left: X(t), width: cw }} /> : null })}
               <b className="tg-today" style={{ left: X(today0), width: cw }} />
-              {STEPS.map((_, k) => { const a = s.ms[k], b = s.ms[k + 1]; if (a == null || b == null || b < a) return null; return <b key={k} className="tg-bar" style={{ left: X(a), width: Math.max(4, X(b) - X(a)), background: PHASE_COLOR[k] }} title={`${STEPS[k]}: ${Math.round((b - a) / DAY * 10) / 10} hari`} /> })}
+              {STEPS.map((_, k) => { const a = s.ms[k], b = s.ms[k + 1]; if (a == null || b == null || b < a) return null; return <b key={k} className="tg-bar" style={{ left: X(a), width: Math.max(4, X(b) - X(a)), background: PHASE_COLOR[k] }} /> })}
               {act && last >= 0 && last < 9 && ref > (s.ms[last] as number) && <b className="tg-run" style={{ left: X(s.ms[last] as number), width: Math.max(4, X(ref) - X(s.ms[last] as number)), color: PHASE_COLOR[last], borderColor: PHASE_COLOR[last] }} />}
               {s.ms.map((v, k) => v != null && s.ms[k + 1] == null && (k === 0 || s.ms[k - 1] == null) ? <b key={'m' + k} className="tg-dot" style={{ left: X(v) - 3, background: PHASE_COLOR[Math.min(k, 8)] }} /> : null)}
               {s.eta != null && end != null && end > s.eta + DAY && <b className="tg-late" style={{ left: X(s.eta), width: X(end) - X(s.eta) }} />}
@@ -60,6 +61,20 @@ export default function Gantt({ ships, today: ref, cmp = 6, onSelect, selId, fla
             </div></div>
         })}
       </div></div>
+    {tip && <GanttTip t={tip} cmp={cmp} />}
     {hidden > 0 && <p className="text-[11px] text-slate-500 mt-1">{hidden} shipment tidak ditampilkan karena belum punya tanggal milestone maupun ETA.</p>}
+  </div>
+}
+
+function GanttTip({ t, cmp }: { t: { x: number; y: number; s: Ship; nm: string }; cmp: number }) {
+  const { s, nm } = t; const W = 280; const left = Math.min(t.x + 14, window.innerWidth - W - 8), flip = t.y > window.innerHeight - 280
+  const steps = STEPS.map((n, k) => ({ n, v: s.ms[k] })).filter(x => x.v != null) as { n: string; v: number }[]
+  return <div className="no-print" style={{ position: 'fixed', left, top: flip ? undefined : t.y + 16, bottom: flip ? window.innerHeight - t.y + 12 : undefined, width: W, zIndex: 8000, pointerEvents: 'none', background: 'var(--s1,#12161d)', color: 'var(--tx,#e8ecf2)', border: '1px solid rgba(255,255,255,.16)', borderRadius: 10, padding: '10px 12px', fontSize: 12, lineHeight: 1.45, boxShadow: '0 10px 30px rgba(0,0,0,.45)' }}>
+    <div style={{ fontWeight: 700, fontSize: 13 }}>{nm}</div>
+    <div style={{ opacity: .75 }}>{s.plant}{s.mitraReal || s.sumber ? ' · ' + (s.mitraReal || s.sumber) : ''}</div>
+    <div style={{ margin: '4px 0', opacity: .9 }}>{s.vol ? fmtNum(s.vol) + ' MT' : s.jumlah ? fmtNum(s.jumlah) + ' MT' : 'Volume —'} · {s.eta != null ? 'ETA ' + dm(s.eta) : 'ETA —'} · {s.stage ? (s.stage === 'terjadwal' ? 'Terjadwal' : stageLabel(s.stage)) : 'Menunggu'}</div>
+    {steps.length > 0 && <div style={{ borderTop: '1px solid rgba(255,255,255,.12)', paddingTop: 4 }}>
+      {steps.map((x, i) => { const k = STEPS.indexOf(x.n as any); const nx = steps[i + 1]; return <div key={x.n} style={{ display: 'flex', gap: 6, alignItems: 'center' }}><i style={{ width: 8, height: 8, borderRadius: 2, background: PHASE_COLOR[Math.min(k, 8)], flex: 'none' }} /><span style={{ flex: 1 }}>{x.n}</span><span style={{ opacity: .85 }}>{dm(x.v)}</span>{nx && <span style={{ opacity: .55, width: 44, textAlign: 'right' }}>+{Math.round((nx.v - x.v) / DAY * 10) / 10}h</span>}</div> })}
+    </div>}
   </div>
 }
