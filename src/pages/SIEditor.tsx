@@ -21,6 +21,7 @@ const JUDUL: Record<Mode, string> = { baru: 'Buat SI baru', edit: 'Edit pengajua
 export default function SIEditor({ mode }: { mode: Mode }) {
   const { id } = useParams(); const nav = useNavigate(); const st = useSI(); const { user } = useAuth(); const admin = isAdmin(user) || bisaBuatSI(user); const nama = user?.nama || user?.id || ''
   const lama = id ? st.rows.find(r => r.id === id) : undefined; const key = mode === 'baru' ? 'new' : `${mode}:${id}`
+  const dasar = (): SI => { if (mode === 'baru') return { ...kosong(), pemohon: /andi|billy|racel|rendi|popi|rully|catur|pras/i.exec(nama)?.[0].replace(/^./, c => c.toUpperCase()) ?? '' }; return lama ? { ...lama, ...(mode === 'revisi' ? { alasan: '' as const, ketRevisi: '' } : {}) } : kosong() }
   const awal = useMemo<SI>(() => { const d = bacaDraft(key); if (d) return d; if (mode === 'baru') return { ...kosong(), pemohon: /andi|billy|racel|rendi|popi|rully|catur|pras/i.exec(nama)?.[0].replace(/^./, c => c.toUpperCase()) ?? '' }; return lama ? { ...lama, ...(mode === 'revisi' ? { alasan: '' as const, ketRevisi: '' } : {}) } : kosong() }, [key]) // eslint-disable-line
   const [pilih, setPilih] = useState<number | ''>(''); const [v, setV] = useState<SI>(awal); const [sisi, setSisi] = useState<'form' | 'preview'>('form'); const [msg, setMsg] = useState(''); const [busy, setBusy] = useState(false); const [selesai, setSelesai] = useState<{ si: SI; teks: string } | null>(null)
   const [paraf, setP] = useState(getParaf()); const [blob, setBlob] = useState<Blob | null>(null); const [prevErr, setPrevErr] = useState(''); const cv = useRef<HTMLCanvasElement>(null)
@@ -54,6 +55,7 @@ export default function SIEditor({ mode }: { mode: Mode }) {
   const sl = useMemo(() => slotKosong(st.rows, st.blok, thnSI, tglSI), [st.rows, st.blok, thnSI, tglSI]); const nextNo = nomorBerikut(st.rows, st.blok, thnSI)
   const backdate = !!sl.terakhir && tglSI < sl.terakhir; const cocok = sl.slot.filter(x => x.cocok).slice(-12); const lain = sl.slot.filter(x => !x.cocok).slice(-30).reverse()
   const dm = (x?: SI) => x ? `${x.nomor} (${tglId(x.tanggal).replace(/ \d{4}$/, '')})` : '—'
+  const reset = () => { if (!window.confirm(mode === 'baru' ? 'Kosongkan semua isian form ini?' : 'Kembalikan semua isian ke data awal?')) return; tulisDraft(key, null); setPilih(''); setMsg(''); setV(dasar()) }
   const kurang = wajib(v)
   const jalan = async (fn: () => Promise<{ si: SI; teks: string }>) => { setBusy(true); setMsg(''); try { const r = await fn(); tulisDraft(key, null); setSelesai(r) } catch (e: any) { setMsg(e.message || String(e)) } setBusy(false) }
   const unduhSemua = async (n: SI) => { await unduhDocx(n); await unduhPdf(n) }
@@ -99,6 +101,7 @@ export default function SIEditor({ mode }: { mode: Mode }) {
         {(mode === 'revisi' || mode === 'koreksi') && <div className="mt-3 rounded-xl border border-white/10 bg-white/[.03] p-3 text-[12px]"><div className="font-semibold mb-1">Yang berubah ({ub.length})</div>{!ub.length ? <span className="text-slate-400">Belum ada perubahan.</span> : <ul className="space-y-0.5">{ub.map(u => <li key={u.f}>{u.label}: <span className="text-slate-400">{u.dari}</span> → <b>{u.ke}</b>{kor?.tolak.some(t => t.f === u.f) && <span className="text-red-400 ml-2">bukan typo → pakai Revisi</span>}</li>)}</ul>}{mode === 'revisi' && ub.length > 0 && !penting && <p className="text-amber-300 mt-1">Perubahan kecil — kalau hanya typo, pakai Koreksi penulisan.</p>}</div>}
         {msg && <p className="text-red-400 text-[12.5px] mt-3">{msg}</p>}
         <div className="sticky bottom-0 -mx-1 mt-4 pt-3 pb-1 flex gap-2 flex-wrap items-center border-t border-white/10 bg-[var(--s1,#12161d)]">
+          <button className="fchip" disabled={busy} onClick={reset} title={mode === 'baru' ? 'Hapus semua isian' : 'Kembalikan ke data awal'}>{mode === 'baru' ? 'Reset form' : 'Kembalikan ke awal'}</button>
           {kurang.length > 0 && (mode === 'baru' || mode === 'edit') && <span className="text-[11px] text-slate-400">Belum lengkap: {kurang.join(', ')}</span>}<span className="flex-1" />
           {(mode === 'baru' || mode === 'edit') && <><button className="fchip !px-4 !py-2" disabled={busy} onClick={ajukan}>{admin ? 'Simpan ke antrean' : 'Ajukan ke Racel'}</button>{admin && <button className="fchip on !px-5 !py-2 !text-[14px]" disabled={busy || st.riwayat !== 'ok'} onClick={terbit}>Terbitkan nomor SI</button>}</>}
           {mode === 'kelola' && <button className="fchip on !px-5 !py-2 !text-[14px]" disabled={busy} onClick={kelola}>Simpan perubahan (admin)</button>}
