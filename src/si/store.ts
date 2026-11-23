@@ -52,7 +52,8 @@ export const siActions = {
   },
   setRemote: (u: string) => emit({ remote: u.trim(), sync: '', err: '' }),
   /** Tarik seluruh registri dari server bersama (menggantikan salinan lokal). */
-  async tarik() { if (!state.remote) return; emit({ sync: 'proses', err: '' }); try { const r = await fetch(state.remote + (state.remote.includes('?') ? '&' : '?') + 'action=list'); const j = await r.json(); if (!j.ok) throw new Error(j.error || 'gagal'); emit({ rows: j.rows as SI[], blok: j.blok as Blok[], sync: 'ok', at: now(), err: '' }) } catch (e: any) { emit({ sync: 'gagal', err: String(e?.message || e) }) } },
+  async tarik() { if (!state.remote) return; emit({ sync: 'proses', err: '' }); try { const r = await fetch(state.remote + (state.remote.includes('?') ? '&' : '?') + 'action=list'); const j = await r.json(); if (!j.ok) throw new Error(j.error || 'gagal'); const semua = j.rows as SI[]; let baruHapus = false; for (const x of semua) if (x.id.startsWith('hapus-') && !hapusan.has(x.id.slice(6))) { hapusan.add(x.id.slice(6)); baruHapus = true } if (baruHapus) { try { localStorage.setItem(KH, JSON.stringify([...hapusan])) } catch { /* abaikan */ } }
+      emit({ rows: semua.filter(x => !x.id.startsWith('hapus-') && !hapusan.has(x.id)), blok: j.blok as Blok[], sync: 'ok', at: now(), err: '' }) } catch (e: any) { emit({ sync: 'gagal', err: String(e?.message || e) }) } },
   setAll: (rows: SI[], blok?: Blok[]) => emit({ rows, ...(blok ? { blok } : {}) }),
   /** Impor massal ke server (hanya admin) lalu simpan lokal. */
   async dorong(rows: SI[]) { if (state.remote) { emit({ sync: 'proses' }); try { await call({ action: 'import', rows, blok: state.blok }); emit({ sync: 'ok', at: now() }) } catch (e: any) { emit({ sync: 'gagal', err: String(e?.message || e) }); throw e } } },
@@ -102,7 +103,7 @@ export const siActions = {
     if (pdf) { const { simpanLokal, b64 } = await import('./berkas'); await simpanLokal(n.id, new Blob([pdf], { type: 'application/pdf' }))
       if (state.remote) { try { const j = await call({ action: 'file', name: `SI ${n.nomor}.pdf`, b64: b64(pdf) }); if (j?.url) { n.arsipUrl = j.url; drive = true } } catch { /* Drive belum aktif: salinan lokal tetap ada */ } } }
     await siActions.simpan(n); return { drive } },
-  async hapus(id: string) { const r0 = state.rows.find(r => r.id === id); if (r0 && r0.sumber !== 'sistem') { hapusan.add(id); try { localStorage.setItem(KH, JSON.stringify([...hapusan])) } catch { /* abaikan */ } } if (state.remote) await call({ action: 'delete', id, paksa: true }); emit({ rows: state.rows.filter(r => r.id !== id) }) },
+  async hapus(id: string) { const r0 = state.rows.find(r => r.id === id); if (r0 && r0.sumber !== 'sistem') { hapusan.add(id); try { localStorage.setItem(KH, JSON.stringify([...hapusan])) } catch { /* abaikan */ } } if (state.remote) { await call({ action: 'delete', id, paksa: true }); if (r0 && r0.sumber !== 'sistem') await call({ action: 'save', row: { ...kosong(), id: 'hapus-' + id, tahap: 'batal', tahun: r0.tahun, nomor: null, sumber: 'sistem', dibuat: now(), diubah: now() } }) } emit({ rows: state.rows.filter(r => r.id !== id) }) },
   /** ADMIN: kelola SI terbit — ubah isi/nomor/tanggal tanpa revisi. Tercatat di riwayat. */
   async kelola(lama: SI, baru: SI, oleh: string): Promise<SI> {
     const tanggal = baru.tanggal || lama.tanggal; const tahun = +tanggal.slice(0, 4) || lama.tahun; const nomor = baru.nomor ?? lama.nomor
