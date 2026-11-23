@@ -38,7 +38,7 @@ export default function SIEditor({ mode }: { mode: Mode }) {
   const prev = useMemo<SI>(() => {
     const x: SI = { ...v, mitra: v.mitra || '…', muat: v.muat || '…', laycanTeks: v.laycanMulai ? v.laycanTeks : '…', tanggal: v.tanggal || iso(new Date()), tahun: +(v.tanggal || iso(new Date())).slice(0, 4) }
     if (mode === 'revisi' && lama) return { ...x, nomor: null, revisiKe: lama.revisiKe + 1, sebelumnyaNomor: lama.nomor, perubahan: ub, tanggal: iso(new Date()) }
-    if (mode === 'koreksi' && lama) return { ...x, nomor: lama.nomor, tahun: lama.tahun, tanggal: lama.tanggal, revisiKe: lama.revisiKe, sebelumnyaNomor: lama.sebelumnyaNomor, alasan: lama.alasan, perubahan: lama.perubahan }
+    if (mode === 'koreksi' && lama) return { ...x, nomor: lama.nomor, tahun: lama.tahun, tanggal: besar ? (x.tanggal || lama.tanggal) : lama.tanggal, revisiKe: lama.revisiKe, sebelumnyaNomor: lama.sebelumnyaNomor, alasan: lama.alasan, perubahan: lama.perubahan }
     return { ...x, nomor: mode === 'kelola' ? v.nomor : (pilih || v.nomor) }
   }, [v, mode, lama, pilih]) // eslint-disable-line
   // pratinjau langsung: dirender ulang ~0,6 detik setelah berhenti mengetik; tidak perlu data lengkap
@@ -85,6 +85,7 @@ export default function SIEditor({ mode }: { mode: Mode }) {
       <div className={'gcard ' + (sisi === 'preview' ? 'hidden lg:block' : '')}>
         {mode === 'revisi' && <p className="text-[11.5px] text-slate-300 mb-3 rounded-lg bg-violet-400/10 border border-violet-400/30 px-3 py-2">Ubah bagian yang berubah (mis. nama kapal). SI revisi mendapat <b>nomor baru</b> dan menaut ke {fmtNomor(lama!.nomor, lama!.tahun)}; yang berubah dicatat otomatis.</p>}
         {mode === 'koreksi' && <p className="text-[11.5px] text-slate-300 mb-3 rounded-lg bg-sky-400/10 border border-sky-400/30 px-3 py-2">Hanya untuk salah ketik. <b>Nomor tetap</b>, dokumen dicetak ulang, tercatat di riwayat koreksi. Kapal, volume, laycan, atau ETA yang berubah = Revisi.</p>}
+        {mode === 'koreksi' && besar && lama && <div className="mb-3 max-w-xs"><Fld l="Tanggal SI (boleh diganti, nomor tetap)"><input type="date" value={v.tanggal || lama.tanggal} onChange={e => setV({ ...v, tanggal: e.target.value })} /></Fld>{v.tanggal && v.tanggal !== lama.tanggal && <p className="text-[11.5px] text-amber-300 mt-1">Tanggal berubah dari {tglId(lama.tanggal)}. Pastikan urutan tanggal tetap cocok dengan nomor {fmtNomor(lama.nomor, lama.tahun)}.</p>}</div>}
         {mode === 'baru' && recent.length > 0 && <div className="mb-3"><Fld l="Mulai dari SI sebelumnya (opsional — menyalin mitra, tujuan, consignee; kapal & laycan dikosongkan)"><input list="dl-recent" placeholder="ketik nomor / mitra / PLTU, lalu pilih" onChange={e => dariSebelumnya(e.target.value)} /></Fld><datalist id="dl-recent">{recent.map(r => <option key={r.id} value={`${r.nomor} · ${r.mitra} → ${r.bongkar || r.pltu}`} />)}</datalist></div>}
         {(mode === 'baru' || mode === 'edit' || mode === 'kelola' || mode === 'revisi') && <div className="mb-3 rounded-xl border border-white/10 bg-white/[.03] p-3 text-[12px]">
           <div className="grid sm:grid-cols-2 gap-2.5">
@@ -116,7 +117,7 @@ export default function SIEditor({ mode }: { mode: Mode }) {
           {(mode === 'baru' || mode === 'edit') && <><button className="fchip !px-4 !py-2" disabled={busy} onClick={ajukan}>{admin ? 'Simpan ke antrean' : 'Ajukan ke Racel'}</button>{admin && <button className="fchip on !px-5 !py-2 !text-[14px]" disabled={busy || st.riwayat !== 'ok'} onClick={terbit}>{busy ? 'Menerbitkan… (±3 detik)' : 'Terbitkan nomor SI'}</button>}</>}
           {mode === 'kelola' && <button className="fchip on !px-5 !py-2 !text-[14px]" disabled={busy} onClick={kelola}>Simpan perubahan (admin)</button>}
           {mode === 'revisi' && (admin ? <button className="fchip on !px-5 !py-2 !text-[14px]" disabled={busy || !ub.length} onClick={revisi}>Terbitkan revisi</button> : <span className="text-[11.5px] text-slate-400">Penerbitan revisi dilakukan Racel.</span>)}
-          {mode === 'koreksi' && (admin ? <button className="fchip on !px-5 !py-2 !text-[14px]" disabled={busy || !ub.length || (kor ? !kor.ok && !besar : false)} onClick={koreksi}>{kor && !kor.ok && besar ? 'Simpan koreksi besar (nomor tetap)' : 'Simpan koreksi'}</button> : <span className="text-[11.5px] text-slate-400">Koreksi dilakukan Racel.</span>)}
+          {mode === 'koreksi' && (admin ? <button className="fchip on !px-5 !py-2 !text-[14px]" disabled={busy || (!ub.length && !(besar && lama && v.tanggal && v.tanggal !== lama.tanggal)) || (kor ? !kor.ok && !besar : false)} onClick={koreksi}>{kor && !kor.ok && besar ? 'Simpan koreksi besar (nomor tetap)' : 'Simpan koreksi'}</button> : <span className="text-[11.5px] text-slate-400">Koreksi dilakukan Racel.</span>)}
         </div>
       </div>
       <div className={'lg:sticky lg:top-3 ' + (sisi === 'form' ? 'hidden lg:block' : '')}>
