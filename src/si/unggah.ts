@@ -35,6 +35,8 @@ export function urai(b: { kiri: string[]; kanan: string[]; isi: string[] }, nama
   const mn = hd.match(/(\d{3,4})\s*\.\s*SI\s*\/\s*EPI\.03\.01\s*\/\s*DIR\s*\/\s*(\d{4})/i) ?? namaFile.match(/(\d{4})()/)
   if (!mn) w.push('Nomor SI tidak terbaca'); else { s.nomor = +mn[1]; if (mn[2]) s.tahun = +mn[2] }
   const hdT = [...b.kanan.filter(l => /^\s*\d{1,2}\s+[A-Za-z]+\s+\d{4}\s*$/.test(l)).slice(0, 1), ...b.kiri.filter(l => /Nomor/i.test(l))].join('\n'); const md = hdT.match(/(\d{1,2})\s+(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+(\d{4})/i); if (md) s.tanggal = tglIso(+md[1], md[2], +md[3]); else w.push('Tanggal SI tidak terbaca')
+  // revisi: "Revisi Shipping Instruction" + nomor lama + "Revisi ke-N (alasan)"
+  if (/Revisi\s+Shipping\s+Instruction/i.test(hd)) { const semua = [...hd.matchAll(/(\d{3,4})\s*\.\s*SI\s*\/\s*EPI\.03\.01\s*\/\s*DIR\s*\/\s*(\d{4})/gi)].map(m => +m[1]); const lama = semua.find(n => n !== s.nomor); const rk = hd.match(/Revisi\s+ke\s*-?\s*(\d+)/i); s.revisiKe = rk ? +rk[1] : 1; if (lama) s.sebelumnyaNomor = lama; else w.push('Nomor SI yang direvisi tidak terbaca'); const al = /armada|kapal/i.test(hd.match(/Revisi\s+ke[^\n]*/i)?.[0] ?? '') ? 'armada' : ''; if (al) s.alasan = al as any }
   // Kepada (kolom kanan): "1. X", "2. Y"
   const kep: string[] = []; let on = false
   for (const l of b.kanan) { if (/^Kepada/i.test(l)) { on = true; continue } if (!on) continue; const m = l.match(/^(\d+)\.\s*(.+)$/); if (m) kep.push(m[2]); else if (kep.length) kep[kep.length - 1] += ' ' + l }

@@ -174,7 +174,7 @@ function Unggah({ oleh, info }: { oleh: string; info: (s: string) => void }) {
           <Fld l="Shipper"><input value={s.mitra} onChange={e => ubah(i, 'mitra', e.target.value)} /></Fld><Fld l="Sumber tambang"><input value={s.tambang} onChange={e => ubah(i, 'tambang', e.target.value)} /></Fld>
           <Fld l="Kapal"><input value={s.kapal} onChange={e => ubah(i, 'kapal', e.target.value)} /></Fld><Fld l="PLTU"><input value={s.pltu} onChange={e => ubah(i, 'pltu', e.target.value)} /></Fld>
           <Fld l="Laycan mulai"><input type="date" value={s.laycanMulai} onChange={e => ubah(i, 'laycanMulai', e.target.value)} /></Fld><Fld l="Laycan selesai"><input type="date" value={s.laycanSelesai} onChange={e => ubah(i, 'laycanSelesai', e.target.value)} /></Fld>
-        </div><div className="text-[11px] text-slate-400 mt-1.5">Jetty: {s.muat || '—'} · Transporter: {s.transporter || '—'} · Skema {s.skema} · {s.volume ?? '—'} ton · ETA {s.etaTeks || '—'}</div></div> })}
+        </div><div className="text-[11px] text-slate-400 mt-1.5">{s.revisiKe > 0 && <b className="text-violet-300">Revisi ke-{s.revisiKe} dari {s.sebelumnyaNomor ?? '?'} · </b>}Jetty: {s.muat || '—'} · Transporter: {s.transporter || '—'} · Skema {s.skema} · {s.volume ?? '—'} ton · ETA {s.etaTeks || '—'}</div></div> })}
       <button className="fchip on" disabled={busy} onClick={masuk}>Masukkan {daftar.filter(o => status(o.h.si) !== 'skip').length} SI ke dashboard</button></div>}
   </Card>
 }
