@@ -24,8 +24,15 @@ export function nilaiSheet(s: SI, jetty: string[][]): NilaiSheet {
   const kepada = [singkat(s.mitra || s.tambang), s.skema === 'FOB' || s.transporter ? singkatTransport(s.transporter) : ''].filter(Boolean).join(' & ')
   return {
     tanggal: dmy(s.tanggal), pemohon: s.pemohon ? s.pemohon[0].toUpperCase() + s.pemohon.slice(1) : '', tambang: singkat(s.tambang || s.mitra), muat: muatSheet(s.muat, jetty),
-    laycan: rentangSheet(s.laycanMulai, s.laycanSelesai, s.tanggal), eta: rentangSheet(s.etaMulai, s.etaSelesai, s.tanggal, true), bongkar: s.pltu || '', kepada,
+    laycan: rentangSheet(s.laycanMulai, s.laycanSelesai, s.tanggal), eta: rentangSheet(s.etaMulai, s.etaSelesai, s.tanggal, true), bongkar: bongkarSheet(s.pltu), kepada,
     rev: s.sebelumnyaNomor != null ? String(s.sebelumnyaNomor) : '', ketRev: s.revisiKe > 0 ? [s.alasan ? ALASAN[s.alasan] : '', s.ketRevisi].filter(Boolean).join(' — ') : '',
   }
 }
 void p2
+
+/** "DUKS PLTU Jeneponto, Sulawesi Selatan" -> "PLTU Jeneponto"; nama tanpa kata PLTU ditambah di depan. */
+export function bongkarSheet(p?: string): string {
+  let t = (p || '').split(',')[0].replace(/^\s*(duks|jetty)\s+/i, '').trim(); if (!t) return ''
+  if (!/\bpltu\b/i.test(t)) t = 'PLTU ' + t
+  return t
+}
