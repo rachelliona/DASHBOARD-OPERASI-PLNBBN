@@ -96,7 +96,12 @@ export const siActions = {
   async hapusPengajuan(id: string) { if (state.remote) await call({ action: 'delete', id }); emit({ rows: state.rows.filter(r => r.id !== id || r.tahap !== 'pengajuan') }) },
   /** ADMIN: hapus SI apa pun (termasuk yang sudah terbit). Nomornya jadi slot kosong. */
   /** ADMIN: masukkan SI yang dibuat di luar dashboard (hasil unggah PDF). Baris arsip lama bernomor sama diganti. */
-  async unggah(si: SI) { for (const r of state.rows.filter(r => r.tahun === si.tahun && r.nomor === si.nomor && r.sumber !== 'sistem')) await siActions.hapus(r.id); await siActions.simpan(si) },
+  async unggah(si: SI, pdf?: ArrayBuffer): Promise<{ drive: boolean }> {
+    for (const r of state.rows.filter(r => r.tahun === si.tahun && r.nomor === si.nomor && r.sumber !== 'sistem')) await siActions.hapus(r.id)
+    let drive = false; const n = { ...si }
+    if (pdf) { const { simpanLokal, b64 } = await import('./berkas'); await simpanLokal(n.id, new Blob([pdf], { type: 'application/pdf' }))
+      if (state.remote) { try { const j = await call({ action: 'file', name: `SI ${n.nomor}.pdf`, b64: b64(pdf) }); if (j?.url) { n.arsipUrl = j.url; drive = true } } catch { /* Drive belum aktif: salinan lokal tetap ada */ } } }
+    await siActions.simpan(n); return { drive } },
   async hapus(id: string) { const r0 = state.rows.find(r => r.id === id); if (r0 && r0.sumber !== 'sistem') { hapusan.add(id); try { localStorage.setItem(KH, JSON.stringify([...hapusan])) } catch { /* abaikan */ } } if (state.remote) await call({ action: 'delete', id, paksa: true }); emit({ rows: state.rows.filter(r => r.id !== id) }) },
   /** ADMIN: kelola SI terbit — ubah isi/nomor/tanggal tanpa revisi. Tercatat di riwayat. */
   async kelola(lama: SI, baru: SI, oleh: string): Promise<SI> {

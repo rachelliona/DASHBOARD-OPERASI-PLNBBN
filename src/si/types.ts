@@ -22,7 +22,7 @@ export type SI = {
   koreksi: Koreksi[] // koreksi penulisan (typo) — nomor tetap, bukan revisi
   ttd: boolean // sudah ditandatangani Dirop
   sumber: 'sistem' | 'sheet-2026' | 'databas'
-  dibuat: string; dibuatOleh: string; diubah: string
+  dibuat: string; dibuatOleh: string; diubah: string; arsipUrl?: string
 }
 export type Ubah = { f: string; label: string; dari: string; ke: string }
 export type Koreksi = { at: string; oleh: string; ubah: Ubah[] }
