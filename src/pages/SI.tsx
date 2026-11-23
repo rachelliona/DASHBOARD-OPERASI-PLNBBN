@@ -12,7 +12,7 @@ import { unduhPdf } from '../si/pdf'
 import { getParaf, setParaf, unduhDocx } from '../si/docx'
 import { APPS_SCRIPT } from '../si/appsscript'
 const B = import.meta.env.BASE_URL
-type Ref = { pltu: string[][]; mitra: string[][]; transport: string[][]; jetty: string[][]; moda: string[]; tambangJetty?: Record<string, string[]> }
+type Ref = { pltu: string[][]; mitra: string[][]; transport: string[][]; jetty: string[][]; moda: string[]; tambangJetty?: Record<string, string[]>; mitraJetty?: Record<string, string[]>; pairJetty?: Record<string, string[]> }
 let refCache: Ref | null = null
 const useRef_ = () => { const [r, setR] = useState<Ref | null>(refCache); useEffect(() => { if (!refCache) fetch(B + 'si/ref.json').then(x => x.json()).then(j => { refCache = j; setR(j) }).catch(() => { /* tanpa referensi */ }) }, []); return r }
 const WARNA: Record<Status, string> = { pengajuan: '#8aa0b8', batal: '#6b7280', direvisi: '#a78bfa', lewat: '#f87171', arsip: '#64748b', segera: '#f59e0b', aktif: '#34d399', 'tanpa-laycan': '#94a3b8' }
@@ -79,9 +79,10 @@ function Detail({ r, admin, bisa: boleh, onAksi }: { r: SI; admin: boolean; bisa
 export function Fld({ l, children, w }: { l: string; children: React.ReactNode; w?: string }) { return <label className={'block text-[11px] text-slate-400 ' + (w ?? '')}>{l}<div className="mt-0.5 text-slate-100 [&>input]:w-full [&>select]:w-full">{children}</div></label> }
 export function Form({ v, set, kunci }: { v: SI; set: (s: SI) => void; kunci?: boolean }) {
   const ref = useRef_(); const { rows: semua } = useSI(); const tambangList = useMemo(() => [...new Set([...(ref?.mitra.map(x => x[0]) ?? []), ...Object.keys(ref?.tambangJetty ?? {}), ...semua.map(r => r.tambang)].map(x => (x || '').trim()).filter(x => x.length > 2))].sort(), [ref, semua]); const p = (k: Partial<SI>) => set({ ...v, ...k }); const t = (k: keyof SI) => ({ value: String(v[k] ?? ''), onChange: (e: any) => p({ [k]: e.target.value } as any) })
-  const jtDari = (tb: string) => { const k = Object.keys(ref?.tambangJetty ?? {}).find(x => x.toLowerCase() === tb.trim().toLowerCase()); const n = k ? ref!.tambangJetty![k][0] : (semua.filter(r => r.muat && (r.tambang || '').trim().toLowerCase() === tb.trim().toLowerCase()).sort((x, y) => (y.tanggal || '').localeCompare(x.tanggal || ''))[0]?.muat ?? ''); if (!n) return null; const m = ref?.jetty.find(x => x[0].toLowerCase() === n.toLowerCase()); return m ? `${m[0]}, ${m[1]}` : n }
-  const tb = (n: string) => { const j = jtDari(n); p({ tambang: n, ...(j ? { muat: j } : {}) }) }
-  const mt = (n: string) => { const m = ref?.mitra.find(x => x[0].toLowerCase() === n.toLowerCase()); const j = !v.tambang ? jtDari(n) : null; p({ mitra: n, ...(m ? { kontrak: m[1] } : {}), ...(!v.tambang ? { tambang: n } : {}), ...(j ? { muat: j } : {}) }) }
+  const fmtJ = (n: string) => { const m = ref?.jetty.find(x => x[0].toLowerCase() === n.toLowerCase()); return m ? `${m[0]}, ${m[1]}` : n }
+  const jtDari = (tb: string, mi?: string) => { const lc = (x: string) => (x || '').trim().toLowerCase(); const k = Object.keys(ref?.tambangJetty ?? {}).find(x => lc(x) === lc(tb)); const n = ref?.pairJetty?.[lc(mi || '') + '|' + lc(tb)]?.[0] ?? (k ? ref!.tambangJetty![k][0] : '') ?? ''; const h = n || ref?.mitraJetty?.[lc(mi || tb)]?.[0] || semua.filter(r => r.muat && (lc(r.tambang) === lc(tb) || lc(r.mitra) === lc(mi || tb))).sort((x, y) => (y.tanggal || '').localeCompare(x.tanggal || ''))[0]?.muat || ''; return h ? fmtJ(h) : null }
+  const tb = (n: string) => { const j = jtDari(n, v.mitra); p({ tambang: n, ...(j ? { muat: j } : {}) }) }
+  const mt = (n: string) => { const m = ref?.mitra.find(x => x[0].toLowerCase() === n.toLowerCase()); const j = jtDari(v.tambang || n, n); p({ mitra: n, ...(m ? { kontrak: m[1] } : {}), ...(!v.tambang ? { tambang: n } : {}), ...(j ? { muat: j } : {}) }) }
   const jetOpsi = useMemo(() => { const k = Object.keys(ref?.tambangJetty ?? {}).find(x => x.toLowerCase() === (v.tambang || '').trim().toLowerCase()); const pri = k ? ref!.tambangJetty![k] : []; return [...pri, ...(ref?.jetty.map(x => x[0]).filter(x => !pri.includes(x)) ?? [])] }, [ref, v.tambang])
   const tr = (n: string) => { const m = ref?.transport.find(x => x[0].toLowerCase() === n.toLowerCase()); p({ transporter: n, ...(m ? { kontrakTransport: m[1] } : {}) }) }
   const pl = (n: string) => { const m = ref?.pltu.find(x => x[0].toLowerCase() === n.toLowerCase()); p({ pltu: n, bongkar: n, ...(m ? { consignee: m[1].replace(/ \/ /g, '\n'), notify: m[2] } : {}) }) }
