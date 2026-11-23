@@ -17,14 +17,27 @@ const now = () => new Date().toISOString()
 async function call(body: any) { const r = await fetch(state.remote, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), redirect: 'follow' }); const j = await r.json(); if (!j.ok) throw new Error(j.error || 'Ditolak server'); return j }
 const BASE = import.meta.env.BASE_URL
 let muat: Promise<void> | null = null
+async function bacaLegacy(): Promise<SI[]> {
+  const db = await (await fetch(BASE + 'si/databas-si.json')).json(); let sheet: SI[] = []
+  try { const src = (await import('../config/sources')) as any; const url = (src.SI_CSV_URL as string) ?? ''; if (url) sheet = dariSheet(await (await fetch(url)).text()) } catch { /* sheet opsional */ }
+  return gabung(dariDatabas(db), sheet).filter(r => !hapusan.has(r.id))
+}
 const KC = 'pln-si-cad-v1'
 export const getCad = () => { try { const v = localStorage.getItem(KC); return v == null ? 2 : Math.max(0, Math.min(10, +v || 0)) } catch { return 2 } }
 export const setCad = (n: number) => { try { localStorage.setItem(KC, String(Math.max(0, Math.min(10, n)))) } catch { /* abaikan */ } }
 export const siActions = {
   /** Muat arsip Databas SI + sheet SI 2026 supaya nomor berikutnya MELANJUTKAN nomor yang sudah ada (tidak mulai dari 0001). Sheet diambil ulang tiap dipanggil. */
+  /** Mode server: tarik registri, lalu kirim ke server SI lama (arsip + sheet) yang belum ada di sana, supaya nomor server melanjutkan nomor terakhir. */
+  async sinkronLegacy() {
+    await siActions.tarik(); if (state.sync === 'gagal') throw new Error(state.err || 'server tidak terjangkau')
+    const all = await bacaLegacy(); const have = new Set(state.rows.map(r => r.id)); const baru = all.filter(r => !have.has(r.id))
+    for (let i = 0; i < baru.length; i += 800) await call({ action: 'import', rows: baru.slice(i, i + 800), blok: [] })
+    if (baru.length) await siActions.tarik()
+    if (!state.rows.length) throw new Error('Registri kosong')
+  },
   muatRiwayat(paksa = false): Promise<void> {
     if (muat && !paksa) return muat
-    if (state.remote) { emit({ riwayat: 'ok' }); return siActions.tarik() } // mode server: nomor ditentukan server
+    if (state.remote) { muat = (async () => { emit({ riwayat: 'memuat' }); try { await siActions.sinkronLegacy(); emit({ riwayat: 'ok' }) } catch { emit({ riwayat: 'gagal' }) } })(); return muat } // mode server: nomor ditentukan server
     muat = (async () => { emit({ riwayat: 'memuat' }); try {
       const db = await (await fetch(BASE + 'si/databas-si.json')).json(); let sheet: SI[] = []
       try { const src = (await import('../config/sources')) as any; const url = (src.SI_CSV_URL as string) ?? ''; if (url) sheet = dariSheet(await (await fetch(url)).text()) } catch { /* sheet opsional */ }
@@ -45,7 +58,7 @@ export const siActions = {
   /** Terbitkan: pesan nomor berikutnya secara atomik. Mode server: nomor ditentukan server (LockService). Mode lokal: dari registri di browser ini. */
   async terbitkan(s: SI, opsi: { nomor?: number; tanggal?: string } = {}): Promise<SI> {
     const tahun = +(opsi.tanggal || s.tanggal || iso(new Date())).slice(0, 4); const tanggal = opsi.tanggal || s.tanggal || iso(new Date())
-    if (state.remote) await siActions.tarik(); else { await siActions.muatRiwayat(true); if (state.riwayat !== 'ok') throw new Error('Riwayat nomor SI belum termuat (sheet SI tidak terjangkau). Coba lagi sebentar supaya nomor tidak mulai dari 0001.') }
+    if (state.remote) await siActions.sinkronLegacy(); else { await siActions.muatRiwayat(true); if (state.riwayat !== 'ok') throw new Error('Riwayat nomor SI belum termuat (sheet SI tidak terjangkau). Coba lagi sebentar supaya nomor tidak mulai dari 0001.') }
     // pakai slot cadangan backdate: lepaskan dulu blok cadangannya
     if (opsi.nomor != null && state.blok.some(b => b.tahun === tahun && b.nomor === opsi.nomor && isCad(b))) await siActions.lepasBlok(tahun, opsi.nomor)
     // hari baru: sisihkan slot cadangan untuk SI backdate hari-hari sebelumnya

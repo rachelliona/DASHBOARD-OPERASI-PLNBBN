@@ -11,4 +11,4 @@ export const TARGET_TAHUNAN = 13100000 // MT, sel TARGET pada sheet realisasi bu
 export const SI_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTNubBR6mjW_E_aD78ZK64jqZw-in5h9qa_6fbgCh2hOgzTl1PjFMeVO_2jij8SsDHUDOVcQngIZ5SB/pub?gid=275104604&single=true&output=csv'
 
 /** URL Web App Apps Script registri SI bersama. Isi sekali di sini (lalu deploy) supaya SEMUA pengguna otomatis memakai penomoran satu pintu. Kosong = mode lokal per browser. */
-export const SI_REMOTE_URL = ''
+export const SI_REMOTE_URL = 'https://script.google.com/macros/s/AKfycbxwCLqnTG69ddjHFA4Mt5OAZHpu3aUWGES82emrwU4tPW4MNX3FwC-RUBr8v7b2Minjrw/exec'
