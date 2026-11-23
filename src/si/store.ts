@@ -10,7 +10,7 @@ let state: State = { riwayat: '', rows: rd<SI[]>(K, []), blok: rd<Blok[]>(KB, []
 const KH = 'pln-si-hapus-v1'; const hapusan = new Set<string>(rd<string[]>(KH, []))
 const subs = new Set<() => void>()
 const emit = (n: Partial<State>) => { state = { ...state, ...n }; try { localStorage.setItem(K, JSON.stringify(state.rows)); localStorage.setItem(KB, JSON.stringify(state.blok)); localStorage.setItem(KU, JSON.stringify(state.remote)) } catch { /* tanpa penyimpanan */ } subs.forEach(f => f()) }
-export const useSI = () => useSyncExternalStore(f => { subs.add(f); return () => { subs.delete(f) } }, () => state)
+export const useSI = () => useSyncExternalStore(f => { subs.add(f); return () => { subs.delete(f) } }, () => state, () => state)
 export const newId = () => 'si-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
 const now = () => new Date().toISOString()
 /** Panggilan ke Apps Script (text/plain agar tanpa preflight CORS). */

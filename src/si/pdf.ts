@@ -14,7 +14,7 @@ export function barisSurat(s: SI): [string, string][] {
   return r
 }
 async function img(u: string) { try { const b = await (await fetch(u)).blob(); return await new Promise<string>(ok => { const f = new FileReader(); f.onload = () => ok(String(f.result)); f.readAsDataURL(b) }) } catch { return '' } }
-export function namaFile(s: SI) { return `${s.revisiKe ? 'Revisi_' : ''}SI_${s.nomor == null ? 'draft' : String(s.nomor).padStart(4, '0')}_${singkat(s.tambang || s.mitra) || 'XXX'}_-_${ringkasPltu(s.pltu || s.bongkar)}.pdf` } // contoh: SI_3116_BSL_-_PLTU_Indramayu.pdf
+export function namaFile(s: SI) { return `${s.revisiKe ? 'Revisi ' : ''}SI ${s.nomor == null ? 'draft' : String(s.nomor).padStart(4, '0')} ${singkat(s.tambang || s.mitra) || 'XXX'} - ${ringkasPltu(s.pltu || s.bongkar)}.pdf` } // contoh: SI 3116 BSL - PLTU Indramayu.pdf
 /** Tata letak mengikuti contoh SI asli (PDF dari Word): koordinat dalam px pada 90 dpi, A4 = 744 x 1052 px. */
 const PX = 210 / 744
 export async function buatPdf(s: SI, draft = false, paraf: 'ada' | 'kosong' = (() => { try { return localStorage.getItem('pln-si-paraf') === 'kosong' ? 'kosong' : 'ada' } catch { return 'ada' } })()): Promise<{ blob: Blob; nama: string }> {

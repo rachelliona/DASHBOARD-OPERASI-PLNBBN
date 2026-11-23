@@ -42,11 +42,11 @@ describe('slot cadangan backdate', () => {
 })
 
 describe('nama file SI', () => {
-  it('SI_nomor_singkatan_-_PLTU_nama', async () => {
+  it('SI nomor singkatan - PLTU nama', async () => {
     const { namaFile } = await import('../si/pdf')
     const b: any = { ...kosong(), nomor: 3116, tahun: 2026, tambang: 'PT Barasentosa Lestari', pltu: 'PLTU Indramayu. Kab. Indramayu' }
-    expect(namaFile(b)).toBe('SI_3116_BSL_-_PLTU_Indramayu.pdf')
-    expect(namaFile({ ...b, nomor: 3099, tambang: 'PT Baramulti Suksessarana', pltu: 'Tanjung Awar Awar, Tuban' })).toBe('SI_3099_BSSR_-_PLTU_Tj_Awar_Awar.pdf')
-    expect(namaFile({ ...b, revisiKe: 1 })).toMatch(/^Revisi_SI_3116_/)
+    expect(namaFile(b)).toBe('SI 3116 BSL - PLTU Indramayu.pdf')
+    expect(namaFile({ ...b, nomor: 3099, tambang: 'PT Baramulti Suksessarana', pltu: 'Tanjung Awar Awar, Tuban' })).toBe('SI 3099 BSSR - PLTU Tj Awar Awar.pdf')
+    expect(namaFile({ ...b, revisiKe: 1 })).toMatch(/^Revisi SI 3116 /)
   })
 })

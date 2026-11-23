@@ -10,5 +10,5 @@ export function singkat(nama: string): string {
   const w = k.split(/\s+/).filter(Boolean); return w.length === 1 ? w[0].toUpperCase() : w.map(x => x[0]).join('').toUpperCase()
 }
 export function ringkasPltu(p: string): string {
-  const t = (p || '').split(/[.,(\n]/)[0].replace(/^PLTU\s+/i, '').replace(/\bTanjung\b/gi, 'Tj').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_'); return t ? 'PLTU_' + t : 'PLTU'
+  const t = (p || '').split(/[.,(\n]/)[0].replace(/^PLTU\s+/i, '').replace(/\bTanjung\b/gi, 'Tj').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, ' '); return t ? 'PLTU ' + t : 'PLTU'
 }
