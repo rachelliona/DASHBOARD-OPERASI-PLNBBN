@@ -97,7 +97,7 @@ export const siActions = {
   /** ADMIN: hapus SI apa pun (termasuk yang sudah terbit). Nomornya jadi slot kosong. */
   /** ADMIN: masukkan SI yang dibuat di luar dashboard (hasil unggah PDF). Baris arsip lama bernomor sama diganti. */
   async unggah(si: SI, pdf?: ArrayBuffer): Promise<{ drive: boolean }> {
-    for (const r of state.rows.filter(r => r.tahun === si.tahun && r.nomor === si.nomor && r.sumber !== 'sistem')) await siActions.hapus(r.id)
+    for (const r of state.rows.filter(r => r.tahun === si.tahun && r.nomor === si.nomor && (r.sumber !== 'sistem' || /unggah/.test(r.dibuatOleh)))) await siActions.hapus(r.id)
     let drive = false; const n = { ...si }
     if (pdf) { const { simpanLokal, b64 } = await import('./berkas'); await simpanLokal(n.id, new Blob([pdf], { type: 'application/pdf' }))
       if (state.remote) { try { const j = await call({ action: 'file', name: `SI ${n.nomor}.pdf`, b64: b64(pdf) }); if (j?.url) { n.arsipUrl = j.url; drive = true } } catch { /* Drive belum aktif: salinan lokal tetap ada */ } } }
