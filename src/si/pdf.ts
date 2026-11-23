@@ -27,11 +27,12 @@ export async function buatPdf(s: SI, draft = false, paraf: 'ada' | 'kosong' = ((
   T('Nomor', 75, 152); T(':', 145, 152); T(nomor, 160, 152); T('Lampiran', 75, 169); T(':', 145, 169); T('-', 160, 169); T('Perihal', 75, 185); T(':', 145, 185)
   let y = 185; perihal.forEach((t, i) => { d.setFont('helvetica', i === 0 ? 'italic' : 'normal'); t.split('\n').flatMap(x => wrap(x, 255)).forEach((ln, j) => { if (j === 0) { T('•', 165, y) } T(ln, 187, y); y += 15.5 }) }); d.setFont('helvetica', 'normal'); const yPer = y
   T(tglId(s.tanggal || ''), 453, 152); T('Kepada :', 453, 185); const kep = [...new Set([s.mitra, s.transporter].filter(Boolean))]; let ky = 200; kep.forEach((k, i) => { wrap(k, 220).forEach((ln, j) => { T(j ? ln : `${i + 1}.  ${ln}`, j ? 470 : 453, ky); ky += 15.5 }) })
-  y = Math.max(yPer, ky) + 33; d.text('Mohon agar dapat dilakukan proses pengapalan batubara dengan informasi sebagai berikut:', m(75), m(y + 5), { maxWidth: m(594), align: 'justify' }); y += 16 * 2 + 17
-  barisSurat(s).forEach(([k, v]) => { const ln = wrap(v, 369); T(k, 95, y); T(':', 283, y)
+  y = Math.max(yPer, ky) + 33; { const ws = 'Mohon agar dapat dilakukan proses pengapalan batubara dengan informasi sebagai berikut:'.split(' '), tw = ws.reduce((a, w) => a + d.getTextWidth(w), 0), gap = (m(594) - tw) / (ws.length - 1); let x = m(75); ws.forEach(w => { d.text(w, x, m(y + 5)); x += d.getTextWidth(w) + gap }) } y += 16 * 2 + 17
+  const rowsS = barisSurat(s); const maxW = Math.max(120, ...rowsS.flatMap(([, v]) => wrap(v, 369).map(t => d.getTextWidth(t) / PX))); const dx = Math.min(60, Math.max(0, Math.round(372 - (95 + 300 + maxW) / 2))) // blok tabel dipusatkan di halaman
+  rowsS.forEach(([k, v]) => { const ln = wrap(v, 369); T(k, 95 + dx, y); T(':', 283 + dx, y)
     if (ln.length === 1 && (k === 'Komoditi' || /draught|or subs/.test(v))) { // huruf miring seperti contoh: Steam Coal, draught, or subs
-      let x = 300; v.split(/(draught|or subs)/).filter(Boolean).forEach(seg => { d.setFont('helvetica', k === 'Komoditi' || seg === 'draught' || seg === 'or subs' ? 'italic' : 'normal'); T(seg.trim(), x + (/^\s/.test(seg) ? 5 : 0), y); const sp = 5; x += d.getTextWidth(seg.trim()) / PX + (/\s$/.test(seg) ? sp : 0); if (/^\s/.test(seg)) x += sp }); d.setFont('helvetica', 'normal')
-    } else ln.forEach((t, i) => T(t, 300, y + i * 15.6))
+      let x = 300 + dx; v.split(/(draught|or subs)/).filter(Boolean).forEach(seg => { d.setFont('helvetica', k === 'Komoditi' || seg === 'draught' || seg === 'or subs' ? 'italic' : 'normal'); T(seg.trim(), x + (/^\s/.test(seg) ? 5 : 0), y); const sp = 5; x += d.getTextWidth(seg.trim()) / PX + (/\s$/.test(seg) ? sp : 0); if (/^\s/.test(seg)) x += sp }); d.setFont('helvetica', 'normal')
+    } else ln.forEach((t, i) => T(t, 300 + dx, y + i * 15.6))
     y += Math.max(1, ln.length) * 15.6 })
   if (rev && s.perubahan.length) { y += 6; d.setFont('helvetica', 'bold'); d.setFontSize(9.5); T('Perubahan dari SI sebelumnya:', 95, y); d.setFont('helvetica', 'normal'); y += 14; s.perubahan.slice(0, 8).forEach(u => { wrap(`- ${u.label}: ${u.dari}  menjadi  ${u.ke}`, 480).forEach(ln => { T(ln, 102, y); y += 13.5 }) }); d.setFontSize(10.5) }
   y += 14; T('Demikian disampaikan atas perhatiannya diucapkan terimakasih.', 75, y)
