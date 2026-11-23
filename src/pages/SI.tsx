@@ -12,7 +12,7 @@ import { unduhPdf } from '../si/pdf'
 import { getParaf, setParaf, unduhDocx } from '../si/docx'
 import { APPS_SCRIPT } from '../si/appsscript'
 const B = import.meta.env.BASE_URL
-type Ref = { pltu: string[][]; mitra: string[][]; transport: string[][]; jetty: string[][]; moda: string[] }
+type Ref = { pltu: string[][]; mitra: string[][]; transport: string[][]; jetty: string[][]; moda: string[]; tambangJetty?: Record<string, string[]> }
 let refCache: Ref | null = null
 const useRef_ = () => { const [r, setR] = useState<Ref | null>(refCache); useEffect(() => { if (!refCache) fetch(B + 'si/ref.json').then(x => x.json()).then(j => { refCache = j; setR(j) }).catch(() => { /* tanpa referensi */ }) }, []); return r }
 const WARNA: Record<Status, string> = { pengajuan: '#8aa0b8', batal: '#6b7280', direvisi: '#a78bfa', lewat: '#f87171', arsip: '#64748b', segera: '#f59e0b', aktif: '#34d399', 'tanpa-laycan': '#94a3b8' }
@@ -78,8 +78,11 @@ function Detail({ r, admin, bisa: boleh, onAksi }: { r: SI; admin: boolean; bisa
 }
 export function Fld({ l, children, w }: { l: string; children: React.ReactNode; w?: string }) { return <label className={'block text-[11px] text-slate-400 ' + (w ?? '')}>{l}<div className="mt-0.5 text-slate-100 [&>input]:w-full [&>select]:w-full">{children}</div></label> }
 export function Form({ v, set, kunci }: { v: SI; set: (s: SI) => void; kunci?: boolean }) {
-  const ref = useRef_(); const { rows: semua } = useSI(); const tambangList = useMemo(() => [...new Set([...(ref?.mitra.map(x => x[0]) ?? []), ...semua.map(r => r.tambang)].map(x => (x || '').trim()).filter(x => x.length > 2))].sort(), [ref, semua]); const p = (k: Partial<SI>) => set({ ...v, ...k }); const t = (k: keyof SI) => ({ value: String(v[k] ?? ''), onChange: (e: any) => p({ [k]: e.target.value } as any) })
-  const mt = (n: string) => { const m = ref?.mitra.find(x => x[0].toLowerCase() === n.toLowerCase()); p({ mitra: n, ...(m ? { kontrak: m[1] } : {}), ...(!v.tambang ? { tambang: n } : {}) }) }
+  const ref = useRef_(); const { rows: semua } = useSI(); const tambangList = useMemo(() => [...new Set([...(ref?.mitra.map(x => x[0]) ?? []), ...Object.keys(ref?.tambangJetty ?? {}), ...semua.map(r => r.tambang)].map(x => (x || '').trim()).filter(x => x.length > 2))].sort(), [ref, semua]); const p = (k: Partial<SI>) => set({ ...v, ...k }); const t = (k: keyof SI) => ({ value: String(v[k] ?? ''), onChange: (e: any) => p({ [k]: e.target.value } as any) })
+  const jtDari = (tb: string) => { const k = Object.keys(ref?.tambangJetty ?? {}).find(x => x.toLowerCase() === tb.trim().toLowerCase()); const n = k ? ref!.tambangJetty![k][0] : ''; if (!n) return null; const m = ref!.jetty.find(x => x[0].toLowerCase() === n.toLowerCase()); return m ? `${m[0]}, ${m[1]}` : n }
+  const tb = (n: string) => { const j = jtDari(n); p({ tambang: n, ...(j ? { muat: j } : {}) }) }
+  const mt = (n: string) => { const m = ref?.mitra.find(x => x[0].toLowerCase() === n.toLowerCase()); const j = !v.tambang ? jtDari(n) : null; p({ mitra: n, ...(m ? { kontrak: m[1] } : {}), ...(!v.tambang ? { tambang: n } : {}), ...(j ? { muat: j } : {}) }) }
+  const jetOpsi = useMemo(() => { const k = Object.keys(ref?.tambangJetty ?? {}).find(x => x.toLowerCase() === (v.tambang || '').trim().toLowerCase()); const pri = k ? ref!.tambangJetty![k] : []; return [...pri, ...(ref?.jetty.map(x => x[0]).filter(x => !pri.includes(x)) ?? [])] }, [ref, v.tambang])
   const tr = (n: string) => { const m = ref?.transport.find(x => x[0].toLowerCase() === n.toLowerCase()); p({ transporter: n, ...(m ? { kontrakTransport: m[1] } : {}) }) }
   const pl = (n: string) => { const m = ref?.pltu.find(x => x[0].toLowerCase() === n.toLowerCase()); p({ pltu: n, bongkar: n, ...(m ? { consignee: m[1].replace(/ \/ /g, '\n'), notify: m[2] } : {}) }) }
   const jt = (n: string) => { const m = ref?.jetty.find(x => x[0].toLowerCase() === n.toLowerCase()); p({ muat: m ? `${m[0]}, ${m[1]}` : n }) }
@@ -89,7 +92,7 @@ export function Form({ v, set, kunci }: { v: SI; set: (s: SI) => void; kunci?: b
     <Fld l="Jenis"><label className="mr-3"><input type="checkbox" checked={v.kelistrikan} onChange={e => p({ kelistrikan: e.target.checked })} /> Kelistrikan</label><label><input type="checkbox" checked={v.bib} onChange={e => p({ bib: e.target.checked })} /> BIB</label></Fld>
     <Fld l="Shipper / mitra batubara"><input list="dl-mitra" value={v.mitra} onChange={e => mt(e.target.value)} /></Fld>
     <Fld l="Kontrak PJBB"><input {...t('kontrak')} /></Fld>
-    <Fld l="Sumber tambang"><input list="dl-tambang" {...t('tambang')} placeholder="pilih atau ketik sendiri" /></Fld>
+    <Fld l="Sumber tambang"><input list="dl-tambang" value={v.tambang} onChange={e => tb(e.target.value)} placeholder="pilih atau ketik sendiri (jetty terisi otomatis)" /></Fld>
     <Fld l="Transporter (Kepada)"><input list="dl-tr" value={v.transporter} onChange={e => tr(e.target.value)} /></Fld>
     <Fld l="Nama kapal / tongkang"><input {...t('kapal')} placeholder="TB … / BG …" /></Fld>
     <Fld l="Moda"><input list="dl-moda" {...t('moda')} /></Fld>
@@ -100,7 +103,7 @@ export function Form({ v, set, kunci }: { v: SI; set: (s: SI) => void; kunci?: b
     <Fld l="Laycan mulai"><input type="date" {...t('laycanMulai')} /></Fld><Fld l="Laycan selesai"><input type="date" {...t('laycanSelesai')} /></Fld><div />
     <Fld l="ETA mulai"><input type="date" {...t('etaMulai')} /></Fld><Fld l="ETA selesai"><input type="date" {...t('etaSelesai')} /></Fld><div />
     <Fld l="Consignee (penerima barang)" w="sm:col-span-1"><textarea rows={3} className="w-full" {...t('consignee')} /><span className="block text-[10.5px] text-slate-500 mt-0.5">Nama PLTU / unit penerima batubara di dokumen pengapalan. Terisi otomatis dari PLTU tujuan.</span></Fld><Fld l="Notify address (alamat pemberitahuan)" w="sm:col-span-2"><textarea rows={3} className="w-full" {...t('notify')} /><span className="block text-[10.5px] text-slate-500 mt-0.5">Pihak &amp; alamat lengkap yang diberi tahu saat kapal tiba (biasanya operator PLTU / unit pelaksana). Terisi otomatis dari PLTU tujuan.</span></Fld>
-    <datalist id="dl-tambang">{tambangList.map(x => <option key={x} value={x} />)}</datalist><datalist id="dl-mitra">{ref?.mitra.map(x => <option key={x[0]} value={x[0]} />)}</datalist><datalist id="dl-tr">{ref?.transport.map(x => <option key={x[0]} value={x[0].trim()} />)}</datalist><datalist id="dl-moda">{ref?.moda.map(x => <option key={x} value={x} />)}</datalist><datalist id="dl-jetty">{ref?.jetty.map(x => <option key={x[0]} value={x[0]} />)}</datalist><datalist id="dl-pltu">{ref?.pltu.map(x => <option key={x[0]} value={x[0]} />)}</datalist>
+    <datalist id="dl-tambang">{tambangList.map(x => <option key={x} value={x} />)}</datalist><datalist id="dl-mitra">{ref?.mitra.map(x => <option key={x[0]} value={x[0]} />)}</datalist><datalist id="dl-tr">{ref?.transport.map(x => <option key={x[0]} value={x[0].trim()} />)}</datalist><datalist id="dl-moda">{ref?.moda.map(x => <option key={x} value={x} />)}</datalist><datalist id="dl-jetty">{jetOpsi.map(x => <option key={x} value={x} />)}</datalist><datalist id="dl-pltu">{ref?.pltu.map(x => <option key={x[0]} value={x[0]} />)}</datalist>
     {kunci && null}
   </div>
 }

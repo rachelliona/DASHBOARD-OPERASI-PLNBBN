@@ -1,14 +1,16 @@
 export const APPS_SCRIPT = `// Registri SI PLN BBN — Google Apps Script (Web App). Penomoran atomik dengan LockService.
 const SHEET = 'SI', BLOK = 'BLOK';
-function ss_(){ let s=SpreadsheetApp.getActive(); if(s) return s; const p=PropertiesService.getScriptProperties(), id=p.getProperty('SS'); if(id) return SpreadsheetApp.openById(id); s=SpreadsheetApp.create('Registri SI PLN BBN'); p.setProperty('SS',s.getId()); return s; }
+let SS_=null;
+function ss_(){ if(SS_) return SS_; let s=SpreadsheetApp.getActive(); if(s) return (SS_=s); const p=PropertiesService.getScriptProperties(), id=p.getProperty('SS'); if(id) return (SS_=SpreadsheetApp.openById(id)); s=SpreadsheetApp.create('Registri SI PLN BBN'); p.setProperty('SS',s.getId()); return (SS_=s); }
 function sh_(n){ const s=ss_(); let x=s.getSheetByName(n); if(!x){ x=s.insertSheet(n); x.appendRow(n==='SI'?['id','tahun','nomor','json']:['tahun','nomor','ket']); } return x; }
 function rows_(){ const v=sh_(SHEET).getDataRange().getValues().slice(1); return v.filter(r=>r[0]).map(r=>JSON.parse(r[3])); }
 function blok_(){ return sh_(BLOK).getDataRange().getValues().slice(1).filter(r=>r[1]).map(r=>({tahun:+r[0],nomor:+r[1],ket:r[2]})); }
 function out_(o){ return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function doGet(e){ if((e.parameter.action||'list')==='list') return out_({ok:true,rows:rows_(),blok:blok_()}); return out_({ok:false,error:'aksi tidak dikenal'}); }
-function put_(row){ const s=sh_(SHEET), v=s.getDataRange().getValues(); for(let i=1;i<v.length;i++){ if(v[i][0]===row.id){ s.getRange(i+1,1,1,4).setValues([[row.id,row.tahun,row.nomor||'',JSON.stringify(row)]]); return; } } s.appendRow([row.id,row.tahun,row.nomor||'',JSON.stringify(row)]); }
-function maxNo_(tahun){ let m=0; rows_().forEach(r=>{ if(+r.tahun===tahun && r.nomor && r.tahap!=='pengajuan') m=Math.max(m,+r.nomor); }); blok_().forEach(b=>{ if(b.tahun===tahun) m=Math.max(m,b.nomor); }); return m; }
-function pakai_(tahun,no,id){ return rows_().some(r=>+r.tahun===tahun && +r.nomor===no && r.id!==id && r.tahap!=='pengajuan') || blok_().some(b=>b.tahun===tahun && b.nomor===no); }
+function idx_(){ const s=sh_(SHEET), n=s.getLastRow(); return n<2?[]:s.getRange(2,1,n-1,3).getValues(); } // id, tahun, nomor (tanpa JSON: cepat)
+function put_(row){ const s=sh_(SHEET), ids=idx_(); const v=[[row.id,row.tahun,row.nomor||'',JSON.stringify(row)]]; for(let i=0;i<ids.length;i++){ if(ids[i][0]===row.id){ s.getRange(i+2,1,1,4).setValues(v); return; } } s.appendRow(v[0]); }
+function maxNo_(tahun){ let m=0; idx_().forEach(r=>{ if(+r[1]===tahun && r[2]!=='') m=Math.max(m,+r[2]); }); blok_().forEach(b=>{ if(b.tahun===tahun) m=Math.max(m,b.nomor); }); return m; }
+function pakai_(tahun,no,id){ return idx_().some(r=>+r[1]===tahun && r[2]!=='' && +r[2]===no && r[0]!==id) || blok_().some(b=>b.tahun===tahun && b.nomor===no); }
 function doPost(e){
   const lock=LockService.getScriptLock(); lock.waitLock(20000);
   try{

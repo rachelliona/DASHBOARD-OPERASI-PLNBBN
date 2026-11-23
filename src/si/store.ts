@@ -62,7 +62,7 @@ export const siActions = {
   /** Terbitkan: pesan nomor berikutnya secara atomik. Mode server: nomor ditentukan server (LockService). Mode lokal: dari registri di browser ini. */
   async terbitkan(s: SI, opsi: { nomor?: number; tanggal?: string } = {}): Promise<SI> {
     const tahun = +(opsi.tanggal || s.tanggal || iso(new Date())).slice(0, 4); const tanggal = opsi.tanggal || s.tanggal || iso(new Date())
-    if (state.remote) { if (Date.now() - sinkAt > 120000) await siActions.sinkronLegacy() } else { await siActions.muatRiwayat(true); if (state.riwayat !== 'ok') throw new Error('Riwayat nomor SI belum termuat (sheet SI tidak terjangkau). Coba lagi sebentar supaya nomor tidak mulai dari 0001.') }
+    if (state.remote) { if (Date.now() - sinkAt > 300000) await siActions.sinkronLegacy() } else { await siActions.muatRiwayat(true); if (state.riwayat !== 'ok') throw new Error('Riwayat nomor SI belum termuat (sheet SI tidak terjangkau). Coba lagi sebentar supaya nomor tidak mulai dari 0001.') }
     // pakai slot cadangan backdate: lepaskan dulu blok cadangannya
     if (opsi.nomor != null && state.blok.some(b => b.tahun === tahun && b.nomor === opsi.nomor && isCad(b))) await siActions.lepasBlok(tahun, opsi.nomor)
     // hari baru: sisihkan slot cadangan untuk SI backdate hari-hari sebelumnya
