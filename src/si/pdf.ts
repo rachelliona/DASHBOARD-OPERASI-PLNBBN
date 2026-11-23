@@ -18,7 +18,7 @@ export function namaFile(s: SI) { return `${s.revisiKe ? 'Revisi ' : ''}SI ${Str
 const PX = 210 / 744
 export async function buatPdf(s: SI, draft = false, paraf: 'ada' | 'kosong' = (() => { try { return localStorage.getItem('pln-si-paraf') === 'kosong' ? 'kosong' : 'ada' } catch { return 'ada' } })()): Promise<{ blob: Blob; nama: string }> {
   const { jsPDF } = await import('jspdf'); const d = new jsPDF({ unit: 'mm', format: 'a4' }); const m = (px: number) => px * PX
-  const kop = await img(BASE + 'si/kop.png'); if (kop) { try { d.addImage(kop, 'PNG', 0, m(35), m(699), m(93.6)) } catch { /* tanpa kop */ } }
+  const kop = await img(BASE + 'si/kop.png'); if (kop) { try { d.addImage(kop, 'PNG', m(6), m(35), m(672.9), m(90.1)) } catch { /* tanpa kop */ } }
   d.setFont('helvetica', 'normal'); d.setFontSize(10.5); d.setTextColor(0)
   const T = (t: string, x: number, y: number, o?: any) => d.text(t, m(x), m(y + 5), o)
   const wrap = (t: string, w: number) => d.splitTextToSize(t, m(w)) as string[]
@@ -41,7 +41,8 @@ export async function buatPdf(s: SI, draft = false, paraf: 'ada' | 'kosong' = ((
   if (paraf === 'ada') { const pi = await img(BASE + 'si/paraf.png'); if (pi) { try { d.addImage(pi, 'PNG', m(536), m(yn + 20), m(60), m(48)) } catch { /* tanpa paraf */ } } }
   if (draft) { // cap DRAFT transparan miring 45° di atas dokumen
     const D = d as any; d.saveGraphicsState(); D.setGState(new D.GState({ opacity: 0.13 })); d.setTextColor(200, 40, 40); d.setFont('helvetica', 'bold'); d.setFontSize(120)
-    d.text('DRAFT', 120, 185, { align: 'center', angle: 45 }); d.restoreGraphicsState()
+    const w = d.getTextWidth('DRAFT'), h = 0.716 * 120 * 25.4 / 72, c = Math.SQRT1_2 // pusatkan teks miring tepat di tengah halaman (A4 210x297)
+    d.text('DRAFT', 105 - c * w / 2 + c * h / 2, 148.5 + c * w / 2 + c * h / 2, { angle: 45 }); d.restoreGraphicsState()
   }
   return { blob: d.output('blob'), nama: namaFile(s) }
 }

@@ -75,3 +75,15 @@ export function cekKoreksi(lama: SI, baru: SI): { ok: boolean; ubah: Ubah[]; tol
   const ubah = bandingkan(lama, baru); const tolak = ubah.filter(u => { const fd = FIELDS.find(x => x.f === u.f)!; if (!fd.penting) return false; if (['volume', 'laycanMulai', 'laycanSelesai', 'etaMulai', 'etaSelesai', 'skema'].includes(u.f)) return true; return lev(u.dari.toLowerCase(), u.ke.toLowerCase()) > 2 })
   return { ok: !tolak.length, ubah, tolak }
 }
+
+/** Slot nomor kosong pada tahun tertentu + apakah urutan tanggalnya cocok dengan tanggal SI (untuk backdate). Celah bisa juga nomor surat Dirop lain. */
+export type Slot = { n: number; prev?: SI; next?: SI; cocok: boolean }
+export function slotKosong(rows: SI[], blok: Blok[], tahun: number, tanggal: string): { slot: Slot[]; terakhir: string } {
+  const used = new Set<number>(); const dated: SI[] = []
+  rows.forEach(r => { if (r.tahun === tahun && r.nomor != null && r.tahap !== 'pengajuan') { used.add(r.nomor); if (r.tanggal) dated.push(r) } }); blok.forEach(b => { if (b.tahun === tahun) used.add(b.nomor) })
+  dated.sort((a, b) => a.nomor! - b.nomor!); const mx = Math.max(0, ...used); const slot: Slot[] = []; let i = 0
+  for (let n = 1; n <= mx; n++) { if (used.has(n)) continue; while (i < dated.length && dated[i].nomor! < n) i++
+    const next = dated[i], prev = dated[i - 1]; slot.push({ n, prev, next, cocok: !!tanggal && (!prev || prev.tanggal <= tanggal) && (!next || next.tanggal >= tanggal) }) }
+  const terakhir = dated.reduce((m, r) => r.tanggal > m ? r.tanggal : m, '')
+  return { slot, terakhir }
+}

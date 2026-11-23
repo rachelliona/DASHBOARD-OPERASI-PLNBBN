@@ -1,10 +1,12 @@
 import { useSyncExternalStore } from 'react'
 import { Blok, SI, kosong } from './types'
+import { dariDatabas, dariSheet, gabung } from './legacy'
 import { nomorBerikut, nomorDipakai, iso, bandingkan, cekKoreksi, FIELDS } from './logic'
 const K = 'pln-si-v1', KB = 'pln-si-blok-v1', KU = 'pln-si-remote-v1'
-type State = { rows: SI[]; blok: Blok[]; remote: string; sync: '' | 'ok' | 'gagal' | 'proses'; at: string; err: string }
+type State = { riwayat: '' | 'memuat' | 'ok' | 'gagal'; rows: SI[]; blok: Blok[]; remote: string; sync: '' | 'ok' | 'gagal' | 'proses'; at: string; err: string }
 const rd = <T,>(k: string, d: T): T => { try { const v = JSON.parse(localStorage.getItem(k) || 'null'); return v ?? d } catch { return d } }
-let state: State = { rows: rd<SI[]>(K, []), blok: rd<Blok[]>(KB, []), remote: rd<string>(KU, ''), sync: '', at: '', err: '' }
+let state: State = { riwayat: '', rows: rd<SI[]>(K, []), blok: rd<Blok[]>(KB, []), remote: rd<string>(KU, ''), sync: '', at: '', err: '' }
+const KH = 'pln-si-hapus-v1'; const hapusan = new Set<string>(rd<string[]>(KH, []))
 const subs = new Set<() => void>()
 const emit = (n: Partial<State>) => { state = { ...state, ...n }; try { localStorage.setItem(K, JSON.stringify(state.rows)); localStorage.setItem(KB, JSON.stringify(state.blok)); localStorage.setItem(KU, JSON.stringify(state.remote)) } catch { /* tanpa penyimpanan */ } subs.forEach(f => f()) }
 export const useSI = () => useSyncExternalStore(f => { subs.add(f); return () => { subs.delete(f) } }, () => state)
@@ -12,7 +14,21 @@ export const newId = () => 'si-' + Date.now().toString(36) + Math.random().toStr
 const now = () => new Date().toISOString()
 /** Panggilan ke Apps Script (text/plain agar tanpa preflight CORS). */
 async function call(body: any) { const r = await fetch(state.remote, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), redirect: 'follow' }); const j = await r.json(); if (!j.ok) throw new Error(j.error || 'Ditolak server'); return j }
+const BASE = import.meta.env.BASE_URL
+let muat: Promise<void> | null = null
 export const siActions = {
+  /** Muat arsip Databas SI + sheet SI 2026 supaya nomor berikutnya MELANJUTKAN nomor yang sudah ada (tidak mulai dari 0001). Sheet diambil ulang tiap dipanggil. */
+  muatRiwayat(paksa = false): Promise<void> {
+    if (muat && !paksa) return muat
+    if (state.remote) { if (state.riwayat !== 'ok') emit({ riwayat: 'ok' }); return Promise.resolve() } // mode server: nomor ditentukan server
+    muat = (async () => { emit({ riwayat: 'memuat' }); try {
+      const db = await (await fetch(BASE + 'si/databas-si.json')).json(); let sheet: SI[] = []
+      try { const src = (await import('../config/sources')) as any; const url = (src.SI_CSV_URL as string) ?? ''; if (url) sheet = dariSheet(await (await fetch(url)).text()) } catch { /* sheet opsional */ }
+      const all = gabung(dariDatabas(db), sheet).filter(r => !hapusan.has(r.id)); const buatan = state.rows.filter(r => r.sumber === 'sistem')
+      emit({ rows: [...all, ...buatan], riwayat: 'ok' })
+    } catch { emit({ riwayat: state.rows.length ? 'ok' : 'gagal' }) } })()
+    return muat
+  },
   setRemote: (u: string) => emit({ remote: u.trim(), sync: '', err: '' }),
   /** Tarik seluruh registri dari server bersama (menggantikan salinan lokal). */
   async tarik() { if (!state.remote) return; emit({ sync: 'proses', err: '' }); try { const r = await fetch(state.remote + (state.remote.includes('?') ? '&' : '?') + 'action=list'); const j = await r.json(); if (!j.ok) throw new Error(j.error || 'gagal'); emit({ rows: j.rows as SI[], blok: j.blok as Blok[], sync: 'ok', at: now(), err: '' }) } catch (e: any) { emit({ sync: 'gagal', err: String(e?.message || e) }) } },
@@ -28,6 +44,7 @@ export const siActions = {
     if (state.remote) {
       emit({ sync: 'proses' }); try { const j = await call({ action: 'reserve', tahun, nomor: opsi.nomor ?? null, row: { ...s, tahun, tanggal, tahap: 'terbit' } }); const n: SI = j.row; emit({ rows: state.rows.some(r => r.id === n.id) ? state.rows.map(r => r.id === n.id ? n : r) : [...state.rows, n], sync: 'ok', at: now(), err: '' }); return n } catch (e: any) { emit({ sync: 'gagal', err: String(e?.message || e) }); throw e }
     }
+    await siActions.muatRiwayat(true); if (state.riwayat !== 'ok') throw new Error('Riwayat nomor SI belum termuat (sheet SI tidak terjangkau). Coba lagi sebentar supaya nomor tidak mulai dari 0001.')
     const nomor = opsi.nomor ?? nomorBerikut(state.rows, state.blok, tahun); const pakai = nomorDipakai(state.rows, state.blok, tahun, nomor, s.id); if (pakai) throw new Error(`Nomor ${nomor}/${tahun} sudah dipakai${pakai.id === 'blok' ? ' (diblok untuk surat lain)' : ''}.`)
     const n: SI = { ...s, tahun, tanggal, nomor, tahap: 'terbit', diubah: now() }; emit({ rows: state.rows.some(r => r.id === n.id) ? state.rows.map(r => r.id === n.id ? n : r) : [...state.rows, n] }); return n
   },
@@ -48,5 +65,16 @@ export const siActions = {
   async blokir(tahun: number, nomor: number, ket: string) { if (state.remote) await call({ action: 'block', tahun, nomor, ket }); emit({ blok: [...state.blok.filter(b => !(b.tahun === tahun && b.nomor === nomor)), { tahun, nomor, ket }] }) },
   async lepasBlok(tahun: number, nomor: number) { if (state.remote) await call({ action: 'unblock', tahun, nomor }); emit({ blok: state.blok.filter(b => !(b.tahun === tahun && b.nomor === nomor)) }) },
   async hapusPengajuan(id: string) { if (state.remote) await call({ action: 'delete', id }); emit({ rows: state.rows.filter(r => r.id !== id || r.tahap !== 'pengajuan') }) },
+  /** ADMIN: hapus SI apa pun (termasuk yang sudah terbit). Nomornya jadi slot kosong. */
+  async hapus(id: string) { const r0 = state.rows.find(r => r.id === id); if (r0 && r0.sumber !== 'sistem') { hapusan.add(id); try { localStorage.setItem(KH, JSON.stringify([...hapusan])) } catch { /* abaikan */ } } if (state.remote) await call({ action: 'delete', id, paksa: true }); emit({ rows: state.rows.filter(r => r.id !== id) }) },
+  /** ADMIN: kelola SI terbit — ubah isi/nomor/tanggal tanpa revisi. Tercatat di riwayat. */
+  async kelola(lama: SI, baru: SI, oleh: string): Promise<SI> {
+    const tanggal = baru.tanggal || lama.tanggal; const tahun = +tanggal.slice(0, 4) || lama.tahun; const nomor = baru.nomor ?? lama.nomor
+    if (nomor != null) { const p = nomorDipakai(state.rows, state.blok, tahun, nomor, lama.id); if (p) throw new Error(`Nomor ${nomor}/${tahun} sudah dipakai${p.id === 'blok' ? ' (diblok untuk surat lain)' : ''}.`) }
+    const ubah = bandingkan(lama, { ...baru, tanggal }); if (nomor !== lama.nomor) ubah.unshift({ f: 'nomor', label: 'Nomor SI', dari: String(lama.nomor ?? '—'), ke: String(nomor ?? '—') })
+    if (!ubah.length) throw new Error('Tidak ada yang diubah.')
+    const n: SI = { ...baru, id: lama.id, tanggal, tahun, nomor, tahap: lama.tahap, koreksi: [...lama.koreksi, { at: now(), oleh: oleh + ' (admin)', ubah }] }
+    await siActions.simpan(n); return n
+  },
   reset: () => emit({ rows: [], blok: [] }),
 }

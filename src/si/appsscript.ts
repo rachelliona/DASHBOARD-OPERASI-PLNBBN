@@ -16,7 +16,7 @@ function doPost(e){
     if(a==='save'){ const row=b.row; if(row.nomor && pakai_(+row.tahun,+row.nomor,row.id)) return out_({ok:false,error:'Nomor dobel ditolak server'}); put_(row); return out_({ok:true,row:row}); }
     if(a==='block'){ if(pakai_(+b.tahun,+b.nomor,'')) return out_({ok:false,error:'Nomor sudah dipakai'}); sh_(BLOK).appendRow([b.tahun,b.nomor,b.ket||'']); return out_({ok:true}); }
     if(a==='unblock'){ const s=sh_(BLOK), v=s.getDataRange().getValues(); for(let i=v.length-1;i>=1;i--) if(+v[i][0]===+b.tahun && +v[i][1]===+b.nomor) s.deleteRow(i+1); return out_({ok:true}); }
-    if(a==='delete'){ const s=sh_(SHEET), v=s.getDataRange().getValues(); for(let i=v.length-1;i>=1;i--) if(v[i][0]===b.id && JSON.parse(v[i][3]).tahap==='pengajuan') s.deleteRow(i+1); return out_({ok:true}); }
+    if(a==='delete'){ const s=sh_(SHEET), v=s.getDataRange().getValues(); for(let i=v.length-1;i>=1;i--) if(v[i][0]===b.id && (b.paksa || JSON.parse(v[i][3]).tahap==='pengajuan')) s.deleteRow(i+1); return out_({ok:true}); }
     if(a==='import'){ const s=sh_(SHEET), have={}; rows_().forEach(r=>have[r.id]=1); const add=(b.rows||[]).filter(r=>!have[r.id]).map(r=>[r.id,r.tahun,r.nomor||'',JSON.stringify(r)]); if(add.length) s.getRange(s.getLastRow()+1,1,add.length,4).setValues(add); (b.blok||[]).forEach(x=>{ if(!blok_().some(y=>y.tahun===x.tahun&&y.nomor===x.nomor)) sh_(BLOK).appendRow([x.tahun,x.nomor,x.ket||'']); }); return out_({ok:true,n:add.length}); }
     return out_({ok:false,error:'aksi tidak dikenal'});
   } finally { lock.releaseLock(); }
