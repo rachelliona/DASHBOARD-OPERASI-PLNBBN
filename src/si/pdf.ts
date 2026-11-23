@@ -1,3 +1,4 @@
+import { ringkasPltu, singkat } from './singkatan'
 import { SI, ALASAN } from './types'
 import { fmtNomor, rentangId, tglId } from './logic'
 const BASE = import.meta.env.BASE_URL
@@ -13,11 +14,13 @@ export function barisSurat(s: SI): [string, string][] {
   return r
 }
 async function img(u: string) { try { const b = await (await fetch(u)).blob(); return await new Promise<string>(ok => { const f = new FileReader(); f.onload = () => ok(String(f.result)); f.readAsDataURL(b) }) } catch { return '' } }
-export function namaFile(s: SI) { return `${s.revisiKe ? 'Revisi ' : ''}SI ${String(s.nomor ?? 'draft').padStart(4, '0')}-${s.tahun} ${(s.mitra || s.tambang || '').replace(/^PT\.?\s*/i, '').replace(/[^\w ]/g, '').trim()}`.trim() + '.pdf' }
+export function namaFile(s: SI) { return `${s.revisiKe ? 'Revisi_' : ''}SI_${s.nomor == null ? 'draft' : String(s.nomor).padStart(4, '0')}_${singkat(s.tambang || s.mitra) || 'XXX'}_-_${ringkasPltu(s.pltu || s.bongkar)}.pdf` } // contoh: SI_3116_BSL_-_PLTU_Indramayu.pdf
 /** Tata letak mengikuti contoh SI asli (PDF dari Word): koordinat dalam px pada 90 dpi, A4 = 744 x 1052 px. */
 const PX = 210 / 744
 export async function buatPdf(s: SI, draft = false, paraf: 'ada' | 'kosong' = (() => { try { return localStorage.getItem('pln-si-paraf') === 'kosong' ? 'kosong' : 'ada' } catch { return 'ada' } })()): Promise<{ blob: Blob; nama: string }> {
   const { jsPDF } = await import('jspdf'); const d = new jsPDF({ unit: 'mm', format: 'a4' }); const m = (px: number) => px * PX
+  for (const hal of [1, 2]) { // lembar 1: dengan paraf, lembar 2: tanpa paraf (seperti SI asli)
+    if (hal === 2) d.addPage()
   const kop = await img(BASE + 'si/kop.png'); if (kop) { try { d.addImage(kop, 'PNG', m(6), m(35), m(672.9), m(90.1)) } catch { /* tanpa kop */ } }
   d.setFont('helvetica', 'normal'); d.setFontSize(10.5); d.setTextColor(0)
   const T = (t: string, x: number, y: number, o?: any) => d.text(t, m(x), m(y + 5), o)
@@ -38,12 +41,13 @@ export async function buatPdf(s: SI, draft = false, paraf: 'ada' | 'kosong' = ((
   y += 14; T('Demikian disampaikan atas perhatiannya diucapkan terimakasih.', 165, y)
   const ys = Math.max(y + 49, 642); T('PLT DIREKTUR NIAGA &', 608, ys, { align: 'center' }); T('OPERASI', 608, ys + 21, { align: 'center' })
   const yn = ys + 107; d.setFont('times', 'normal'); d.setFontSize(9.5); T('Tembusan :', 167, yn - 6); T('1.', 170, yn + 8); T('Direktur Utama PT PLN Batubara Niaga', 193, yn + 8)
-  d.setFont('helvetica', 'normal'); d.setFontSize(10.5); T('RAHMAT DIAN AMIR', 608, yn, { align: 'center' }); d.setFont('times', 'normal'); d.setFontSize(9.5); T('Paraf : ………………..', 548, yn + 41)
-  if (paraf === 'ada') { const pi = await img(BASE + 'si/paraf.png'); if (pi) { try { d.addImage(pi, 'PNG', m(584), m(yn + 20), m(60), m(48)) } catch { /* tanpa paraf */ } } }
+  d.setFont('helvetica', 'normal'); d.setFontSize(10.5); T('RAHMAT DIAN AMIR', 608, yn, { align: 'center' }); d.setFont('times', 'normal'); d.setFontSize(9.5); if (hal === 1) T('Paraf : ………………..', 548, yn + 41)
+  if (paraf === 'ada' && hal === 1) { const pi = await img(BASE + 'si/paraf.png'); if (pi) { try { d.addImage(pi, 'PNG', m(584), m(yn + 20), m(60), m(48)) } catch { /* tanpa paraf */ } } }
   if (draft) { // cap DRAFT transparan miring 45° di atas dokumen
     const D = d as any; d.saveGraphicsState(); D.setGState(new D.GState({ opacity: 0.13 })); d.setTextColor(200, 40, 40); d.setFont('helvetica', 'bold'); d.setFontSize(120)
     const w = d.getTextWidth('DRAFT'), h = 0.716 * 120 * 25.4 / 72, c = Math.SQRT1_2 // pusatkan teks miring tepat di tengah halaman (A4 210x297)
     d.text('DRAFT', 105 - c * w / 2 + c * h / 2, 148.5 + c * w / 2 + c * h / 2, { angle: 45 }); d.restoreGraphicsState()
+  }
   }
   return { blob: d.output('blob'), nama: namaFile(s) }
 }
