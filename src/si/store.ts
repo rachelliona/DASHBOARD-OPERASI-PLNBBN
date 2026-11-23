@@ -87,10 +87,12 @@ export const siActions = {
     return siActions.terbitkan(n, opsi)
   },
   /** KOREKSI PENULISAN: nomor tetap, bukan revisi. Ditolak bila field penting berubah lebih dari sekadar typo. */
-  async koreksi(lama: SI, baru: SI, oleh: string, besar = false): Promise<SI> {
-    const c = cekKoreksi(lama, baru); if (!c.ubah.length) throw new Error('Tidak ada yang diubah.')
+  async koreksi(lama: SI, baru: SI, oleh: string, besar = false, opsi: { nomor?: number } = {}): Promise<SI> {
+    const c = cekKoreksi(lama, baru); if (!c.ubah.length && opsi.nomor == null) throw new Error('Tidak ada yang diubah.')
     if (!c.ok && !besar) throw new Error('Perubahan ini bukan typo (' + c.tolak.map(t => t.label).join(', ') + '). Gunakan "Revisi SI" supaya dapat nomor baru.')
-    const n: SI = { ...baru, id: lama.id, nomor: lama.nomor, tahun: lama.tahun, tahap: lama.tahap, revisiKe: lama.revisiKe, sebelumnyaId: lama.sebelumnyaId, sebelumnyaNomor: lama.sebelumnyaNomor, koreksi: [...lama.koreksi, { at: now(), oleh: c.ok ? oleh : oleh + ' (koreksi besar)', ubah: c.ubah }] }
+    const nomorBaru = opsi.nomor != null && opsi.nomor !== lama.nomor ? opsi.nomor : lama.nomor
+    if (nomorBaru !== lama.nomor) { if (!besar) throw new Error('Ganti nomor hanya untuk Racel/Andi/Billy.'); if (state.blok.some(b => b.tahun === lama.tahun && b.nomor === nomorBaru && isCad(b))) await siActions.lepasBlok(lama.tahun, nomorBaru!); const pk = nomorDipakai(state.rows, state.blok, lama.tahun, nomorBaru!, lama.id); if (pk) throw new Error(`Nomor ${nomorBaru}/${lama.tahun} sudah dipakai.`) }
+    const n: SI = { ...baru, id: lama.id, nomor: nomorBaru, tahun: lama.tahun, tahap: lama.tahap, revisiKe: lama.revisiKe, sebelumnyaId: lama.sebelumnyaId, sebelumnyaNomor: lama.sebelumnyaNomor, koreksi: [...lama.koreksi, { at: now(), oleh: nomorBaru !== lama.nomor ? oleh + ` (koreksi besar, nomor ${lama.nomor} → ${nomorBaru})` : c.ok ? oleh : oleh + ' (koreksi besar)', ubah: c.ubah }] }
     await siActions.simpan(n); return n
   },
   async blokir(tahun: number, nomor: number, ket: string) { if (state.remote) await call({ action: 'block', tahun, nomor, ket }); emit({ blok: [...state.blok.filter(b => !(b.tahun === tahun && b.nomor === nomor)), { tahun, nomor, ket }] }) },
@@ -127,7 +129,7 @@ async function tulisSheet(s: SI, timpa: boolean) {
 }
 { const t0 = siActions.terbitkan, k0 = siActions.koreksi, g0 = siActions.kelola
   siActions.terbitkan = async (...a: Parameters<typeof t0>) => { const n = await t0(...a); void tulisSheet(n, false); return n }
-  siActions.koreksi = async (...a: Parameters<typeof k0>) => { const n = await k0(...a); void tulisSheet(n, true); return n }
+  siActions.koreksi = async (...a: Parameters<typeof k0>) => { const n = await k0(...a); void tulisSheet(n, true); if (a[0].nomor !== n.nomor) void kosongkanSheet(a[0].nomor, a[0].tahun); return n }
   siActions.kelola = async (...a: Parameters<typeof g0>) => { const n = await g0(...a); void tulisSheet(n, true); return n } }
 
 /** Hapus SI dari database -> kosongkan catatannya di spreadsheet monitoring (nomor tetap). */
