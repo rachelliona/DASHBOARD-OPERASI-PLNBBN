@@ -11,13 +11,14 @@ import { dariDatabas, dariSheet, gabung } from '../si/legacy'
 import { unduhPdf } from '../si/pdf'
 import { getParaf, setParaf, unduhDocx } from '../si/docx'
 import { APPS_SCRIPT } from '../si/appsscript'
+import { bacaBaris, urai, siBaru, Hasil } from '../si/unggah'
 const B = import.meta.env.BASE_URL
 type Ref = { pltu: string[][]; mitra: string[][]; transport: string[][]; jetty: string[][]; moda: string[]; tambangJetty?: Record<string, string[]>; mitraJetty?: Record<string, string[]>; pairJetty?: Record<string, string[]> }
 let refCache: Ref | null = null
 const useRef_ = () => { const [r, setR] = useState<Ref | null>(refCache); useEffect(() => { if (!refCache) fetch(B + 'si/ref.json').then(x => x.json()).then(j => { refCache = j; setR(j) }).catch(() => { /* tanpa referensi */ }) }, []); return r }
 const WARNA: Record<Status, string> = { pengajuan: '#8aa0b8', batal: '#6b7280', direvisi: '#a78bfa', lewat: '#f87171', arsip: '#64748b', segera: '#f59e0b', aktif: '#34d399', 'tanpa-laycan': '#94a3b8' }
 const Chip = ({ s }: { s: Status }) => <span className="inline-block rounded-full px-2 py-0.5 text-[10.5px] font-semibold whitespace-nowrap" style={{ background: WARNA[s] + '26', color: WARNA[s], border: `1px solid ${WARNA[s]}66` }}>{STATUS_LABEL[s]}</span>
-type Tab = 'monitor' | 'antrean' | 'nomor' | 'sinkron'
+type Tab = 'monitor' | 'antrean' | 'nomor' | 'sinkron' | 'unggah'
 export default function SIPage() {
   const st = useSI(); const { user } = useAuth(); const admin = isAdmin(user); const bisa = bisaBuatSI(user) || admin; const [tab, setTab] = useState<Tab>('monitor'); useEffect(() => { siActions.muatRiwayat() }, []); const nav = useNavigate(); const [info, setInfo] = useState('')
   const today = iso(new Date()); const sup = useMemo(() => supersededIds(st.rows), [st.rows]); const cek = useMemo(() => periksa(st.rows, st.blok), [st.rows, st.blok])
@@ -33,11 +34,12 @@ export default function SIPage() {
       <Kpi label="Revisi" value={String(rev)} accent="#a78bfa" note={`${revArmada} karena armada diganti`} />
       <Kpi label="Antrean pengajuan" value={String(antre)} accent="#8aa0b8" note="menunggu Racel" />
     </div>
-    <div className="vsw mb-3" role="tablist" aria-label="Modul SI">{([['monitor', 'Monitoring SI'], ['antrean', 'Antrean pengajuan'], ['nomor', 'Nomor & celah'], ['sinkron', 'Sinkron & impor']] as [Tab, string][]).map(([v, l]) => <button key={v} role="tab" aria-selected={tab === v} className={'vsw-b' + (tab === v ? ' on' : '')} onClick={() => setTab(v)}>{l}{v === 'antrean' && antre ? ` (${antre})` : ''}</button>)}</div>
+    <div className="vsw mb-3" role="tablist" aria-label="Modul SI">{([['monitor', 'Monitoring SI'], ['antrean', 'Antrean pengajuan'], ['nomor', 'Nomor & celah'], ['sinkron', 'Sinkron & impor'], ...(admin ? [['unggah', 'Unggah SI luar']] : [])] as [Tab, string][]).map(([v, l]) => <button key={v} role="tab" aria-selected={tab === v} className={'vsw-b' + (tab === v ? ' on' : '')} onClick={() => setTab(v)}>{l}{v === 'antrean' && antre ? ` (${antre})` : ''}</button>)}</div>
     {tab === 'monitor' && <Monitor today={today} sup={sup} onAksi={(mode, si) => nav(`/si/${mode}/${si.id}`)} admin={admin} bisa={bisa} />}
     {tab === 'antrean' && <Antrean admin={bisa} onBuka={x => nav(`/si/edit/${x.id}`)} info={setInfo} />}
     {tab === 'nomor' && <Nomor admin={admin} />}
     {tab === 'sinkron' && <Sinkron admin={admin} />}
+    {tab === 'unggah' && admin && <Unggah oleh={user?.id ?? 'racel'} info={setInfo} />}
   </>
 }
 function ParafPilih() { const [p, setP] = useState(getParaf()); return <span className="inline-flex gap-1.5">{([['ada', 'Dengan paraf template'], ['kosong', 'Kosongan (tanpa paraf)']] as const).map(([v, l]) => <button key={v} className={'fchip' + (p === v ? ' on' : '')} onClick={() => { setParaf(v); setP(v) }}>{l}</button>)}</span> }
@@ -150,4 +152,28 @@ function Sinkron({ admin }: { admin: boolean }) {
         <label className="fchip cursor-pointer">Gabungkan dari file<input type="file" accept="application/json,.json" className="hidden" onChange={async e => { const f = e.target.files?.[0]; if (!f) return; try { const j = JSON.parse(await f.text()); const baru: SI[] = (j.rows ?? []).filter((r: SI) => r?.id); const by = new Map(st.rows.map(r => [r.id, r])); let n = 0; baru.forEach(r => { const o = by.get(r.id); if (!o || (r.diubah ?? '') > (o.diubah ?? '')) { by.set(r.id, r); n++ } }); const nb = [...st.blok]; (j.blok ?? []).forEach((b: any) => { if (!nb.some(x => x.tahun === b.tahun && x.nomor === b.nomor)) nb.push(b) }); siActions.setAll([...by.values()], nb); setMsg(`Digabung ${n} SI dari file.`) } catch { setMsg('File tidak dikenali.') } e.target.value = '' }} /></label></div></Card>
     <Card title="Data lokal"><button className="fchip" onClick={() => { if (confirm('Hapus semua data SI di browser ini? (tidak menghapus data di server)')) siActions.reset() }}>Kosongkan data lokal</button></Card>
   </div>
+}
+
+function Unggah({ oleh, info }: { oleh: string; info: (s: string) => void }) {
+  const st = useSI(); const [daftar, setDaftar] = useState<{ nama: string; h: Hasil }[]>([]); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false)
+  const pilih = async (fl: FileList | null) => { if (!fl) return; setErr(''); setBusy(true); const out: { nama: string; h: Hasil }[] = []
+    for (const f of Array.from(fl)) { try { out.push({ nama: f.name, h: urai(await bacaBaris(await f.arrayBuffer()), f.name) }) } catch (e: any) { setErr(`${f.name}: gagal dibaca (${e?.message || e})`) } }
+    const seen = new Set<string>(); setDaftar(out.filter(o => { const k = o.h.si.tahun + ':' + o.h.si.nomor; if (seen.has(k)) return false; seen.add(k); return true })); setBusy(false) }
+  const ubah = (i: number, k: keyof SI, v: any) => setDaftar(d => d.map((x, j) => j === i ? { ...x, h: { ...x.h, si: { ...x.h.si, [k]: v } } } : x))
+  const status = (s: SI) => { const ada = st.rows.filter(r => r.tahun === s.tahun && r.nomor === s.nomor); if (ada.some(r => r.sumber === 'sistem' && r.tahap !== 'pengajuan')) return 'skip'; return ada.length ? 'ganti' : 'baru' }
+  const masuk = async () => { setBusy(true); let n = 0, skip = 0; try { for (const o of daftar) { const s = o.h.si; if (!s.nomor || !s.tanggal || status(s) === 'skip') { skip++; continue } await siActions.unggah(siBaru(o.h, oleh)); n++ } info(`${n} SI luar dashboard masuk ke registri${skip ? `, ${skip} dilewati` : ''}.`); setDaftar([]) } catch (e: any) { setErr(String(e?.message || e)) } setBusy(false) }
+  return <Card title="Unggah SI buatan luar dashboard (arsip & pelacakan)">
+    <p className="text-xs text-slate-300 mb-2">Pilih satu atau banyak file <b>PDF SI</b> yang sudah kamu buat di luar dashboard. Isinya dibaca otomatis (nomor, tanggal, shipper, kapal, laycan, PLTU, jetty). Periksa hasilnya, lalu masukkan — SI itu muncul di menu Shipping Instruction dan ikut monitoring laycan/revisi. Arsip lama bernomor sama diganti, jadi tidak dobel. Menu ini hanya untuk Racel.</p>
+    <label className="fchip on cursor-pointer inline-block">Pilih PDF SI<input type="file" accept="application/pdf,.pdf" multiple className="hidden" onChange={e => { pilih(e.target.files); e.target.value = '' }} /></label> {busy && <span className="text-xs ml-2">Memproses…</span>} {err && <span className="text-xs ml-2 text-red-400">{err}</span>}
+    {daftar.length > 0 && <div className="mt-3 space-y-2">
+      {daftar.map((o, i) => { const s = o.h.si, stt = status(s); return <div key={i} className="rounded-xl border border-white/10 p-2.5 text-xs">
+        <div className="flex gap-2 flex-wrap items-center mb-1.5"><b>{o.nama}</b><span className="rounded-full px-2 py-0.5 text-[10.5px] font-semibold" style={{ background: stt === 'skip' ? '#f8717126' : stt === 'ganti' ? '#f59e0b26' : '#34d39926', color: stt === 'skip' ? '#f87171' : stt === 'ganti' ? '#f59e0b' : '#34d399' }}>{stt === 'skip' ? 'sudah ada SI dashboard — dilewati' : stt === 'ganti' ? 'arsip lama diganti' : 'baru'}</span>{o.h.peringatan.map(w => <span key={w} className="text-amber-400">⚠ {w}</span>)}</div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
+          <Fld l="Nomor"><input type="number" value={s.nomor ?? ''} onChange={e => ubah(i, 'nomor', +e.target.value || null)} /></Fld><Fld l="Tanggal SI"><input type="date" value={s.tanggal} onChange={e => ubah(i, 'tanggal', e.target.value)} /></Fld>
+          <Fld l="Shipper"><input value={s.mitra} onChange={e => ubah(i, 'mitra', e.target.value)} /></Fld><Fld l="Sumber tambang"><input value={s.tambang} onChange={e => ubah(i, 'tambang', e.target.value)} /></Fld>
+          <Fld l="Kapal"><input value={s.kapal} onChange={e => ubah(i, 'kapal', e.target.value)} /></Fld><Fld l="PLTU"><input value={s.pltu} onChange={e => ubah(i, 'pltu', e.target.value)} /></Fld>
+          <Fld l="Laycan mulai"><input type="date" value={s.laycanMulai} onChange={e => ubah(i, 'laycanMulai', e.target.value)} /></Fld><Fld l="Laycan selesai"><input type="date" value={s.laycanSelesai} onChange={e => ubah(i, 'laycanSelesai', e.target.value)} /></Fld>
+        </div><div className="text-[11px] text-slate-400 mt-1.5">Jetty: {s.muat || '—'} · Transporter: {s.transporter || '—'} · Skema {s.skema} · {s.volume ?? '—'} ton · ETA {s.etaTeks || '—'}</div></div> })}
+      <button className="fchip on" disabled={busy} onClick={masuk}>Masukkan {daftar.filter(o => status(o.h.si) !== 'skip').length} SI ke dashboard</button></div>}
+  </Card>
 }

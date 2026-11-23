@@ -24,7 +24,7 @@ async function bacaLegacy(): Promise<SI[]> {
   return gabung(dariDatabas(db), sheet).filter(r => !hapusan.has(r.id))
 }
 const KC = 'pln-si-cad-v1'
-export const getCad = () => { try { const v = localStorage.getItem(KC); return v == null ? 2 : Math.max(0, Math.min(10, +v || 0)) } catch { return 2 } }
+export const getCad = () => { try { const v = localStorage.getItem(KC); return v == null ? 0 : Math.max(0, Math.min(10, +v || 0)) } catch { return 0 } }
 export const setCad = (n: number) => { try { localStorage.setItem(KC, String(Math.max(0, Math.min(10, n)))) } catch { /* abaikan */ } }
 export const siActions = {
   /** Muat arsip Databas SI + sheet SI 2026 supaya nomor berikutnya MELANJUTKAN nomor yang sudah ada (tidak mulai dari 0001). Sheet diambil ulang tiap dipanggil. */
@@ -95,6 +95,8 @@ export const siActions = {
   async lepasBlok(tahun: number, nomor: number) { if (state.remote) await call({ action: 'unblock', tahun, nomor }); emit({ blok: state.blok.filter(b => !(b.tahun === tahun && b.nomor === nomor)) }) },
   async hapusPengajuan(id: string) { if (state.remote) await call({ action: 'delete', id }); emit({ rows: state.rows.filter(r => r.id !== id || r.tahap !== 'pengajuan') }) },
   /** ADMIN: hapus SI apa pun (termasuk yang sudah terbit). Nomornya jadi slot kosong. */
+  /** ADMIN: masukkan SI yang dibuat di luar dashboard (hasil unggah PDF). Baris arsip lama bernomor sama diganti. */
+  async unggah(si: SI) { for (const r of state.rows.filter(r => r.tahun === si.tahun && r.nomor === si.nomor && r.sumber !== 'sistem')) await siActions.hapus(r.id); await siActions.simpan(si) },
   async hapus(id: string) { const r0 = state.rows.find(r => r.id === id); if (r0 && r0.sumber !== 'sistem') { hapusan.add(id); try { localStorage.setItem(KH, JSON.stringify([...hapusan])) } catch { /* abaikan */ } } if (state.remote) await call({ action: 'delete', id, paksa: true }); emit({ rows: state.rows.filter(r => r.id !== id) }) },
   /** ADMIN: kelola SI terbit — ubah isi/nomor/tanggal tanpa revisi. Tercatat di riwayat. */
   async kelola(lama: SI, baru: SI, oleh: string): Promise<SI> {
