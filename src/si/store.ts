@@ -2,9 +2,10 @@ import { useSyncExternalStore } from 'react'
 import { Blok, SI, kosong } from './types'
 import { SI_REMOTE_URL } from '../config/sources'
 import { dariDatabas, dariSheet, gabung } from './legacy'
+import { nilaiSheet } from './sheet'
 import { isCad, nomorBerikut, nomorDipakai, iso, bandingkan, cekKoreksi, FIELDS } from './logic'
 const K = 'pln-si-v1', KB = 'pln-si-blok-v1', KU = 'pln-si-remote-v1'
-type State = { riwayat: '' | 'memuat' | 'ok' | 'gagal'; rows: SI[]; blok: Blok[]; remote: string; sync: '' | 'ok' | 'gagal' | 'proses'; at: string; err: string }
+type State = { riwayat: '' | 'memuat' | 'ok' | 'gagal'; rows: SI[]; blok: Blok[]; remote: string; sync: '' | 'ok' | 'gagal' | 'proses'; at: string; err: string; sheet?: '' | 'proses' | 'ok' | 'gagal'; sheetMsg?: string }
 const rd = <T,>(k: string, d: T): T => { try { const v = JSON.parse(localStorage.getItem(k) || 'null'); return v ?? d } catch { return d } }
 let state: State = { riwayat: '', rows: rd<SI[]>(K, []), blok: rd<Blok[]>(KB, []), remote: rd<string>(KU, '') || SI_REMOTE_URL, sync: '', at: '', err: '' }
 const KH = 'pln-si-hapus-v1'; const hapusan = new Set<string>(rd<string[]>(KH, []))
@@ -31,7 +32,7 @@ export const siActions = {
   /** Mode server: tarik registri, lalu kirim ke server SI lama (arsip + sheet) yang belum ada di sana, supaya nomor server melanjutkan nomor terakhir. */
   async sinkronLegacy() {
     await siActions.tarik(); if (state.sync === 'gagal') throw new Error(state.err || 'server tidak terjangkau')
-    const all = await bacaLegacy(); const have = new Set(state.rows.map(r => r.id)); const baru = all.filter(r => !have.has(r.id))
+    const all = await bacaLegacy(); const have = new Set(state.rows.map(r => r.id)); const sis = new Set(state.rows.filter(r => r.sumber === 'sistem' && r.nomor != null).map(r => r.tahun + ':' + r.nomor)); const baru = all.filter(r => !have.has(r.id) && !(r.nomor != null && sis.has(r.tahun + ':' + r.nomor)))
     for (let i = 0; i < baru.length; i += 800) await call({ action: 'import', rows: baru.slice(i, i + 800), blok: [] })
     if (baru.length) await siActions.tarik()
     if (!state.rows.length) throw new Error('Registri kosong')
@@ -86,10 +87,10 @@ export const siActions = {
     return siActions.terbitkan(n)
   },
   /** KOREKSI PENULISAN: nomor tetap, bukan revisi. Ditolak bila field penting berubah lebih dari sekadar typo. */
-  async koreksi(lama: SI, baru: SI, oleh: string): Promise<SI> {
+  async koreksi(lama: SI, baru: SI, oleh: string, besar = false): Promise<SI> {
     const c = cekKoreksi(lama, baru); if (!c.ubah.length) throw new Error('Tidak ada yang diubah.')
-    if (!c.ok) throw new Error('Perubahan ini bukan typo (' + c.tolak.map(t => t.label).join(', ') + '). Gunakan "Revisi SI" supaya dapat nomor baru.')
-    const n: SI = { ...baru, id: lama.id, nomor: lama.nomor, tahun: lama.tahun, tahap: lama.tahap, revisiKe: lama.revisiKe, sebelumnyaId: lama.sebelumnyaId, sebelumnyaNomor: lama.sebelumnyaNomor, koreksi: [...lama.koreksi, { at: now(), oleh, ubah: c.ubah }] }
+    if (!c.ok && !besar) throw new Error('Perubahan ini bukan typo (' + c.tolak.map(t => t.label).join(', ') + '). Gunakan "Revisi SI" supaya dapat nomor baru.')
+    const n: SI = { ...baru, id: lama.id, nomor: lama.nomor, tahun: lama.tahun, tahap: lama.tahap, revisiKe: lama.revisiKe, sebelumnyaId: lama.sebelumnyaId, sebelumnyaNomor: lama.sebelumnyaNomor, koreksi: [...lama.koreksi, { at: now(), oleh: c.ok ? oleh : oleh + ' (koreksi besar)', ubah: c.ubah }] }
     await siActions.simpan(n); return n
   },
   async blokir(tahun: number, nomor: number, ket: string) { if (state.remote) await call({ action: 'block', tahun, nomor, ket }); emit({ blok: [...state.blok.filter(b => !(b.tahun === tahun && b.nomor === nomor)), { tahun, nomor, ket }] }) },
@@ -115,3 +116,16 @@ export const siActions = {
   },
   reset: () => emit({ rows: [], blok: [] }),
 }
+
+let refJetty: string[][] | null = null
+async function tulisSheet(s: SI, timpa: boolean) {
+  if (!state.remote || s.nomor == null || s.sumber !== 'sistem' || s.tahap === 'pengajuan') return
+  emit({ sheet: 'proses', sheetMsg: '' })
+  try { if (!refJetty) { try { refJetty = (await (await fetch(BASE + 'si/ref.json')).json()).jetty ?? [] } catch { refJetty = [] } }
+    const j = await call({ action: 'sheet', nomor: s.nomor, tahun: s.tahun, nilai: nilaiSheet(s, refJetty!), timpa }); emit({ sheet: 'ok', sheetMsg: j.dilewati ? 'Baris sheet sudah terisi, tidak ditimpa.' : `Tercatat di spreadsheet monitoring (baris ${j.baris}).` })
+  } catch (e: any) { emit({ sheet: 'gagal', sheetMsg: 'Gagal menulis ke spreadsheet: ' + String(e?.message || e) }) }
+}
+{ const t0 = siActions.terbitkan, k0 = siActions.koreksi, g0 = siActions.kelola
+  siActions.terbitkan = async (...a: Parameters<typeof t0>) => { const n = await t0(...a); void tulisSheet(n, false); return n }
+  siActions.koreksi = async (...a: Parameters<typeof k0>) => { const n = await k0(...a); void tulisSheet(n, true); return n }
+  siActions.kelola = async (...a: Parameters<typeof g0>) => { const n = await g0(...a); void tulisSheet(n, true); return n } }
