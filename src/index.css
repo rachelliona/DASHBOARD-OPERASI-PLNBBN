@@ -901,8 +901,20 @@ html[data-theme=light] .gcard-h .gcard-t{color:#0b1220}
 
 /* HP: form SI mudah diisi (input besar, tidak zoom di iOS, tombol aksi di atas tab bar) */
 @media (max-width:767px){
-  .aksi-bar{bottom:74px!important;padding-bottom:8px!important;z-index:20;box-shadow:0 -8px 14px -8px rgba(0,0,0,.5)}
+  .aksi-bar{position:static!important;margin-bottom:84px;padding-bottom:8px!important}
+  .aksi-bar>span.flex-1{display:none}
+  .aksi-bar .fchip{flex:1 1 100%!important}
   .aksi-bar .fchip{min-height:44px;flex:1 1 auto;justify-content:center}
   main input:not([type=checkbox]):not([type=radio]),main select,main textarea{font-size:16px!important;min-height:44px}
   main label:has(input[type=checkbox]){min-height:44px}
 }
+
+/* HP: header kartu boleh turun baris (judul di atas, filter di bawah, penuh lebar) */
+@media (max-width:767px){
+  .gcard-h{flex-wrap:wrap;align-items:flex-start!important}
+  .gcard-h>.gcard-t{flex:1 0 100%}
+  .gcard-h>div{flex:1 0 100%;width:100%}
+  .gcard-h>div>select,.gcard-h>div>input{flex:1 1 140px;min-width:0;width:auto!important}
+  .gcard-h>div>input{flex-basis:100%}
+}
+@media (max-width:767px){label.cek-blok{display:flex!important;width:100%;min-height:0!important;line-height:1.4}label.cek-blok input{width:20px;height:20px;min-height:0!important}}
