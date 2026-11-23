@@ -80,11 +80,11 @@ export const siActions = {
     const n: SI = { ...s, tahun, tanggal, nomor, tahap: 'terbit', diubah: now() }; emit({ rows: state.rows.some(r => r.id === n.id) ? state.rows.map(r => r.id === n.id ? n : r) : [...state.rows, n] }); return n
   },
   /** REVISI: SI baru bernomor baru, menaut ke SI sebelumnya; perubahan dihitung otomatis. Wajib ada perubahan penting & alasan. */
-  async revisi(lama: SI, baru: SI, oleh: string): Promise<SI> {
+  async revisi(lama: SI, baru: SI, oleh: string, opsi: { tanggal?: string; nomor?: number } = {}): Promise<SI> {
     const perubahan = bandingkan(lama, baru).filter(u => u.f !== 'tanggal'); if (!perubahan.some(u => FIELDS.find(f => f.f === u.f)?.penting)) throw new Error('Tidak ada perubahan penting. Kalau hanya salah ketik, pakai "Koreksi penulisan" (nomor tetap).')
     if (!baru.alasan) throw new Error('Pilih alasan revisi.')
-    const n: SI = { ...baru, id: newId(), tahap: 'pengajuan', nomor: null, revisiKe: lama.revisiKe + 1, sebelumnyaId: lama.id, sebelumnyaNomor: lama.nomor, perubahan, koreksi: [], ttd: false, sumber: 'sistem', dibuat: now(), dibuatOleh: oleh, tanggal: iso(new Date()) }
-    return siActions.terbitkan(n)
+    const n: SI = { ...baru, id: newId(), tahap: 'pengajuan', nomor: null, revisiKe: lama.revisiKe + 1, sebelumnyaId: lama.id, sebelumnyaNomor: lama.nomor, perubahan, koreksi: [], ttd: false, sumber: 'sistem', dibuat: now(), dibuatOleh: oleh, tanggal: opsi.tanggal || iso(new Date()) }
+    return siActions.terbitkan(n, opsi)
   },
   /** KOREKSI PENULISAN: nomor tetap, bukan revisi. Ditolak bila field penting berubah lebih dari sekadar typo. */
   async koreksi(lama: SI, baru: SI, oleh: string, besar = false): Promise<SI> {
