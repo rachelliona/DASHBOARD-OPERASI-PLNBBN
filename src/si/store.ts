@@ -17,6 +17,7 @@ const now = () => new Date().toISOString()
 async function call(body: any) { const r = await fetch(state.remote, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), redirect: 'follow' }); const j = await r.json(); if (!j.ok) throw new Error(j.error || 'Ditolak server'); return j }
 const BASE = import.meta.env.BASE_URL
 let muat: Promise<void> | null = null
+let sinkAt = 0
 async function bacaLegacy(): Promise<SI[]> {
   const db = await (await fetch(BASE + 'si/databas-si.json')).json(); let sheet: SI[] = []
   try { const src = (await import('../config/sources')) as any; const url = (src.SI_CSV_URL as string) ?? ''; if (url) sheet = dariSheet(await (await fetch(url)).text()) } catch { /* sheet opsional */ }
@@ -34,7 +35,10 @@ export const siActions = {
     for (let i = 0; i < baru.length; i += 800) await call({ action: 'import', rows: baru.slice(i, i + 800), blok: [] })
     if (baru.length) await siActions.tarik()
     if (!state.rows.length) throw new Error('Registri kosong')
+    sinkAt = Date.now()
   },
+  /** Blokir beberapa nomor sekaligus (satu panggilan ke server). */
+  async blokirBanyak(tahun: number, dari: number, jumlah: number, ket: string) { const b: Blok[] = Array.from({ length: jumlah }, (_, i) => ({ tahun, nomor: dari + i, ket })); if (state.remote) await call({ action: 'import', rows: [], blok: b }); emit({ blok: [...state.blok, ...b.filter(x => !state.blok.some(y => y.tahun === x.tahun && y.nomor === x.nomor))] }) },
   muatRiwayat(paksa = false): Promise<void> {
     if (muat && !paksa) return muat
     if (state.remote) { muat = (async () => { emit({ riwayat: 'memuat' }); try { await siActions.sinkronLegacy(); emit({ riwayat: 'ok' }) } catch { emit({ riwayat: 'gagal' }) } })(); return muat } // mode server: nomor ditentukan server
@@ -58,14 +62,14 @@ export const siActions = {
   /** Terbitkan: pesan nomor berikutnya secara atomik. Mode server: nomor ditentukan server (LockService). Mode lokal: dari registri di browser ini. */
   async terbitkan(s: SI, opsi: { nomor?: number; tanggal?: string } = {}): Promise<SI> {
     const tahun = +(opsi.tanggal || s.tanggal || iso(new Date())).slice(0, 4); const tanggal = opsi.tanggal || s.tanggal || iso(new Date())
-    if (state.remote) await siActions.sinkronLegacy(); else { await siActions.muatRiwayat(true); if (state.riwayat !== 'ok') throw new Error('Riwayat nomor SI belum termuat (sheet SI tidak terjangkau). Coba lagi sebentar supaya nomor tidak mulai dari 0001.') }
+    if (state.remote) { if (Date.now() - sinkAt > 120000) await siActions.sinkronLegacy() } else { await siActions.muatRiwayat(true); if (state.riwayat !== 'ok') throw new Error('Riwayat nomor SI belum termuat (sheet SI tidak terjangkau). Coba lagi sebentar supaya nomor tidak mulai dari 0001.') }
     // pakai slot cadangan backdate: lepaskan dulu blok cadangannya
     if (opsi.nomor != null && state.blok.some(b => b.tahun === tahun && b.nomor === opsi.nomor && isCad(b))) await siActions.lepasBlok(tahun, opsi.nomor)
     // hari baru: sisihkan slot cadangan untuk SI backdate hari-hari sebelumnya
     if (opsi.nomor == null && getCad() > 0) {
       const terakhir = state.rows.reduce((m, r) => r.tahun === tahun && r.nomor != null && r.tahap !== 'pengajuan' && r.tanggal > m && r.tanggal <= iso(new Date(Date.now() + 864e5)) ? r.tanggal : m, '')
       if (terakhir && tanggal > terakhir) { const hari = Math.max(1, Math.min(5, Math.round((Date.parse(tanggal) - Date.parse(terakhir)) / 864e5))); const mx = nomorBerikut(state.rows, state.blok, tahun) - 1
-        for (let i = 1; i <= getCad() * hari; i++) await siActions.blokir(tahun, mx + i, 'Cadangan backdate (sebelum ' + tanggal + ')') }
+        await siActions.blokirBanyak(tahun, mx + 1, getCad() * hari, 'Cadangan backdate (sebelum ' + tanggal + ')') }
     }
     if (state.remote) {
       emit({ sync: 'proses' }); try { const j = await call({ action: 'reserve', tahun, nomor: opsi.nomor ?? null, row: { ...s, tahun, tanggal, tahap: 'terbit' } }); const n: SI = j.row; emit({ rows: state.rows.some(r => r.id === n.id) ? state.rows.map(r => r.id === n.id ? n : r) : [...state.rows, n], sync: 'ok', at: now(), err: '' }); return n } catch (e: any) { emit({ sync: 'gagal', err: String(e?.message || e) }); throw e }
