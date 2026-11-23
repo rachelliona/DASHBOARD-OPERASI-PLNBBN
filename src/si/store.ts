@@ -25,7 +25,7 @@ async function bacaLegacy(): Promise<SI[]> {
   return gabung(dariDatabas(db), sheet).filter(r => !hapusan.has(r.id))
 }
 const KC = 'pln-si-cad-v1'
-export const getCad = () => { try { const v = localStorage.getItem(KC); return v == null ? 0 : Math.max(0, Math.min(10, +v || 0)) } catch { return 0 } }
+export const getCad = () => { try { const v = localStorage.getItem(KC); return v == null ? 10 : Math.max(0, Math.min(10, +v || 0)) } catch { return 0 } }
 export const setCad = (n: number) => { try { localStorage.setItem(KC, String(Math.max(0, Math.min(10, n)))) } catch { /* abaikan */ } }
 export const siActions = {
   /** Muat arsip Databas SI + sheet SI 2026 supaya nomor berikutnya MELANJUTKAN nomor yang sudah ada (tidak mulai dari 0001). Sheet diambil ulang tiap dipanggil. */
@@ -129,3 +129,9 @@ async function tulisSheet(s: SI, timpa: boolean) {
   siActions.terbitkan = async (...a: Parameters<typeof t0>) => { const n = await t0(...a); void tulisSheet(n, false); return n }
   siActions.koreksi = async (...a: Parameters<typeof k0>) => { const n = await k0(...a); void tulisSheet(n, true); return n }
   siActions.kelola = async (...a: Parameters<typeof g0>) => { const n = await g0(...a); void tulisSheet(n, true); return n } }
+
+/** Hapus SI dari database -> kosongkan catatannya di spreadsheet monitoring (nomor tetap). */
+export async function kosongkanSheet(nomor: number | null, tahun: number) {
+  if (!state.remote || nomor == null || state.rows.some(r => r.tahun === tahun && r.nomor === nomor)) return
+  try { await call({ action: 'sheetKosong', nomor, tahun }) } catch { /* abaikan */ }
+}

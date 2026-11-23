@@ -26,6 +26,13 @@ function tulisSheet_(b){
     if(k==='tanggal'){ const p=n.tanggal.split('/'); cell.setValue(new Date(+p[2],+p[1]-1,+p[0])); } else { cell.setNumberFormat('@').setValue(n[k]); } });
   return {ok:true,baris:r+1};
 }
+function kosongSheet_(b){
+  const sh=SpreadsheetApp.openById(SI_SS).getSheets().filter(s=>s.getSheetId()===SI_GID)[0]; if(!sh) return {ok:false,error:'tab SI tidak ditemukan'};
+  const v=sh.getDataRange().getDisplayValues(); let h=-1; for(let i=0;i<v.length;i++){ if(v[i].some(x=>/^nomor si$/i.test(String(x).trim()))){h=i;break;} } if(h<0) return {ok:false,error:'header tidak ditemukan'};
+  const H=v[h].map(x=>String(x).trim().toLowerCase()), cNo=H.indexOf('nomor si');
+  for(let i=h+1;i<v.length;i++){ if(String(v[i][cNo]).trim()===String(b.nomor)){ ['tanggal','pemohon','sumber tambang','pelabuhan muat','laycan','eta pod','pelabuhan bongkar','kepada','nomor si rev','keterangan revisi'].forEach(k=>{ const c=H.indexOf(k); if(c>=0) sh.getRange(i+1,c+1).clearContent(); }); return {ok:true,baris:i+1}; } }
+  return {ok:true,baris:0};
+}
 function doPost(e){
   const lock=LockService.getScriptLock(); lock.waitLock(20000);
   try{
@@ -37,6 +44,7 @@ function doPost(e){
     if(a==='delete'){ const s=sh_(SHEET), v=s.getDataRange().getValues(); for(let i=v.length-1;i>=1;i--) if(v[i][0]===b.id && (b.paksa || JSON.parse(v[i][3]).tahap==='pengajuan')) s.deleteRow(i+1); return out_({ok:true}); }
     if(a==='import'){ const s=sh_(SHEET), have={}; rows_().forEach(r=>have[r.id]=1); const add=(b.rows||[]).filter(r=>!have[r.id]).map(r=>[r.id,r.tahun,r.nomor||'',JSON.stringify(r)]); if(add.length) s.getRange(s.getLastRow()+1,1,add.length,4).setValues(add); (b.blok||[]).forEach(x=>{ if(!blok_().some(y=>y.tahun===x.tahun&&y.nomor===x.nomor)) sh_(BLOK).appendRow([x.tahun,x.nomor,x.ket||'']); }); return out_({ok:true,n:add.length}); }
     if(a==='sheet'){ return out_(tulisSheet_(b)); }
+    if(a==='sheetKosong'){ return out_(kosongSheet_(b)); }
     if(a==='file'){ const it=DriveApp.getFoldersByName('SI Arsip PLN BBN'), fo=it.hasNext()?it.next():DriveApp.createFolder('SI Arsip PLN BBN'); const f=fo.createFile(Utilities.newBlob(Utilities.base64Decode(b.b64),'application/pdf',b.name||'SI.pdf')); return out_({ok:true,id:f.getId(),url:f.getUrl()}); }
     return out_({ok:false,error:'aksi tidak dikenal'});
   } finally { lock.releaseLock(); }

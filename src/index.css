@@ -898,3 +898,11 @@ html[data-theme=light] .gcard-h .gcard-t{color:#0b1220}
 .page .grid>button{text-align:left}
 .pipe{padding-inline:0}
 .rhero{padding-block:18px}
+
+/* HP: form SI mudah diisi (input besar, tidak zoom di iOS, tombol aksi di atas tab bar) */
+@media (max-width:767px){
+  .aksi-bar{bottom:74px!important;padding-bottom:8px!important;z-index:20;box-shadow:0 -8px 14px -8px rgba(0,0,0,.5)}
+  .aksi-bar .fchip{min-height:44px;flex:1 1 auto;justify-content:center}
+  main input:not([type=checkbox]):not([type=radio]),main select,main textarea{font-size:16px!important;min-height:44px}
+  main label:has(input[type=checkbox]){min-height:44px}
+}
