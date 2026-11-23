@@ -1,11 +1,12 @@
 import { useSyncExternalStore } from 'react'
 import { Blok, SI, kosong } from './types'
+import { SI_REMOTE_URL } from '../config/sources'
 import { dariDatabas, dariSheet, gabung } from './legacy'
 import { nomorBerikut, nomorDipakai, iso, bandingkan, cekKoreksi, FIELDS } from './logic'
 const K = 'pln-si-v1', KB = 'pln-si-blok-v1', KU = 'pln-si-remote-v1'
 type State = { riwayat: '' | 'memuat' | 'ok' | 'gagal'; rows: SI[]; blok: Blok[]; remote: string; sync: '' | 'ok' | 'gagal' | 'proses'; at: string; err: string }
 const rd = <T,>(k: string, d: T): T => { try { const v = JSON.parse(localStorage.getItem(k) || 'null'); return v ?? d } catch { return d } }
-let state: State = { riwayat: '', rows: rd<SI[]>(K, []), blok: rd<Blok[]>(KB, []), remote: rd<string>(KU, ''), sync: '', at: '', err: '' }
+let state: State = { riwayat: '', rows: rd<SI[]>(K, []), blok: rd<Blok[]>(KB, []), remote: rd<string>(KU, '') || SI_REMOTE_URL, sync: '', at: '', err: '' }
 const KH = 'pln-si-hapus-v1'; const hapusan = new Set<string>(rd<string[]>(KH, []))
 const subs = new Set<() => void>()
 const emit = (n: Partial<State>) => { state = { ...state, ...n }; try { localStorage.setItem(K, JSON.stringify(state.rows)); localStorage.setItem(KB, JSON.stringify(state.blok)); localStorage.setItem(KU, JSON.stringify(state.remote)) } catch { /* tanpa penyimpanan */ } subs.forEach(f => f()) }
@@ -20,7 +21,7 @@ export const siActions = {
   /** Muat arsip Databas SI + sheet SI 2026 supaya nomor berikutnya MELANJUTKAN nomor yang sudah ada (tidak mulai dari 0001). Sheet diambil ulang tiap dipanggil. */
   muatRiwayat(paksa = false): Promise<void> {
     if (muat && !paksa) return muat
-    if (state.remote) { if (state.riwayat !== 'ok') emit({ riwayat: 'ok' }); return Promise.resolve() } // mode server: nomor ditentukan server
+    if (state.remote) { emit({ riwayat: 'ok' }); return siActions.tarik() } // mode server: nomor ditentukan server
     muat = (async () => { emit({ riwayat: 'memuat' }); try {
       const db = await (await fetch(BASE + 'si/databas-si.json')).json(); let sheet: SI[] = []
       try { const src = (await import('../config/sources')) as any; const url = (src.SI_CSV_URL as string) ?? ''; if (url) sheet = dariSheet(await (await fetch(url)).text()) } catch { /* sheet opsional */ }
