@@ -11,12 +11,13 @@ export function dariSheet(csv: string, tahun = 2026, now = new Date()): SI[] {
   const out: SI[] = []; let ref = `${tahun}-01-01`; const today = iso(now)
   lines.slice(hi + 1).forEach(r => {
     const no = parseInt(r[cNo] ?? '', 10); if (!no) return
-    const tg = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(r[cTgl] ?? ''); if (tg) ref = `${tg[3]}-${tg[2].padStart(2, '0')}-${tg[1].padStart(2, '0')}`
+    const tg = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(r[cTgl] ?? ''); const tgIso = tg ? `${tg[3]}-${tg[2].padStart(2, '0')}-${tg[1].padStart(2, '0')}` : ''; const salah = !!tgIso && tgIso > iso(new Date(now.getTime() + 7 * 864e5)) // tanggal jauh di masa depan = salah ketik di sheet, diabaikan
+    if (tg && !salah) ref = tgIso
     const isi = [cPem, cTb, cMuat, cLay, cEta, cBon, cKep, cKet, cRev].some(c => c >= 0 && up(r[c]))
     if (!isi && !tg) return // slot kosong yang belum dipakai
     const s = kosong(); const lay = parseRentang(r[cLay] ?? '', ref), eta = parseRentang(r[cEta] ?? '', lay?.[1] ?? ref)
     const revNo = parseInt(r[cRev] ?? '', 10)
-    Object.assign(s, { id: `sheet-${tahun}-${no}`, tahap: 'terbit', nomor: no, tahun, tanggal: tg ? ref : '', pemohon: cap(up(r[cPem])), tambang: up(r[cTb]), muat: up(r[cMuat]), laycanTeks: up(r[cLay]), laycanMulai: lay?.[0] ?? '', laycanSelesai: lay?.[1] ?? '', etaTeks: up(r[cEta]), etaMulai: eta?.[0] ?? '', etaSelesai: eta?.[1] ?? '', bongkar: up(r[cBon]), pltu: up(r[cBon]), transporter: up(r[cKep]), ketRevisi: up(r[cKet]), alasan: alasanDari(up(r[cKet])), sumber: 'sheet-2026', dibuat: today, diubah: today })
+    Object.assign(s, { id: `sheet-${tahun}-${no}`, tahap: 'terbit', nomor: no, tahun, tanggal: tg && !salah ? ref : '', pemohon: cap(up(r[cPem])), tambang: up(r[cTb]), muat: up(r[cMuat]), laycanTeks: up(r[cLay]), laycanMulai: lay?.[0] ?? '', laycanSelesai: lay?.[1] ?? '', etaTeks: up(r[cEta]), etaMulai: eta?.[0] ?? '', etaSelesai: eta?.[1] ?? '', bongkar: up(r[cBon]), pltu: up(r[cBon]), transporter: up(r[cKep]), ketRevisi: up(r[cKet]), alasan: alasanDari(up(r[cKet])), sumber: 'sheet-2026', dibuat: today, diubah: today })
     if (revNo) { s.sebelumnyaNomor = revNo; s.revisiKe = 1 } else if (up(r[cKet])) s.revisiKe = 1
     out.push(s)
   }); return out

@@ -81,7 +81,7 @@ export function cekKoreksi(lama: SI, baru: SI): { ok: boolean; ubah: Ubah[]; tol
 export type Slot = { n: number; prev?: SI; next?: SI; cocok: boolean; cad?: boolean }
 export function slotKosong(rows: SI[], blok: Blok[], tahun: number, tanggal: string): { slot: Slot[]; terakhir: string } {
   const used = new Set<number>(); const dated: SI[] = []
-  rows.forEach(r => { if (r.tahun === tahun && r.nomor != null && r.tahap !== 'pengajuan') { used.add(r.nomor); if (r.tanggal) dated.push(r) } }); blok.forEach(b => { if (b.tahun === tahun && !isCad(b)) used.add(b.nomor) })
+  rows.forEach(r => { if (r.tahun === tahun && r.nomor != null && r.tahap !== 'pengajuan') { used.add(r.nomor); if (r.tanggal && r.tanggal <= iso(new Date(Date.now() + 864e5))) dated.push(r) } }); blok.forEach(b => { if (b.tahun === tahun && !isCad(b)) used.add(b.nomor) })
   const cad = new Set(blok.filter(b => b.tahun === tahun && isCad(b)).map(b => b.nomor)); const cadMax = Math.max(0, ...cad)
   dated.sort((a, b) => a.nomor! - b.nomor!); const mx = Math.max(0, ...used, cadMax); const slot: Slot[] = []; let i = 0
   for (let n = 1; n <= mx; n++) { if (used.has(n)) continue; while (i < dated.length && dated[i].nomor! < n) i++

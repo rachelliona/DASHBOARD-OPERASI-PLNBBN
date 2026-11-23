@@ -63,7 +63,7 @@ export const siActions = {
     if (opsi.nomor != null && state.blok.some(b => b.tahun === tahun && b.nomor === opsi.nomor && isCad(b))) await siActions.lepasBlok(tahun, opsi.nomor)
     // hari baru: sisihkan slot cadangan untuk SI backdate hari-hari sebelumnya
     if (opsi.nomor == null && getCad() > 0) {
-      const terakhir = state.rows.reduce((m, r) => r.tahun === tahun && r.nomor != null && r.tahap !== 'pengajuan' && r.tanggal > m ? r.tanggal : m, '')
+      const terakhir = state.rows.reduce((m, r) => r.tahun === tahun && r.nomor != null && r.tahap !== 'pengajuan' && r.tanggal > m && r.tanggal <= iso(new Date(Date.now() + 864e5)) ? r.tanggal : m, '')
       if (terakhir && tanggal > terakhir) { const hari = Math.max(1, Math.min(5, Math.round((Date.parse(tanggal) - Date.parse(terakhir)) / 864e5))); const mx = nomorBerikut(state.rows, state.blok, tahun) - 1
         for (let i = 1; i <= getCad() * hari; i++) await siActions.blokir(tahun, mx + i, 'Cadangan backdate (sebelum ' + tanggal + ')') }
     }
