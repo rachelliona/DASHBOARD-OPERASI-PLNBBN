@@ -87,8 +87,8 @@ export default function SIEditor({ mode }: { mode: Mode }) {
             {mode === 'kelola' ? <Fld l="Nomor SI (admin)"><input type="number" value={v.nomor ?? ''} onChange={e => setV({ ...v, nomor: e.target.value ? +e.target.value : null })} /></Fld>
               : <Fld l="Nomor SI"><select value={pilih} onChange={e => setPilih(e.target.value ? +e.target.value : '')}>
                 <option value="">{st.riwayat === 'ok' ? `Otomatis — nomor berikutnya ${nextNo}` : st.riwayat === 'gagal' ? 'Riwayat nomor gagal dimuat' : 'Memuat nomor terakhir…'}</option>
-                {cocok.length > 0 && <optgroup label="Slot kosong yang cocok dengan tanggal ini">{cocok.map(x => <option key={x.n} value={x.n}>{x.n} — antara {dm(x.prev)} & {dm(x.next)}</option>)}</optgroup>}
-                {lain.length > 0 && <optgroup label="Slot kosong lain (terbaru dulu)">{lain.map(x => <option key={x.n} value={x.n}>{x.n} — antara {dm(x.prev)} & {dm(x.next)}</option>)}</optgroup>}
+                {cocok.length > 0 && <optgroup label="Slot kosong yang cocok dengan tanggal ini">{cocok.map(x => <option key={x.n} value={x.n}>{x.n}{x.cad ? ' (cadangan backdate)' : ''} — antara {dm(x.prev)} & {dm(x.next)}</option>)}</optgroup>}
+                {lain.length > 0 && <optgroup label="Slot kosong lain (terbaru dulu)">{lain.map(x => <option key={x.n} value={x.n}>{x.n}{x.cad ? ' (cadangan backdate)' : ''} — antara {dm(x.prev)} & {dm(x.next)}</option>)}</optgroup>}
               </select></Fld>}
           </div>
           {mode !== 'kelola' && backdate && <p className="mt-2 text-amber-300">Tanggal ini lebih awal dari SI terakhir ({tglId(sl.terakhir)}). {cocok.length ? <>Disarankan pakai slot kosong yang cocok: {cocok.slice(-3).reverse().map(x => <button key={x.n} type="button" className="fchip on mx-0.5" onClick={() => setPilih(x.n)}>{x.n}</button>)}</> : 'Tidak ada slot kosong yang cocok urutan tanggalnya; nomor berikutnya akan terlihat mundur.'}</p>}

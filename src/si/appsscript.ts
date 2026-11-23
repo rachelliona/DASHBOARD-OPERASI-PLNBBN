@@ -1,6 +1,7 @@
 export const APPS_SCRIPT = `// Registri SI PLN BBN — Google Apps Script (Web App). Penomoran atomik dengan LockService.
 const SHEET = 'SI', BLOK = 'BLOK';
-function sh_(n){ const s=SpreadsheetApp.getActive(); let x=s.getSheetByName(n); if(!x){ x=s.insertSheet(n); x.appendRow(n==='SI'?['id','tahun','nomor','json']:['tahun','nomor','ket']); } return x; }
+function ss_(){ let s=SpreadsheetApp.getActive(); if(s) return s; const p=PropertiesService.getScriptProperties(), id=p.getProperty('SS'); if(id) return SpreadsheetApp.openById(id); s=SpreadsheetApp.create('Registri SI PLN BBN'); p.setProperty('SS',s.getId()); return s; }
+function sh_(n){ const s=ss_(); let x=s.getSheetByName(n); if(!x){ x=s.insertSheet(n); x.appendRow(n==='SI'?['id','tahun','nomor','json']:['tahun','nomor','ket']); } return x; }
 function rows_(){ const v=sh_(SHEET).getDataRange().getValues().slice(1); return v.filter(r=>r[0]).map(r=>JSON.parse(r[3])); }
 function blok_(){ return sh_(BLOK).getDataRange().getValues().slice(1).filter(r=>r[1]).map(r=>({tahun:+r[0],nomor:+r[1],ket:r[2]})); }
 function out_(o){ return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }

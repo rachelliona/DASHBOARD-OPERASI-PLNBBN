@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { Blok, SI, kosong } from './types'
 import { SI_REMOTE_URL } from '../config/sources'
 import { dariDatabas, dariSheet, gabung } from './legacy'
-import { nomorBerikut, nomorDipakai, iso, bandingkan, cekKoreksi, FIELDS } from './logic'
+import { isCad, nomorBerikut, nomorDipakai, iso, bandingkan, cekKoreksi, FIELDS } from './logic'
 const K = 'pln-si-v1', KB = 'pln-si-blok-v1', KU = 'pln-si-remote-v1'
 type State = { riwayat: '' | 'memuat' | 'ok' | 'gagal'; rows: SI[]; blok: Blok[]; remote: string; sync: '' | 'ok' | 'gagal' | 'proses'; at: string; err: string }
 const rd = <T,>(k: string, d: T): T => { try { const v = JSON.parse(localStorage.getItem(k) || 'null'); return v ?? d } catch { return d } }
@@ -17,6 +17,9 @@ const now = () => new Date().toISOString()
 async function call(body: any) { const r = await fetch(state.remote, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), redirect: 'follow' }); const j = await r.json(); if (!j.ok) throw new Error(j.error || 'Ditolak server'); return j }
 const BASE = import.meta.env.BASE_URL
 let muat: Promise<void> | null = null
+const KC = 'pln-si-cad-v1'
+export const getCad = () => { try { const v = localStorage.getItem(KC); return v == null ? 2 : Math.max(0, Math.min(10, +v || 0)) } catch { return 2 } }
+export const setCad = (n: number) => { try { localStorage.setItem(KC, String(Math.max(0, Math.min(10, n)))) } catch { /* abaikan */ } }
 export const siActions = {
   /** Muat arsip Databas SI + sheet SI 2026 supaya nomor berikutnya MELANJUTKAN nomor yang sudah ada (tidak mulai dari 0001). Sheet diambil ulang tiap dipanggil. */
   muatRiwayat(paksa = false): Promise<void> {
@@ -42,10 +45,18 @@ export const siActions = {
   /** Terbitkan: pesan nomor berikutnya secara atomik. Mode server: nomor ditentukan server (LockService). Mode lokal: dari registri di browser ini. */
   async terbitkan(s: SI, opsi: { nomor?: number; tanggal?: string } = {}): Promise<SI> {
     const tahun = +(opsi.tanggal || s.tanggal || iso(new Date())).slice(0, 4); const tanggal = opsi.tanggal || s.tanggal || iso(new Date())
+    if (state.remote) await siActions.tarik(); else { await siActions.muatRiwayat(true); if (state.riwayat !== 'ok') throw new Error('Riwayat nomor SI belum termuat (sheet SI tidak terjangkau). Coba lagi sebentar supaya nomor tidak mulai dari 0001.') }
+    // pakai slot cadangan backdate: lepaskan dulu blok cadangannya
+    if (opsi.nomor != null && state.blok.some(b => b.tahun === tahun && b.nomor === opsi.nomor && isCad(b))) await siActions.lepasBlok(tahun, opsi.nomor)
+    // hari baru: sisihkan slot cadangan untuk SI backdate hari-hari sebelumnya
+    if (opsi.nomor == null && getCad() > 0) {
+      const terakhir = state.rows.reduce((m, r) => r.tahun === tahun && r.nomor != null && r.tahap !== 'pengajuan' && r.tanggal > m ? r.tanggal : m, '')
+      if (terakhir && tanggal > terakhir) { const hari = Math.max(1, Math.min(5, Math.round((Date.parse(tanggal) - Date.parse(terakhir)) / 864e5))); const mx = nomorBerikut(state.rows, state.blok, tahun) - 1
+        for (let i = 1; i <= getCad() * hari; i++) await siActions.blokir(tahun, mx + i, 'Cadangan backdate (sebelum ' + tanggal + ')') }
+    }
     if (state.remote) {
       emit({ sync: 'proses' }); try { const j = await call({ action: 'reserve', tahun, nomor: opsi.nomor ?? null, row: { ...s, tahun, tanggal, tahap: 'terbit' } }); const n: SI = j.row; emit({ rows: state.rows.some(r => r.id === n.id) ? state.rows.map(r => r.id === n.id ? n : r) : [...state.rows, n], sync: 'ok', at: now(), err: '' }); return n } catch (e: any) { emit({ sync: 'gagal', err: String(e?.message || e) }); throw e }
     }
-    await siActions.muatRiwayat(true); if (state.riwayat !== 'ok') throw new Error('Riwayat nomor SI belum termuat (sheet SI tidak terjangkau). Coba lagi sebentar supaya nomor tidak mulai dari 0001.')
     const nomor = opsi.nomor ?? nomorBerikut(state.rows, state.blok, tahun); const pakai = nomorDipakai(state.rows, state.blok, tahun, nomor, s.id); if (pakai) throw new Error(`Nomor ${nomor}/${tahun} sudah dipakai${pakai.id === 'blok' ? ' (diblok untuk surat lain)' : ''}.`)
     const n: SI = { ...s, tahun, tanggal, nomor, tahap: 'terbit', diubah: now() }; emit({ rows: state.rows.some(r => r.id === n.id) ? state.rows.map(r => r.id === n.id ? n : r) : [...state.rows, n] }); return n
   },

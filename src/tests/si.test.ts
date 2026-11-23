@@ -29,3 +29,14 @@ describe('impor sheet', () => {
     const r = dariSheet(csv); expect(r.map(x => x.nomor)).toEqual([27, 28]); expect(r[0].laycanMulai).toBe('2026-01-10'); expect(r[0].pemohon).toBe('Andi'); expect(r[1].tanggal).toBe('')
   })
 })
+
+describe('slot cadangan backdate', () => {
+  it('cadangan muncul sebagai slot, bukan nomor terpakai', async () => {
+    const { slotKosong, nomorBerikut, nomorDipakai } = await import('../si/logic')
+    const mk = (n: number, t: string): any => ({ ...kosong(), id: 'x' + n, nomor: n, tahun: 2026, tanggal: t, tahap: 'terbit', sumber: 'sistem' })
+    const rows = [mk(10, '2026-11-20'), mk(13, '2026-11-21')]; const blok = [{ tahun: 2026, nomor: 11, ket: 'Cadangan backdate (sebelum 2026-11-21)' }, { tahun: 2026, nomor: 12, ket: 'surat lain' }]
+    const { slot } = slotKosong(rows, blok, 2026, '2026-11-20')
+    expect(slot.find(s => s.n === 11)).toMatchObject({ cad: true, cocok: true }); expect(slot.find(s => s.n === 12)).toBeUndefined()
+    expect(nomorDipakai(rows, blok, 2026, 11)).toBeUndefined(); expect(nomorDipakai(rows, blok, 2026, 12)).toBeTruthy(); expect(nomorBerikut(rows, blok, 2026)).toBe(14)
+  })
+})

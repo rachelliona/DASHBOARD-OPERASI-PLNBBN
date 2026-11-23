@@ -54,7 +54,8 @@ export function periksa(rows: SI[], blok: Blok[] = []): { dobel: Map<string, SI[
 export function nomorBerikut(rows: SI[], blok: Blok[], tahun: number) {
   let mx = 0; rows.forEach(r => { if (r.tahun === tahun && r.nomor != null && r.tahap !== 'pengajuan' && r.nomor > mx) mx = r.nomor }); blok.forEach(b => { if (b.tahun === tahun && b.nomor > mx) mx = b.nomor }); return mx + 1
 }
-export const nomorDipakai = (rows: SI[], blok: Blok[], tahun: number, n: number, kecualiId = '') => rows.find(r => r.id !== kecualiId && r.tahun === tahun && r.nomor === n && r.tahap !== 'pengajuan') ?? (blok.find(b => b.tahun === tahun && b.nomor === n) ? ({ id: 'blok' } as SI) : undefined)
+export const isCad = (b: Blok) => /^cadangan/i.test(b.ket || '')
+export const nomorDipakai = (rows: SI[], blok: Blok[], tahun: number, n: number, kecualiId = '') => rows.find(r => r.id !== kecualiId && r.tahun === tahun && r.nomor === n && r.tahap !== 'pengajuan') ?? (blok.find(b => b.tahun === tahun && b.nomor === n && !isCad(b)) ? ({ id: 'blok' } as SI) : undefined)
 /** Rantai revisi dari SI awal sampai terbaru. */
 export function rantai(rows: SI[], r: SI) { const by = new Map(rows.map(x => [x.id, x])); const out: SI[] = [r]; let c = r, g = 0; while (c.sebelumnyaId && by.has(c.sebelumnyaId) && g++ < 50) { c = by.get(c.sebelumnyaId)!; out.unshift(c) } c = r; g = 0; for (;;) { const nx = rows.find(x => x.sebelumnyaId === c.id && x.tahap !== 'batal'); if (!nx || g++ > 50) break; out.push(nx); c = nx } return out }
 
@@ -77,13 +78,14 @@ export function cekKoreksi(lama: SI, baru: SI): { ok: boolean; ubah: Ubah[]; tol
 }
 
 /** Slot nomor kosong pada tahun tertentu + apakah urutan tanggalnya cocok dengan tanggal SI (untuk backdate). Celah bisa juga nomor surat Dirop lain. */
-export type Slot = { n: number; prev?: SI; next?: SI; cocok: boolean }
+export type Slot = { n: number; prev?: SI; next?: SI; cocok: boolean; cad?: boolean }
 export function slotKosong(rows: SI[], blok: Blok[], tahun: number, tanggal: string): { slot: Slot[]; terakhir: string } {
   const used = new Set<number>(); const dated: SI[] = []
-  rows.forEach(r => { if (r.tahun === tahun && r.nomor != null && r.tahap !== 'pengajuan') { used.add(r.nomor); if (r.tanggal) dated.push(r) } }); blok.forEach(b => { if (b.tahun === tahun) used.add(b.nomor) })
-  dated.sort((a, b) => a.nomor! - b.nomor!); const mx = Math.max(0, ...used); const slot: Slot[] = []; let i = 0
+  rows.forEach(r => { if (r.tahun === tahun && r.nomor != null && r.tahap !== 'pengajuan') { used.add(r.nomor); if (r.tanggal) dated.push(r) } }); blok.forEach(b => { if (b.tahun === tahun && !isCad(b)) used.add(b.nomor) })
+  const cad = new Set(blok.filter(b => b.tahun === tahun && isCad(b)).map(b => b.nomor)); const cadMax = Math.max(0, ...cad)
+  dated.sort((a, b) => a.nomor! - b.nomor!); const mx = Math.max(0, ...used, cadMax); const slot: Slot[] = []; let i = 0
   for (let n = 1; n <= mx; n++) { if (used.has(n)) continue; while (i < dated.length && dated[i].nomor! < n) i++
-    const next = dated[i], prev = dated[i - 1]; slot.push({ n, prev, next, cocok: !!tanggal && (!prev || prev.tanggal <= tanggal) && (!next || next.tanggal >= tanggal) }) }
+    const next = dated[i], prev = dated[i - 1]; slot.push({ n, prev, next, cocok: !!tanggal && (!prev || prev.tanggal <= tanggal) && (!next || next.tanggal >= tanggal), cad: cad.has(n) }) }
   const terakhir = dated.reduce((m, r) => r.tanggal > m ? r.tanggal : m, '')
   return { slot, terakhir }
 }
