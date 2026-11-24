@@ -11,7 +11,7 @@ export const NAV: NavItem[] = [
     { label: 'Realisasi', children: [{ label: 'Ringkasan Realisasi', to: '/realisasi' }, { label: 'Per Bulan', children: BULAN.map(b => ({ label: b, to: '/realisasi/' + b })) },
       sheet('Realisasi PLTU'), sheet('Realisasi Mitra Tambang'), sheet('Realisasi Mitra Transport'),
       { label: 'Rekap (data mentah)', children: [sheet('Per PLTU Rekap'), sheet('Per IPP Rekap'), sheet('Data running (SUM)'), sheet('Data running (QTY)')] }] },
-    { label: 'SI', children: [sheet('ALL Shipment'), sheet('Nomor SI'), sheet('Realisasi Penugasan Mitra'), sheet('Pengalihan Shipment')] }] },
+    { label: 'SI', children: [{ label: 'Dashboard SI', to: '/si/dashboard' }, { label: 'Rekap SI', to: '/si/rekap' }, { label: 'Plot SI', to: '/si/plot' }, { label: 'Peta SI', to: '/si/peta' }, sheet('ALL Shipment'), sheet('Nomor SI'), sheet('Realisasi Penugasan Mitra'), sheet('Pengalihan Shipment')] }] },
   { label: 'Kontrak', icon: 'contract', children: [{ label: 'Portofolio Kontrak', to: '/kontrak' }, { label: 'Kontrak vs Realisasi', to: '/kontrak/banding' }, { label: 'Data Kontrak', to: '/kontrak/data' }] },
   { label: 'Mitra dan Kepatuhan', icon: 'users', children: [{ label: 'Kinerja Mitra', to: '/kinerja-mitra' }, sheet('List Izin Mitra'), sheet('Jetty'), sheet('Standar Rejection')] },
   { label: 'Data', icon: 'db', children: [{ label: 'Sumber Data dan Kualitas Data', to: '/sumber-data' }, { label: 'Pengaturan', to: '/pengaturan' },
