@@ -927,3 +927,6 @@ html[data-theme=light] .gcard-h .gcard-t{color:#0b1220}
 .tbl-si tbody tr.baris-si:hover td{background:rgba(240,180,60,.12)}
 .tbl-si td:first-child{font-weight:600;color:#fff;border-left:3px solid transparent}
 .tbl-si tbody tr.baris-si:hover td:first-child{border-left-color:#f0b43c}
+
+/* Semua tabel: judul kolom rata tengah */
+table thead th,table th{text-align:center!important;vertical-align:middle}
