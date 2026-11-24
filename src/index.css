@@ -918,3 +918,12 @@ html[data-theme=light] .gcard-h .gcard-t{color:#0b1220}
   .gcard-h>div>input{flex-basis:100%}
 }
 @media (max-width:767px){label.cek-blok{display:flex!important;width:100%;min-height:0!important;line-height:1.4}label.cek-blok input{width:20px;height:20px;min-height:0!important}}
+
+/* Tabel monitoring SI: header jelas, garis tegas, baris zebra & hover */
+.tbl-si{border-collapse:separate;border-spacing:0}
+.tbl-si thead th{position:sticky;top:0;z-index:1;background:#1c2536;color:#f1f5f9;font-weight:700;letter-spacing:.01em;padding:10px 8px;border-bottom:2px solid rgba(240,180,60,.55);white-space:nowrap}
+.tbl-si tbody td{color:#e5e9f0;border-bottom:1px solid rgba(255,255,255,.12);padding-top:9px;padding-bottom:9px;vertical-align:middle}
+.tbl-si tbody tr.baris-si:nth-of-type(odd) td{background:rgba(255,255,255,.04)}
+.tbl-si tbody tr.baris-si:hover td{background:rgba(240,180,60,.12)}
+.tbl-si td:first-child{font-weight:600;color:#fff;border-left:3px solid transparent}
+.tbl-si tbody tr.baris-si:hover td:first-child{border-left-color:#f0b43c}
