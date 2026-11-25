@@ -1,5 +1,6 @@
 import Papa from 'papaparse'
 import { useEffect, useState } from 'react'
+import { cachedSheet, freshSheet } from './sheetCache'
 /** Sheet "DURASI BBN - BAG" pada spreadsheet Monitoring Rencana Pasokan (angka format US, tanggal dd/mm/yy). */
 export const DURASI_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSbaCCMcXx8T4M14UVScSSz6EB_nAyvsUSBxNkVpx8v2XGULPNVWKABwtfrgHsTqBgbvyE5Mofvq3Wr/pub?gid=1324635653&single=true&output=csv'
 export type DRow = { mitra: string; pol: string; pod: string; moda: string; kso: string; volRen: number | null; volReal: number | null; etaPolRen: number | null; etaPolReal: number | null; etaPodRen: number | null; etaPodReal: number | null; bl: number | null; ds: number | null; short: number | null; hari: number | null; status: string }
@@ -26,11 +27,10 @@ export function parseDurasi(text: string): DRow[] {
   }
   return out
 }
-let cache: Promise<DRow[]> | null = null
-export const loadDurasi = () => (cache ??= fetch(DURASI_URL, { cache: 'no-store' }).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text() }).then(parseDurasi).catch(e => { cache = null; throw e }))
 export function useDurasi() {
   const [rows, setRows] = useState<DRow[] | null>(null); const [err, setErr] = useState('')
-  useEffect(() => { let ok = true; loadDurasi().then(r => ok && setRows(r)).catch(e => ok && setErr(e.message)); return () => { ok = false } }, [])
+  useEffect(() => { let ok = true; (async () => { const c = await cachedSheet('DURASI BBN-BAG'); if (c && ok) setRows(parseDurasi(c.t))
+    try { const f = await freshSheet('DURASI BBN-BAG', DURASI_URL, 600000); if (ok) setRows(parseDurasi(f.t)) } catch (e: any) { if (ok && !c) setErr(e.message) } })(); return () => { ok = false } }, [])
   return { rows, err }
 }
 export const kunci = (s: string) => s.toLowerCase().replace(/\b(pltu|pt|unit|tuks|jetty|duks)\b/g, '').replace(/[^a-z0-9]/g, '')

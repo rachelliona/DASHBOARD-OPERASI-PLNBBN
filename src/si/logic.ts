@@ -89,3 +89,27 @@ export function slotKosong(rows: SI[], blok: Blok[], tahun: number, tanggal: str
   const terakhir = dated.reduce((m, r) => r.tanggal > m ? r.tanggal : m, '')
   return { slot, terakhir }
 }
+/** Kab./Kota lokasi PLTU yang sering dipakai (dipakai lebih dulu daripada tebakan dari alamat). */
+const KAB_PLTU: [RegExp, string][] = [[/suralaya/i, 'Kota Cilegon'], [/lontar|teluk naga/i, 'Kab. Tangerang'], [/paiton/i, 'Kab. Probolinggo'], [/indramayu/i, 'Kab. Indramayu'], [/awar/i, 'Kab. Tuban'], [/tanjung jati/i, 'Kab. Jepara'], [/^batam/i, 'Kota Batam'],
+  [/asam asam/i, 'Kab. Tanah Laut'], [/belitung/i, 'Kab. Belitung'], [/bukit asam/i, 'Kab. Muara Enim'], [/galang batang/i, 'Kab. Bintan'], [/anggrek|^gorontalo|sulbagut/i, 'Kab. Gorontalo Utara'], [/jeranjang|lombok energy/i, 'Kab. Lombok Barat'], [/sambelia/i, 'Kab. Lombok Timur'],
+  [/nii tanasa|morosi|sampara/i, 'Kab. Konawe'], [/^ketapang/i, 'Kab. Ketapang'], [/labuhan angin/i, 'Kab. Tapanuli Tengah'], [/ombilin/i, 'Kota Sawahlunto'], [/ropa|ende/i, 'Kab. Ende'], [/sanggau/i, 'Kab. Sanggau'], [/sintang/i, 'Kab. Sintang'], [/takalar/i, 'Kab. Takalar'], [/jeneponto/i, 'Kab. Jeneponto'],
+  [/karimun/i, 'Kab. Karimun'], [/sebalang/i, 'Kab. Lampung Selatan'], [/teluk sirih/i, 'Kota Padang'], [/tenayan/i, 'Kota Pekanbaru'], [/jawa-?7/i, 'Kab. Serang'], [/sofifi|tidore/i, 'Kota Tidore Kepulauan'], [/tembilahan/i, 'Kab. Indragiri Hilir'], [/palu 3/i, 'Kab. Donggala'],
+  [/parit baru|kalbar 1/i, 'Kab. Bengkayang'], [/sulut 1/i, 'Kab. Bolaang Mongondow Utara'], [/bahodopi/i, 'Kab. Morowali'], [/weda/i, 'Kab. Halmahera Tengah'], [/pomalaa|antam/i, 'Kab. Kolaka'], [/cilacap|adipala/i, 'Kab. Cilacap'], [/celukan/i, 'Kab. Buleleng'], [/bangka/i, 'Kab. Bangka'],
+  [/pangkalan susu/i, 'Kab. Langkat'], [/rembang/i, 'Kab. Rembang'], [/pacitan/i, 'Kab. Pacitan'], [/pelabuhan ratu/i, 'Kab. Sukabumi'], [/labuan/i, 'Kab. Pandeglang'], [/barru/i, 'Kab. Barru'], [/amurang|2 sulut/i, 'Kab. Minahasa Selatan'], [/bolok|timor-?1/i, 'Kab. Kupang'],
+  [/teluk balikpapan/i, 'Kota Balikpapan'], [/holtekamp/i, 'Kota Jayapura'], [/mamuju/i, 'Kab. Mamuju'], [/malinau/i, 'Kab. Malinau'], [/ampana/i, 'Kab. Tojo Una-Una'], [/nagan raya/i, 'Kab. Nagan Raya'], [/pulang pisau/i, 'Kab. Pulang Pisau'], [/berau/i, 'Kab. Berau'], [/bengkulu|tlb\b/i, 'Kota Bengkulu'],
+  [/sumbawa barat/i, 'Kab. Sumbawa Barat'], [/embalut|cahaya fajar|indonesia energi dinamika/i, 'Kab. Kutai Kartanegara'], [/cirebon/i, 'Kota Cirebon'], [/ciwandan|lestari banten|krakatau/i, 'Kota Cilegon'], [/bojonegara/i, 'Kab. Serang'], [/marunda/i, 'Kota Jakarta Utara'], [/lamongan/i, 'Kab. Lamongan'],
+  [/tanjung mas/i, 'Kota Semarang'], [/gresik|maspion/i, 'Kab. Gresik'], [/bantaeng|huadi/i, 'Kab. Bantaeng'], [/asahimas/i, 'Kota Cilegon'], [/tanjung tembaga/i, 'Kota Probolinggo'], [/indocement/i, 'Kab. Bogor'], [/sibolga/i, 'Kab. Tapanuli Tengah']]
+/** Pelabuhan bongkar otomatis: "PLTU <nama>, <Kab./Kota>" dari nama PLTU di referensi + alamat notify. Jetty/pelabuhan non-PLTU tidak diberi awalan PLTU. */
+export function pelabuhanBongkar(nama: string, notify = '', consignee = ''): string {
+  const n = (nama || '').replace(/\s+/g, ' ').trim(); if (!n) return ''
+  const tanpa = n.replace(/^PLTU\s+/i, '')
+  const m = tanpa.match(/^(.*?)(?:\s*[.,]\s+|\s+[–-]\s+)(.*)$/); let base = (m ? m[1] : tanpa).trim(), sisa = (m ? m[2] : '').trim()
+  if (/^\d+\s*x|MW\b/i.test(sisa)) { base = tanpa; sisa = '' }
+  const kabRe = /\b(Kab(?:upaten)?\.?\s*[A-Z][A-Za-z'-]*(?:\s+(?!Jawa|Banten|Sulawesi|Kalimantan|Sumatera|Nusa|Provinsi|Prov|Jl|Kec|Desa|Ds)[A-Z][A-Za-z'-]*){0,2}|Kota\s+(?!Adm)[A-Z][A-Za-z'-]*(?:\s+(?!Jawa|Banten|Sulawesi|Kalimantan|Sumatera|Nusa|Provinsi|Prov|Jl)[A-Z][A-Za-z'-]*){0,2})/
+  const rapi = (k: string) => k.replace(/^Kab(?:upaten)?\.?\s*/i, 'Kab. ').replace(/\s+/g, ' ').trim()
+  const peta = KAB_PLTU.find(([re]) => re.test(n))?.[1]
+  const kab = peta || (sisa.match(kabRe) || [])[1] || (notify.match(kabRe) || [])[1] || (consignee.match(kabRe) || [])[1] || ''
+  const bukanPltu = /^(jetty|pt\b|pelabuhan|tuks|duks)|port\b|anchorage|jetty/i.test(base) || /\bPLTU\b/i.test(base)
+  const nm = bukanPltu ? base : `PLTU ${base}`
+  return kab ? `${nm}, ${rapi(kab)}` : nm
+}

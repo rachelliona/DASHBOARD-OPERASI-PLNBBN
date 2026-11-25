@@ -19,3 +19,15 @@ describe('bongkarSheet', () => {
     expect(bongkarSheet('PLTU Tj. Awar-awar')).toBe('PLTU Tj. Awar-awar')
   })
 })
+import { pelabuhanBongkar } from '../si/logic'
+describe('pelabuhan bongkar otomatis', () => {
+  it('awalan PLTU + Kab/Kota', () => {
+    expect(pelabuhanBongkar('Adipala. Kab. Cilacap')).toBe('PLTU Adipala, Kab. Cilacap')
+    expect(pelabuhanBongkar('Suralaya')).toBe('PLTU Suralaya, Kota Cilegon')
+    expect(pelabuhanBongkar('Tanjung Awar-Awar, Tuban')).toBe('PLTU Tanjung Awar-Awar, Kab. Tuban')
+    expect(pelabuhanBongkar('Mamuju 2 x 25 MW')).toBe('PLTU Mamuju 2 x 25 MW, Kab. Mamuju')
+    expect(pelabuhanBongkar('Jetty Maspion, Gresik, Jawa Timur')).toBe('Jetty Maspion, Kab. Gresik')
+    expect(pelabuhanBongkar('PLTU Sulut 1')).toBe('PLTU Sulut 1, Kab. Bolaang Mongondow Utara')
+    expect(bongkarSheet('PLTU Adipala, Kab. Cilacap')).toBe('PLTU Adipala')
+  })
+})

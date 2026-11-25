@@ -4,6 +4,7 @@ import { SOURCES } from './config/sources'
 import { LOKASI_ROWS } from './config/lokasi'
 import { snapBase } from './config/snapshots'
 import { parseCsv } from './domain/csv'
+import { putSheet } from './domain/sheetCache'
 import { nowWib } from './domain/format'
 import { BULAN, parseMonthly, aggregatePlants, toShipRows } from './domain/monthly'
 import { useAuth } from './auth'
@@ -42,7 +43,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const fetchSheet = async (name: string) => {
     const src = SOURCES.find(x => x.name === name); if (!src || inflight.current.has(name)) return
     inflight.current.add(name); setS(p => ({ ...p, [name]: { ...p[name], state: 'Memuat Data…' } })); const c = new AbortController(); const t = setTimeout(() => c.abort(), 30000)
-    try { const r = await fetch(src.url, { signal: c.signal, cache: 'no-store' }); if (!r.ok) throw new Error('HTTP ' + r.status); const txt = await r.text(); if (textRef.current[name] === txt && rawRef.current[name]) { setS(prev => ({ ...prev, [name]: { state: 'Terhubung', at: nowWib() } })); return } const p = parseCsv(txt); if (!p.headers.length) throw new Error('Header tidak ditemukan'); const at = nowWib(); textRef.current[name] = txt
+    try { const r = await fetch(src.url, { signal: c.signal, cache: 'no-store' }); if (!r.ok) throw new Error('HTTP ' + r.status); const txt = await r.text(); putSheet(name, txt); if (textRef.current[name] === txt && rawRef.current[name]) { setS(prev => ({ ...prev, [name]: { state: 'Terhubung', at: nowWib() } })); return } const p = parseCsv(txt); if (!p.headers.length) throw new Error('Header tidak ditemukan'); const at = nowWib(); textRef.current[name] = txt
       setR(prev => ({ ...prev, [name]: { rows: p.rows, rejected: [], source: 'URL CSV', at, headers: p.headers, headerRow: p.headerRow, errorCells: p.errorCells } })); setS(prev => ({ ...prev, [name]: { state: 'Terhubung', at } }))
     } catch (e: any) { setS(prev => ({ ...prev, [name]: { ...prev[name], state: 'Gagal Diakses', msg: (e.name === 'AbortError' ? 'Waktu habis (30 dtk)' : e.message) + ' — kemungkinan diblokir CORS/jaringan' } })) } finally { clearTimeout(t); inflight.current.delete(name) } }
   const refreshAll = async () => { if (busy.current || asOfRef.current) return; busy.current = true; try { for (const [n, x] of Object.entries(rawRef.current)) if (x.source === 'URL CSV') await fetchSheet(n) } finally { busy.current = false } }
