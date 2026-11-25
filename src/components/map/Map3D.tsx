@@ -10,9 +10,9 @@ const HOME = () => (typeof window !== 'undefined' && window.innerWidth < 640 ? H
 const STAGE_COLOR = Object.fromEntries(STATUSES.map(s => [s.key, s.color]))
 const shade = (hex: string, f: number) => { const n = parseInt(hex.slice(1), 16); const c = (v: number) => Math.max(0, Math.min(255, Math.round(v * f))); return `rgb(${c(n >> 16)},${c((n >> 8) & 255)},${c(n & 255)})` }
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v))
-type Props = { rows: any[]; color: (r: any) => string; sel: string; onSel: (p: string) => void; showShips: boolean; reg: string }
+type Props = { rows: any[]; color: (r: any) => string; sel: string; onSel: (p: string) => void; showShips: boolean; reg: string; tip?: (r: any) => string }
 /** Peta berdimensi (kanvas 2D dengan proyeksi miring): PLTU = balok setinggi volume, kapal bergerak ilustratif menuju PLTU. */
-export default function Map3D({ rows, color, sel, onSel, showShips: ships0, reg }: Props) {
+export default function Map3D({ rows, color, sel, onSel, showShips: ships0, reg, tip }: Props) {
   const wrap = useRef<HTMLDivElement>(null), cv = useRef<HTMLCanvasElement>(null)
   const cam = useRef<Cam>({ ...HOME() }), tgt = useRef<Cam>({ ...HOME() }), dirty = useRef(true), hit = useRef<{ r: any; x: number; y: number; w: number; top: number }[]>([])
   const [anim, setAnim] = useState(true), [auto, setAuto] = useState(false), [ships, setShips] = useState(ships0), [hover, setHover] = useState<{ r: any; x: number; y: number } | null>(null)
@@ -131,6 +131,6 @@ export default function Map3D({ rows, color, sel, onSel, showShips: ships0, reg 
       <button aria-label="Tampilkan kapal" title="Kapal ilustratif" className={'ctl ' + (ships ? 'on' : '')} onClick={() => setShips(s => !s)}><Ship size={15} /></button>
       <button aria-label="Kembali ke tampilan awal" title="Atur ulang" className="ctl" onClick={() => { tgt.current = { ...HOME() }; dirty.current = true }}><Home size={15} /></button></div>
     <button aria-label="Petunjuk kendali peta" className="ctl absolute left-2 bottom-2 tip-r" data-tip={'Seret = putar / miring\nShift atau klik kanan = geser\nRoda atau cubit = zoom\nKlik ganda = atur ulang\nKlik balok = detail PLTU\nKapal ilustratif, bukan posisi GPS nyata'}><Info size={15} /></button>
-    {hover && <div className="absolute pointer-events-none rounded-lg border border-white/20 bg-[var(--s0)]/95 px-2.5 py-1.5 text-[11px] shadow-xl" style={{ left: clamp(hover.x + 12, 4, (wrap.current?.clientWidth ?? 600) - 230), top: clamp(hover.y + 10, 40, (wrap.current?.clientHeight ?? 400) - 90) }}><b className="text-xs">{hover.r.pltu}</b><div style={{ color: REGION_COLOR[hover.r.wilayah] }}>{hover.r.wilayah ?? 'Tanpa wilayah'}</div><div>{fmtNum(hover.r.v)} MT · {hover.r.sh ? hover.r.sh.length : hover.r.n} shipment · {fmtPct(hover.r.pp)}</div></div>}
+    {hover && <div className="absolute pointer-events-none rounded-lg border border-white/20 bg-[var(--s0)]/95 px-2.5 py-1.5 text-[11px] shadow-xl" style={{ left: clamp(hover.x + 12, 4, (wrap.current?.clientWidth ?? 600) - 230), top: clamp(hover.y + 10, 40, (wrap.current?.clientHeight ?? 400) - 90) }}><b className="text-xs">{hover.r.pltu}</b><div style={{ color: REGION_COLOR[hover.r.wilayah] }}>{hover.r.wilayah ?? 'Tanpa wilayah'}</div><div>{tip ? tip(hover.r) : <>{fmtNum(hover.r.v)} MT · {hover.r.sh ? hover.r.sh.length : hover.r.n} shipment · {fmtPct(hover.r.pp)}</>}</div></div>}
   </div>
 }
