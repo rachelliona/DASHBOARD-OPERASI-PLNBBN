@@ -98,10 +98,10 @@ export default function Kualitas({ tab }: { tab: TabK }) {
   const popup = (t: string, rows: Vm[]) => {
     const sorted = [...rows].sort((a, b) => (b.selesaiBongkar ?? 0) - (a.selesaiBongkar ?? 0)); const din = rows.filter(x => x.n), rj = din.filter(x => x.n!.reject).length
     const pl = new Map<string, number>(); rows.forEach(x => pl.set(x.plant, (pl.get(x.plant) ?? 0) + 1)); const top = [...pl].sort((a, b) => b[1] - a[1]).slice(0, 8)
-    dt.open({ variant: 'drawer', title: t, sub: `${nf(rows.length)} shipment · klik di luar panel atau Esc untuk menutup`, color: '#22d3ee',
+    dt.open({ variant: 'drawer', wide: true, title: t, sub: `${nf(rows.length)} shipment · urut tanggal bongkar terbaru`, color: '#22d3ee',
       stats: [{ l: 'Shipment', v: nf(rows.length) }, { l: 'Volume D/S (MT)', v: nf(rows.reduce((a, x) => a + (x.ds ?? 0), 0)) }, { l: 'Rata-rata susut GCV', v: avg(rows.map(x => x.turun)) == null ? '—' : nf(avg(rows.map(x => x.turun))) + ' kcal/kg' }, { l: 'Reject / dinilai', v: `${nf(rj)} / ${nf(din.length)}`, c: rj ? '#f87171' : undefined }],
       bars: top.length > 1 ? [{ title: 'Shipment per PLTU tujuan', items: top.map(([l, v]) => ({ l, v, c: '#22d3ee' })) }] : undefined,
-      table: { head: ['Nominasi TB/BG · Mitra', 'Bongkar', 'PLTU', 'GCV m→b', 'Status'], align: ['l', 'l', 'l', 'r', 'l'], rows: sorted.slice(0, 60).map(x => [`${x.tbbg || x.si || '—'} · ${x.mitra || '—'}`, fd(x.selesaiBongkar), x.plant, `${nf(x.gcvL)} → ${nf(x.gcvU)}`, (x.n == null ? 'Belum dinilai' : x.n.reject ? 'REJECT' : 'Aman') + (x.turun == null ? '' : ' · susut ' + nf(x.turun))]) },
+      table: { head: ['Nominasi TB/BG', 'Mitra', 'Bongkar', 'PLTU', 'GCV muat', 'GCV bongkar', 'Susut', 'Status'], align: ['l', 'l', 'l', 'l', 'r', 'r', 'r', 'l'], rows: sorted.slice(0, 60).map(x => [x.tbbg || x.si || '—', x.mitra || '—', fd(x.selesaiBongkar), x.plant, nf(x.gcvL), nf(x.gcvU), x.turun == null ? '—' : nf(x.turun), <span className={x.n == null ? 'st-na' : x.n.reject ? 'st-bad' : 'st-ok'}>{x.n == null ? 'BELUM DINILAI' : x.n.reject ? 'REJECT' : 'AMAN'}</span>]) },
       note: rows.length > 60 ? `Menampilkan 60 terbaru dari ${nf(rows.length)}. Daftar lengkap ada di tab All Shipment.` : undefined, actions: [{ label: 'Buka All Shipment', to: '/kualitas/shipment' }] })
   }
   const detSpec = (x: Vm) => { const sd = x.n?.std ?? (d ? cariStd(d.std, x.sumber) : null); const B = (v: number | null, dd = 0) => v == null ? '—' : nf(v, dd)

@@ -951,3 +951,9 @@ table thead th,table th{text-align:center!important;vertical-align:middle}
 .kq-drawer-h { background: inherit; }
 @keyframes kqin { from { transform: translateX(40px); opacity: .4 } to { transform: none; opacity: 1 } }
 .kq .seg button { white-space: nowrap }
+.dlg-drawer.xl{width:min(920px,100%)}
+.dlg-drawer.xl .dlg-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+.dlg-drawer.xl .dt td{white-space:nowrap}.dlg-drawer.xl .dt td:first-child{white-space:normal;min-width:190px}
+.dt .st-ok,.dt .st-bad,.dt .st-na{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:700;color:#fff}
+.dt .st-ok{background:#059669}.dt .st-bad{background:#dc2626}.dt .st-na{background:#64748b}
+@media(max-width:640px){.dlg-drawer.xl .dlg-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}

@@ -7,10 +7,12 @@ import { X, ArrowRight } from 'lucide-react'
 export type DetailSpec = {
   /** 'modal' = popup tengah (info singkat), 'drawer' = panel dari kanan (detail/grafik). Kosong = otomatis menurut isi. */
   variant?: 'modal' | 'drawer'
+  /** panel samping lebar (tabel banyak kolom) */
+  wide?: boolean
   title: string; sub?: string; color?: string; icon?: any
   stats?: { l: string; v: string; c?: string }[]
   note?: string
-  table?: { head: string[]; rows: (string | number)[][]; align?: ('l' | 'r')[] }
+  table?: { head: string[]; rows: ReactNode[][]; align?: ('l' | 'r')[] }
   actions?: ({ label: string; to: string } | { label: string; onClick: () => void })[]
   body?: ReactNode
   /** komposisi bertumpuk satu batang (mis. tahapan) */
@@ -51,7 +53,7 @@ export function DetailProvider({ children }: { children: ReactNode }) {
   const rich = !!s && !!(s.table || s.bars || s.stack || s.trend || s.body)
   return <Ctx.Provider value={{ open, close }}>{children}
     {s && createPortal(<div className={'dlg-back ' + (drawer ? 'drawer' : 'modal')} onMouseDown={e => { if (e.target === e.currentTarget) close() }}>
-      <div className={'dlg ' + (drawer ? 'dlg-drawer' : 'dlg-modal' + (rich ? ' wide' : ''))} role="dialog" aria-modal="true" aria-label={s.title} tabIndex={-1} ref={box} style={{ ['--c' as any]: s.color ?? '#e6b457' }}>
+      <div className={'dlg ' + (drawer ? 'dlg-drawer' + (s.wide ? ' xl' : '') : 'dlg-modal' + (rich ? ' wide' : ''))} role="dialog" aria-modal="true" aria-label={s.title} tabIndex={-1} ref={box} style={{ ['--c' as any]: s.color ?? '#e6b457' }}>
         <div className="dlg-h">{I && <span className="dlg-ic"><I size={18} /></span>}<div className="min-w-0 flex-1"><h3>{s.title}</h3>{s.sub && <p>{s.sub}</p>}</div><button className="dlg-x" aria-label="Tutup" onClick={close}><X size={18} /></button></div>
         <div className="dlg-b">
           {s.stats && <div className="dlg-stats">{s.stats.map(x => <div key={x.l} className="dlg-stat"><span>{x.l}</span><b style={x.c ? { color: x.c } : undefined}>{x.v}</b></div>)}</div>}
