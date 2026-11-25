@@ -1,6 +1,8 @@
 /** Seed portofolio kontrak batubara (dari Coal Contract Command Center). Urutan: No, pelanggan, pemasok/tambang, GAR, cluster, volume (MT), status (0 = terkontrak, 1 = on progress kontrak baru). */
 export type Cluster = 'LRC' | 'MRC' | 'HRC'
-export type Kontrak = { id: string; no: string; pelanggan: string; tambang: string; gar: number; cluster: Cluster; vol: number; status: 0 | 1 }
+export type Kontrak = { id: string; no: string; pelanggan: string; tambang: string; gar: number; cluster: Cluster; vol: number; status: 0 | 1
+  /** kolom tambahan dari sheet Database Kontrak (opsional) */
+  pelangganLengkap?: string; trader?: string; nomor?: string; mulai?: string; akhir?: string; jenis?: string; skema?: string; harga?: number | null; ket?: string }
 export const KONTRAK_SEED: [number | string, string, string, number, Cluster, number, 0 | 1][] = [
   [4, "PLN/PNP", "PT Artha Tunggal Mandiri", 3700, "LRC", 687000, 0],
   [5, "PLN Group", "PT Menambang Muara Enim", 4200, "LRC", 52500, 0],
@@ -58,7 +60,7 @@ export const KONTRAK_SEED: [number | string, string, string, number, Cluster, nu
 export const PLTU_KONTRAK: Record<string, string[]> = {
   'PLTU Cilacap': ['Cilacap'], 'PLTU Kaltim-4': ['Kaltim-4'], 'PLTU Kalbar-1': ['Kalbar 1'], 'PLTU Jawa-7': ['Jawa 7'], 'CBF Jawa 7': ['CBF'],
   'PLTU Jeneponto': ['Jeneponto'], 'PLTU Celukan Bawang': ['Celukan Bawang'], 'PLTU LBE': ['Lestari Banten Energi'], 'Paiton Energy': ['Paiton Energy Company'],
-  'PLN Batam': ['Batam'], 'PLN (PLTU SWITP)': ['SW ITP'],
+  'PLN Batam': ['Batam'], 'PLN (PLTU SWITP)': ['SW ITP'], 'PLTU Tanjung Jati-B': ['Tj. Jati B', 'Tanjung Jati B'], 'PLN IP (Spot)': [],
 }
 
 /** Kode Mitra Real. di sheet shipment → nama pemasok di kontrak. Dibuktikan dari silang kolom Sumber Tambang pada data shipment; bisa dikoreksi di halaman Data kontrak. */

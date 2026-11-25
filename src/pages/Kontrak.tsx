@@ -9,6 +9,7 @@ import { fmtNum, fmtPct } from '../domain/format'
 import { useBanding } from './useBanding'
 import { useKModal } from '../components/KontrakModal'
 import { makeViews } from './kontrakViews'
+import KontrakSumber from '../components/KontrakSumber'
 const OUTLIER = 5e6
 const sum = (a: { vol: number }[]) => a.reduce((s, r) => s + r.vol, 0)
 function agg<T extends { vol: number }>(rs: T[], f: (r: T) => string) { const m = new Map<string, number>(); rs.forEach(r => m.set(f(r), (m.get(f(r)) ?? 0) + r.vol)); return [...m].sort((a, b) => b[1] - a[1]) }
@@ -30,12 +31,12 @@ export default function Kontrak() {
   const poolK = (b?.kontrak ?? []).filter(c => pool.some(r => r.id === c.id))
   const kOpen = (f: () => any) => V ? () => km.open(f()) : undefined
   const rows = pool.map(r => { const x = real.get(r.id); const ds = x?.real.ds ?? 0; return { ...r, ds, pct: r.vol > 0 && b ? ds / r.vol * 100 : null, statusTxt: STATUS_LABEL[r.status] } })
-  const cols: Col[] = [{ key: 'no', label: 'No' }, { key: 'pelanggan', label: 'PLTU / Pelanggan' }, { key: 'tambang', label: 'Sumber tambang' }, { key: 'gar', label: 'GAR' }, { key: 'cluster', label: 'Cluster', fmt: v => <ClusterTag c={v} /> }, { key: 'vol', label: 'Volume (MT)', fmt: v => fmtNum(v) },
+  const cols: Col[] = [{ key: 'no', label: 'No' }, { key: 'pelanggan', label: 'PLTU / Pelanggan' }, { key: 'tambang', label: 'Sumber tambang' }, { key: 'gar', label: 'GAR' }, { key: 'cluster', label: 'Cluster', fmt: v => <ClusterTag c={v} /> }, { key: 'vol', label: 'Volume (MT)', fmt: v => v ? fmtNum(v) : <span className="opacity-50" title="Volume tercatat pada baris pertama kelompok kontrak">gabung</span> }, { key: 'jenis', label: 'Jenis' }, { key: 'nomor', label: 'Nomor kontrak' }, { key: 'akhir', label: 'Berakhir' },
     { key: 'ds', label: `Realisasi D/S · ${sc.label}`, tip: 'Estimasi alokasi shipment pemasok ke kontrak (lihat Kontrak vs Realisasi)', fmt: v => b ? fmtNum(v) : '…' }, { key: 'pct', label: 'Pemenuhan', fmt: v => v == null ? '—' : <span style={{ color: v > 100 ? '#fbbf24' : undefined }}>{fmtPct(v)}</span> },
     { key: 'statusTxt', label: 'Status', fmt: (v, r) => <span style={{ color: r.status ? '#fbbf24' : '#34d399' }}>● {v}</span> }]
   const outlier = k.rows.filter(r => r.vol > OUTLIER)
   return <>
-    <PageHead icon={FileSignature} color="#e6b457" title="Kontrak" month={false} sub={`Portofolio kontrak pasokan batubara · ${k.rows.length} kontrak · volume dalam metrik ton (MT)`} />
+    <PageHead icon={FileSignature} color="#e6b457" title="Kontrak" month={false} sub={`Portofolio kontrak pasokan batubara · ${k.rows.length} kontrak · volume dalam metrik ton (MT)`} /><KontrakSumber />
     <KTabs />
     <div className="flex flex-wrap items-center gap-2 mb-3 text-xs no-print">
       <input aria-label="Cari kontrak" placeholder="Cari pelanggan, PLTU, pemasok, GAR, cluster, status…" value={q} onChange={e => setQ(e.target.value)} className="!w-[min(100%,340px)] !py-2" />

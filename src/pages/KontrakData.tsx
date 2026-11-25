@@ -6,13 +6,14 @@ import { CLUSTERS, Cluster, clusterOf, Kontrak, newId, parsePaste, STATUS_LABEL,
 import { downloadCsv, parseCsv } from '../domain/csv'
 import { fmtNum } from '../domain/format'
 import { kontrakActions, useKontrak } from '../kontrakStore'
+import KontrakSumber from '../components/KontrakSumber'
 type Tab = 'form' | 'editor' | 'master'
 const uniq = (rs: Kontrak[], f: 'pelanggan' | 'tambang') => [...new Set(rs.map(r => r[f]).filter(Boolean))].sort()
 export default function KontrakData() {
   const k = useKontrak(); const [tab, setTab] = useState<Tab>('form'); const [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null)
   const say = (t: string, ok = true) => setMsg({ t, ok })
   return <>
-    <PageHead icon={Database} color="#e6b457" title="Data kontrak" month={false} sub="Tambah, ubah, dan impor kontrak. Seluruh halaman Kontrak ikut berubah langsung." />
+    <PageHead icon={Database} color="#e6b457" title="Data kontrak" month={false} sub="Tambah, ubah, dan impor kontrak. Seluruh halaman Kontrak ikut berubah langsung." /><KontrakSumber edit />
     <KTabs />
     <div className="text-[11.5px] rounded-xl border border-white/10 bg-white/[.03] px-3 py-2 mb-3 text-slate-300">Perubahan disimpan <b>di browser ini saja</b> ({k.custom ? 'sudah berbeda dari data awal' : 'masih data awal'}). Untuk membagikan ke rekan, unduh CSV lalu impor di browser mereka. {msg && <span className="ml-2 font-semibold" style={{ color: msg.ok ? '#34d399' : '#fbbf24' }} aria-live="polite">{msg.t}</span>}</div>
     <div className="vsw mb-3" role="tablist" aria-label="Modul data">{([['form', 'Tambah kontrak'], ['editor', 'Editor tabel & impor'], ['master', 'Master PLTU & pemasok']] as [Tab, string][]).map(([v, l]) => <button key={v} role="tab" aria-selected={tab === v} onClick={() => setTab(v)} className={'vsw-b' + (tab === v ? ' on' : '')}><span>{l}</span></button>)}</div>

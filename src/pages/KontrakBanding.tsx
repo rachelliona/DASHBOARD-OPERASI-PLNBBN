@@ -10,6 +10,7 @@ import { kontrakActions } from '../kontrakStore'
 import { kontrakSpec, MONTHS3, useBanding } from './useBanding'
 import { useKModal } from '../components/KontrakModal'
 import { makeViews } from './kontrakViews'
+import KontrakSumber from '../components/KontrakSumber'
 type Sort = 'kontrak-desc' | 'kontrak-asc' | 'real-desc' | 'real-asc' | 'sisa-desc' | 'sisa-asc' | 'pct-asc' | 'pct-desc' | 'lebih-desc' | 'nama'
 const SORTS: [Sort, string][] = [['kontrak-desc', 'Kontrak terbesar'], ['kontrak-asc', 'Kontrak terkecil'], ['real-desc', 'Realisasi terbanyak'], ['real-asc', 'Realisasi tersedikit'], ['sisa-desc', 'Paling banyak belum terealisasi'], ['sisa-asc', 'Paling sedikit belum terealisasi'], ['pct-asc', 'Pemenuhan terendah'], ['pct-desc', 'Pemenuhan tertinggi'], ['lebih-desc', 'Paling banyak melebihi kontrak'], ['nama', 'Nama A–Z']]
 const sorter = (s: Sort) => (x: SbsItem, y: SbsItem) => { const px = x.kontrak > 0 ? x.real / x.kontrak : -1, py = y.kontrak > 0 ? y.real / y.kontrak : -1
@@ -58,7 +59,7 @@ export default function KontrakBanding() {
   const mx = Math.max(...bln, 1)
   const alias = Object.entries(k.alias)
   return <>
-    <PageHead icon={Scale} color="#e6b457" title="Kontrak vs Realisasi" month={false} sub={`Volume kontrak dibandingkan realisasi pasokan (${mk}) · ${sc.label}`} />
+    <PageHead icon={Scale} color="#e6b457" title="Kontrak vs Realisasi" month={false} sub={`Volume kontrak dibandingkan realisasi pasokan (${mk}) · ${sc.label}`} /><KontrakSumber />
     <KTabs />
     <div className="flex flex-wrap items-center gap-2 mb-3 text-xs no-print">{sc.ui}
       <div className="vsw" role="tablist" aria-label="Ukuran realisasi">{([['ds', 'Bongkar (D/S)'], ['bl', 'Muat (B/L)']] as [Metric, string][]).map(([v, l]) => <button key={v} role="tab" aria-selected={m === v} onClick={() => setM(v)} className={'vsw-b' + (m === v ? ' on' : '')}><span>{l}</span></button>)}</div>
