@@ -6,6 +6,7 @@ export const NAV: NavItem[] = [
   { label: 'Peta Shipment', to: '/peta', icon: 'map' },
   { label: 'Laporan Harian', to: '/laporan/harian', icon: 'file' },
   { label: 'Shipping Instruction', to: '/si', icon: 'file' },
+  { label: 'Kualitas', icon: 'file', children: [{ label: 'Monitoring Kualitas', to: '/kualitas/monitoring' }, { label: 'Peta Penurunan Kalori', to: '/kualitas/peta' }, { label: 'Evaluasi Mitra (PDF)', to: '/kualitas/evaluasi' }] },
   { label: 'Monitoring', icon: 'activity', children: [
     { label: 'Analisis', to: '/analisis' }, { label: 'Gantt Pasokan', to: '/gantt' }, { label: 'Simulasi ETA Shipment', to: '/simulasi' }, { label: 'Dashboard Interaktif', to: '/dashboard' }, { label: 'Shipment', to: '/shipment' }, { label: 'ETA Rakor & Keterlambatan', to: '/eta' }, { label: 'Linimasa Tahap', to: '/linimasa' }, { label: 'Pasokan PLTU', to: '/pltu' },
     { label: 'Realisasi', children: [{ label: 'Ringkasan Realisasi', to: '/realisasi' }, { label: 'Per Bulan', children: BULAN.map(b => ({ label: b, to: '/realisasi/' + b })) },

@@ -8,6 +8,7 @@ import { MILESTONES, DAY, predict, probWithin, stepStatsFor, totals } from '../d
 import { STEPS } from '../domain/monthly'
 import { todayRef } from '../domain/insight'
 import { fmtNum } from '../domain/format'
+import { ruteDurasi, useDurasi } from '../domain/durasi'
 const fd = (t: number | null) => t == null ? '—' : new Intl.DateTimeFormat('id-ID', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(t)
 const fdl = (t: number) => new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(t)
 const iso = (t: number) => new Date(t).toISOString().slice(0, 10)
@@ -18,6 +19,7 @@ export default function Simulasi() {
   const [plant, setPlant] = useState(''); const [sumber, setSumber] = useState(''); const [jetty, setJetty] = useState('')
   const [dates, setDates] = useState<string[]>(Array(10).fill('')); const [target, setTarget] = useState(''); const [adj, setAdj] = useState<number[]>(Array(9).fill(0)); const [open, setOpen] = useState(false)
   const ships = all?.ships ?? []
+  const dur = useDurasi(); const rute = useMemo(() => dur.rows ? ruteDurasi(dur.rows, plant || undefined) : [], [dur.rows, plant])
   const plants = useMemo(() => uniq(ships.map(s => s.plant)), [ships])
   const scoped = useMemo(() => plant ? ships.filter(s => s.plant === plant) : ships, [ships, plant])
   const sumbers = useMemo(() => uniq(scoped.map(s => s.sumber)), [scoped]); const jetties = useMemo(() => uniq(scoped.map(s => s.jetty)), [scoped])
@@ -41,6 +43,10 @@ export default function Simulasi() {
   const lowN = stats.slice(Math.max(anchor, 0), 9).some(s => s.n < 5)
   return <>
     <PageHead icon={CalendarClock} color="#22d3ee" title="Simulasi ETA Shipment" month={false} sub={<>Isi tanggal yang sudah diketahui atau yang kamu targetkan (mis. TA POL) — tahap sesudahnya diperkirakan maju, tahap sebelumnya (mis. tanggal SI terbit) dihitung mundur, pilih PLTU, jetty muat, dan sumber tambang — perkiraan tanggal tahap berikutnya dihitung dari durasi historis {fmtNum(ships.length)} shipment di sheet ALL Shipment.</>} />
+    <Card title="Info Durasi Pelayaran BBN-BAG (sheet Monitoring Rencana)"><p className="text-[11px] text-slate-400 mb-2">Rata-rata durasi sailing historis per rute POL → POD{plant ? <> untuk <b>{plant}</b></> : ' (semua PLTU, pilih PLTU untuk menyaring)'} · tambahan info, tidak mengubah hitungan simulasi.</p>
+      {!dur.rows && !dur.err && <p className="text-xs text-slate-400">Memuat…</p>}{dur.err && <p className="text-xs text-amber-300">Gagal memuat sheet durasi: {dur.err}</p>}
+      {dur.rows && !rute.length && <p className="text-xs text-slate-400">Belum ada rute yang cocok untuk PLTU ini.</p>}
+      {rute.length > 0 && <div className="overflow-x-auto"><table className="tbl-si w-full text-xs"><thead><tr><th>POL</th><th>POD</th><th>Shipment</th><th>Rata-rata (hari)</th><th>Tercepat</th><th>Terlama</th></tr></thead><tbody>{rute.slice(0, 12).map(r => <tr key={r.pol + r.pod}><td>{r.pol}</td><td>{r.pod}</td><td>{r.n}</td><td><b>{r.avg.toFixed(1)}</b></td><td>{r.min.toFixed(1)}</td><td>{r.max.toFixed(1)}</td></tr>)}</tbody></table></div>}</Card>
     <div className="grid lg:grid-cols-5 gap-3">
       <div className="lg:col-span-2 grid gap-3 content-start">
         <Card title="1 · Rute & sumber">
