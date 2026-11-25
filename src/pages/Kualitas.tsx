@@ -53,21 +53,36 @@ function Detail({ s }: { s: Vm }) {
 const PARAM: Record<string, { u: keyof QShip; l?: keyof QShip; std?: (d: Std) => number | null; unit: string; d: number }> = {
   GCV: { u: 'gcvU', l: 'gcvL', std: d => d.gcv, unit: 'kcal/kg', d: 0 }, TM: { u: 'tmU', l: 'tmL', std: d => d.tm, unit: '%', d: 2 }, Ash: { u: 'ashU', l: 'ashL', std: d => d.ash, unit: '%', d: 2 }, TS: { u: 'tsU', l: 'tsL', std: d => d.ts, unit: '%', d: 2 }, HGI: { u: 'hgiU', l: 'hgiL', unit: '', d: 0 }, IDT: { u: 'idtU', l: 'idtL', std: d => d.idt, unit: '°C', d: 0 }, 'Susut MT': { u: 'bl', unit: 'MT', d: 0 } }
 function Grafik({ ships, std }: { ships: Vm[]; std: Std[] }) {
-  const [p, setP] = useState('GCV'); const [sum, setSum] = useState(''); const [plt, setPlt] = useState('')
-  const sums = useMemo(() => { const m = new Map<string, number>(); ships.forEach(s => s.sumber && m.set(s.sumber, (m.get(s.sumber) ?? 0) + 1)); return [...m].sort((a, b) => b[1] - a[1]) }, [ships])
-  const plts = useMemo(() => uniq(ships.filter(s => !sum || s.sumber === sum).map(s => s.plant)), [ships, sum])
-  const cfg = PARAM[p]; const pts = useMemo(() => ships.filter(s => (!sum || s.sumber === sum) && (!plt || s.plant === plt)).map(s => ({ t: s.selesaiBongkar ?? s.taPltu, u: p === 'Susut MT' ? (s.bl != null && s.ds != null ? s.bl - s.ds : null) : s[cfg.u] as number | null, l: cfg.l ? s[cfg.l] as number | null : null, n: s.tbbg })).filter(x => x.t != null && x.u != null).sort((a, b) => a.t! - b.t!), [ships, sum, plt, p])
+  const [p, setP] = useState('GCV'); const [sum, setSum] = useState(''); const [plt, setPlt] = useState(''); const [init, setInit] = useState(false)
+  const sums = useMemo(() => { const m = new Map<string, number>(); ships.forEach(s => s.sumber && s.gcvU != null && m.set(s.sumber, (m.get(s.sumber) ?? 0) + 1)); return [...m].sort((a, b) => b[1] - a[1]) }, [ships])
+  useEffect(() => { if (!init && sums.length) { setSum(sums[0][0]); setInit(true) } }, [sums, init])
+  const plts = useMemo(() => { const m = new Map<string, number>(); ships.filter(s => !sum || s.sumber === sum).forEach(s => m.set(s.plant, (m.get(s.plant) ?? 0) + 1)); return [...m].sort((a, b) => b[1] - a[1]) }, [ships, sum])
+  const cfg = PARAM[p]
+  const pts = useMemo(() => {
+    const raw = ships.filter(s => (!sum || s.sumber === sum) && (!plt || s.plant === plt)).map(s => ({ t: s.selesaiBongkar ?? s.taPltu, u: p === 'Susut MT' ? (s.bl != null && s.ds != null ? s.bl - s.ds : null) : s[cfg.u] as number | null, l: cfg.l ? s[cfg.l] as number | null : null, n: s.tbbg })).filter(x => x.t != null && x.u != null).sort((a, b) => a.t! - b.t!)
+    if (sum) return raw.map(x => ({ ...x, lab: `${fd(x.t)} · ${x.n || ''}` }))
+    const m = new Map<string, typeof raw>(); raw.forEach(x => m.set(bk(x.t), [...(m.get(bk(x.t)) ?? []), x])) /* tanpa sumber: rata-rata per bulan agar terbaca */
+    return [...m].sort((a, b) => a[0].localeCompare(b[0])).map(([k, a]) => ({ t: a[0].t, u: avg(a.map(x => x.u)), l: avg(a.map(x => x.l)), n: '', lab: `${bkLabel(k)} · rata-rata ${a.length} shipment` }))
+  }, [ships, sum, plt, p])
   const d = sum ? cariStd(std, sum) : null; const batas = d && cfg.std ? cfg.std(d) : null
-  const ys = [...pts.map(x => x.u!), ...pts.map(x => x.l).filter((x): x is number => x != null), ...(batas != null ? [batas] : [])]; const lo = Math.min(...ys), hi = Math.max(...ys), pad = (hi - lo) * 0.08 || 1
-  const W = 900, H = 250, X = (i: number) => 40 + (pts.length < 2 ? 410 : i * 830 / (pts.length - 1)), Y = (v: number) => 12 + (1 - (v - (lo - pad)) / (hi - lo + 2 * pad)) * (H - 30)
+  const ys = [...pts.map(x => x.u!), ...pts.map(x => x.l).filter((x): x is number => x != null), ...(batas != null ? [batas] : [])]; const lo = Math.min(...ys), hi = Math.max(...ys), pad = (hi - lo) * 0.1 || 1
+  const W = 900, H = 270, T = 26, X = (i: number) => 52 + (pts.length < 2 ? 400 : i * 820 / (pts.length - 1)), Y = (v: number) => T + (1 - (v - (lo - pad)) / (hi - lo + 2 * pad)) * (H - T - 22)
   const line = (k: 'u' | 'l') => pts.map((x, i) => x[k] != null ? `${X(i)},${Y(x[k]!)}` : '').filter(Boolean).join(' ')
+  const area = pts.length > 1 ? `${X(0)},${H - 22} ${line('u')} ${X(pts.length - 1)},${H - 22}` : ''
+  const r = pts.length > 120 ? 0 : pts.length > 50 ? 2 : 3.5
+  const tick = pts.length ? [0, Math.floor((pts.length - 1) / 2), pts.length - 1].filter((v, i, a) => a.indexOf(v) === i) : []
   return <Card title="Realisasi Kualitas Batubara dari Sumber Tambang ke PLTU tujuan"><div className="flex flex-wrap gap-2 items-end mb-3">{Object.keys(PARAM).map(k => <Pil key={k} on={p === k} onClick={() => setP(k)}>{k}</Pil>)}
-    <Sel label="Sumber tambang" v={sum} set={s => { setSum(s); setPlt('') }} opts={sums.map(([a, n]) => [a, `${a} (${n})`])} /><Sel label="PLTU tujuan" v={plt} set={setPlt} opts={plts.map(a => [a, a])} /><span className="text-xs text-slate-400">Σ {pts.length}</span></div>
-    {pts.length ? <svg viewBox={`0 0 ${W} ${H}`} className="w-full"><text x="4" y="10" fontSize="10" fill="#94a3b8">{p} ({cfg.unit})</text>{[0, 1, 2, 3].map(i => { const v = lo - pad + (hi - lo + 2 * pad) * i / 3; return <g key={i}><line x1="40" x2={W - 20} y1={Y(v)} y2={Y(v)} stroke="#334155" strokeDasharray="3 4" /><text x="36" y={Y(v) + 3} fontSize="9" fill="#94a3b8" textAnchor="end">{nf(v, cfg.d)}</text></g> })}
-      {batas != null && <line x1="40" x2={W - 20} y1={Y(batas)} y2={Y(batas)} stroke="#ef4444" strokeWidth="1.6" strokeDasharray="6 4" />}
-      {cfg.l && <polyline points={line('l')} fill="none" stroke="#94a3b8" strokeWidth="1.5" />}<polyline points={line('u')} fill="none" stroke="#0ea5c6" strokeWidth="2" />
-      {pts.map((x, i) => <circle key={i} cx={X(i)} cy={Y(x.u!)} r="3" fill="#0ea5c6"><title>{`${fd(x.t)} · ${x.n || ''} · bongkar ${nf(x.u, cfg.d)}${x.l != null ? ' · muat ' + nf(x.l, cfg.d) : ''}`}</title></circle>)}</svg> : <p className="text-xs text-slate-400">Tidak ada data untuk pilihan ini.</p>}
-    <p className="text-[11px] text-slate-400 mt-1"><span style={{ color: '#0ea5c6' }}>■</span> bongkar {cfg.l && <><span style={{ color: '#94a3b8' }}>■</span> muat </>}{batas != null && <><span style={{ color: '#ef4444' }}>- -</span> batas penolakan {nf(batas, cfg.d)} (pilih sumber tambang)</>}</p></Card>
+    <Sel label="Sumber tambang" v={sum} set={s => { setSum(s); setPlt('') }} opts={sums.map(([a, n]) => [a, `${a} (${n})`])} /><Sel label="PLTU tujuan" v={plt} set={setPlt} opts={plts.map(([a, n]) => [a, `${a} (${n})`])} /><span className="text-xs text-slate-400">Σ {pts.length}{!sum ? ' bulan' : ' shipment'}</span></div>
+    {!sum && <p className="text-[11px] text-amber-300 mb-1">Semua sumber tambang dicampur, jadi ditampilkan rata-rata per bulan. Pilih satu sumber tambang untuk melihat tiap shipment dan garis batas penolakan.</p>}
+    {pts.length ? <svg viewBox={`0 0 ${W} ${H}`} className="w-full"><defs><linearGradient id="kqa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#0ea5c6" stopOpacity=".35" /><stop offset="1" stopColor="#0ea5c6" stopOpacity="0" /></linearGradient></defs>
+      <text x="4" y="12" fontSize="11" fontWeight="600" fill="#94a3b8">{p} ({cfg.unit})</text>
+      {[0, 1, 2, 3].map(i => { const v = lo - pad + (hi - lo + 2 * pad) * i / 3; return <g key={i}><line x1="52" x2={W - 16} y1={Y(v)} y2={Y(v)} stroke="#334155" strokeDasharray="3 4" /><text x="46" y={Y(v) + 3} fontSize="9" fill="#94a3b8" textAnchor="end">{nf(v, cfg.d)}</text></g> })}
+      {tick.map(i => <text key={i} x={X(i)} y={H - 6} fontSize="9" fill="#94a3b8" textAnchor={i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle'}>{fd(pts[i].t)}</text>)}
+      {area && <polygon points={area} fill="url(#kqa)" />}
+      {batas != null && <line x1="52" x2={W - 16} y1={Y(batas)} y2={Y(batas)} stroke="#ef4444" strokeWidth="1.6" strokeDasharray="6 4" />}
+      {cfg.l && <polyline points={line('l')} fill="none" stroke="#94a3b8" strokeWidth="1.3" strokeLinejoin="round" opacity=".8" />}<polyline points={line('u')} fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinejoin="round" />
+      {pts.map((x, i) => <circle key={i} cx={X(i)} cy={Y(x.u!)} r={r || 6} fill={r ? '#0ea5c6' : 'transparent'} stroke={r ? '#0b1626' : 'none'} strokeWidth="1"><title>{`${x.lab} · bongkar ${nf(x.u, cfg.d)}${x.l != null ? ' · muat ' + nf(x.l, cfg.d) : ''}`}</title></circle>)}</svg> : <p className="text-xs text-slate-400">Tidak ada data untuk pilihan ini.</p>}
+    <p className="text-[11px] text-slate-400 mt-1"><span style={{ color: '#22d3ee' }}>■</span> bongkar {cfg.l && <><span style={{ color: '#94a3b8' }}>■</span> muat </>}{batas != null && <><span style={{ color: '#ef4444' }}>- -</span> batas penolakan {nf(batas, cfg.d)}</>}</p></Card>
 }
 export default function Kualitas({ tab }: { tab: TabK }) {
   const [d, setD] = useState<{ ships: QShip[]; std: Std[] } | null>(null); const [err, setErr] = useState(''); const [pop, setPop] = useState<{ t: string; rows: Vm[] } | null>(null); const [det, setDet] = useState<Vm | null>(null); const [cari, setCari] = useState('')
