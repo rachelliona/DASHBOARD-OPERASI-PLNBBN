@@ -2,7 +2,7 @@ import FoldInit from './components/FoldInit'
 import PltuDetail from './pages/PltuDetail'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
-import { Activity, Download, Search, ChevronDown, ChevronsLeft, ChevronsRight, Circle, Database, FileSignature, FileText, LayoutDashboard, LogOut, Map as MapIcon, Menu, Users, X } from 'lucide-react'
+import { Activity, Download, Search, ChevronDown, ChevronsLeft, ChevronsRight, Circle, Database, FileSignature, ClipboardList, Ship, FlaskConical, FileText, LayoutDashboard, LogOut, Map as MapIcon, Menu, Users, X } from 'lucide-react'
 import { useStore } from './store'
 import Ringkasan from './pages/Ringkasan'
 import Laporan from './pages/Laporan'
@@ -39,7 +39,7 @@ import { InstallBanner, MobileMenu, PullToRefresh, Splash, usePageTitle } from '
 import { WelcomePopup } from './components/WelcomePopup'
 import { Moon, RefreshCw, Sun } from 'lucide-react'
 const TABS: [string, string, any][] = [['/', 'Ringkasan', LayoutDashboard], ['/peta', 'Peta', MapIcon], ['/laporan/harian', 'Laporan', FileText], ['/kontrak', 'Kontrak', FileSignature]]
-const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: FileText, activity: Activity, users: Users, db: Database, contract: FileSignature }
+const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: FileText, activity: Activity, users: Users, db: Database, contract: FileSignature, report: ClipboardList, ship: Ship, lab: FlaskConical }
 const B = import.meta.env.BASE_URL
 const Img = ({ mark, cls }: { mark?: boolean; cls: string }) => <><img src={B + (mark ? 'logo-mark-dark.png' : 'logo-dark.png')} alt="PLN Batubara Niaga" className={cls + ' lg-d'} /><img src={B + (mark ? 'logo-mark-light.png' : 'logo-light.png')} alt="PLN Batubara Niaga" className={cls + ' lg-l'} /></>
 function RefreshBtn() { const { refreshNow, refreshing, lastRefresh, asOf, setAsOf } = useStore(); const [, tick] = useState(0); useEffect(() => { const id = setInterval(() => tick(x => x + 1), 15000); return () => clearInterval(id) }, [])

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { Activity, BarChart3, ChevronDown, Clock, Database, Factory, FileSignature, FileText, LayoutDashboard, Map as MapIcon, Settings, Ship, Table2, Users, Waypoints } from 'lucide-react'
+import { Activity, BarChart3, ChevronDown, Clock, Database, Factory, FileSignature, ClipboardList, FlaskConical, FileText, LayoutDashboard, Map as MapIcon, Settings, Ship, Table2, Users, Waypoints } from 'lucide-react'
 import { navFor, isAdmin, NavItem } from '../config/nav'
 import { useAuth } from '../auth'
-const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: FileText, activity: Activity, users: Users, db: Database, contract: FileSignature }
+const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: FileText, activity: Activity, users: Users, db: Database, contract: FileSignature, report: ClipboardList, ship: Ship, lab: FlaskConical }
 const LEAF: Record<string, any> = { '/dashboard': Activity, '/shipment': Ship, '/eta': Clock, '/linimasa': Waypoints, '/pltu': Factory, '/realisasi': BarChart3, '/sumber-data': Database, '/pengaturan': Settings }
 const same = (a: string, b: string) => { try { return decodeURI(a) === decodeURI(b) } catch { return a === b } }
 const has = (it: NavItem, p: string): boolean => it.to ? same(p, it.to) : !!it.children?.some(c => has(c, p))
