@@ -27,4 +27,7 @@ export const bisaBuatSI = (u?: { id: string; nama?: string } | null) => !!u && (
 export const bisaKoreksiBesar = (u?: { id: string; nama?: string } | null) => !!u && ((u.id ?? '') + ' ' + (u.nama ?? '')).toLowerCase().split(/[^a-z]+/).some(t => ['racel', 'andi', 'billy'].includes(t))
 export const isAdmin = (u?: { id: string } | null) => !!u && ADMIN_IDS.includes(u.id.trim().toLowerCase())
 export const DATA_SHEETS = new Set(['Dashboard 1', 'Data Sheet', 'Pivot Table 2', 'MINI DAHSBOARD', 'Sheet13', ...BULAN])
-export const navFor = (admin: boolean) => admin ? NAV : NAV.filter(n => n.label !== 'Data')
+/** Menu Kualitas hanya untuk akun ini. */
+export const KUALITAS_IDS = ['racel', 'rendi']
+export const bisaKualitas = (u?: { id: string } | null) => !!u && KUALITAS_IDS.includes(u.id.trim().toLowerCase())
+export const navFor = (admin: boolean, kualitas = false) => NAV.filter(n => (admin || n.label !== 'Data') && (kualitas || n.label !== 'Kualitas'))

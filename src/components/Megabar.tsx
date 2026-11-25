@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { Activity, BarChart3, ChevronDown, Clock, Database, Factory, FileSignature, ClipboardList, FlaskConical, FileText, LayoutDashboard, Map as MapIcon, Settings, Ship, Table2, Users, Waypoints } from 'lucide-react'
-import { navFor, isAdmin, NavItem } from '../config/nav'
+import { navFor, isAdmin, bisaKualitas, NavItem } from '../config/nav'
 import { useAuth } from '../auth'
 const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: FileText, activity: Activity, users: Users, db: Database, contract: FileSignature, report: ClipboardList, ship: Ship, lab: FlaskConical }
 const LEAF: Record<string, any> = { '/dashboard': Activity, '/shipment': Ship, '/eta': Clock, '/linimasa': Waypoints, '/pltu': Factory, '/realisasi': BarChart3, '/sumber-data': Database, '/pengaturan': Settings }
@@ -10,7 +10,7 @@ const has = (it: NavItem, p: string): boolean => it.to ? same(p, it.to) : !!it.c
 const leaves = (it: NavItem): NavItem[] => it.to ? [it] : (it.children ?? []).flatMap(leaves)
 /** Menu atas gaya mega-menu: ikon di atas label, panel terbuka saat disorot atau diklik. Hanya desktop. */
 export default function Megabar() {
-  const { pathname } = useLocation(); const { user } = useAuth(); const NAVX = navFor(isAdmin(user)); const [open, setOpen] = useState<string | null>(null); const t = useRef<number>(); const box = useRef<HTMLDivElement>(null)
+  const { pathname } = useLocation(); const { user } = useAuth(); const NAVX = navFor(isAdmin(user), bisaKualitas(user)); const [open, setOpen] = useState<string | null>(null); const t = useRef<number>(); const box = useRef<HTMLDivElement>(null)
   useEffect(() => setOpen(null), [pathname])
   useEffect(() => { const k = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(null); const c = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(null) }; window.addEventListener('keydown', k); window.addEventListener('mousedown', c); return () => { window.removeEventListener('keydown', k); window.removeEventListener('mousedown', c) } }, [])
   const show = (l: string) => { window.clearTimeout(t.current); t.current = window.setTimeout(() => setOpen(l), 90) }

@@ -8,3 +8,8 @@ describe('kualitas', () => {
   it('skor transport', () => { expect(skorEta(1)).toBe(100); expect(skorEta(5)).toBe(90); expect(skorEta(40)).toBe(25); expect(skorShort(1.6)).toBe(100); expect(skorShort(null)).toBe(25); expect(kategori(90)).toBe('Good') })
   it('parse durasi', () => { const t = 'a\n\n\n\n\n\nNo,Region,Genco,SHIPPER,Shipper (Fix),POL,POD,POD (Fix),Volume Rencana,x,x,x,x,x,x,ETA POL Rencana,ETA POL Realisasi,ETA POD Rencana,ETA POD,Volume Realisasi\n1,r,g,S,S1,KUTAI,P,AMPANA,"5,000",,,,,,,01-03/01,03/01/26,15/01/26,18/01/26,"5,200.000"\n'; const r = parseDurasi(t); expect(r).toHaveLength(1); expect(r[0].volRen).toBe(5000); expect(r[0].etaPolRen).toBe(Date.UTC(2026, 0, 3)) })
 })
+import { navFor, bisaKualitas } from '../config/nav'
+describe('akses menu Kualitas', () => {
+  it('hanya racel dan rendi', () => { expect(bisaKualitas({ id: 'Racel' })).toBe(true); expect(bisaKualitas({ id: 'rendi' })).toBe(true); expect(bisaKualitas({ id: 'popi' })).toBe(false); expect(bisaKualitas(null)).toBe(false)
+    expect(navFor(true, false).some(n => n.label === 'Kualitas')).toBe(false); expect(navFor(false, true).some(n => n.label === 'Kualitas')).toBe(true); expect(navFor(false, true).some(n => n.label === 'Data')).toBe(false) })
+})
