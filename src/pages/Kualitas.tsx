@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, ReactNode } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Polyline, Tooltip } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
+import { LayoutDashboard, Table2, ShieldAlert, FileText } from 'lucide-react'
 import { Btn, Card, PageHead } from '../components/ui'
 import { SOURCES } from '../config/sources'
 import { LOKASI_ROWS } from '../config/lokasi'
@@ -30,7 +31,6 @@ function Modal({ judul, onClose, children }: { judul: string; onClose: () => voi
   return <div className="fixed inset-0 z-[3000] bg-black/55" onClick={onClose}><aside className="kq-drawer" onClick={e => e.stopPropagation()}>
     <div className="flex justify-between items-center gap-2 px-4 py-3 border-b border-white/10 sticky top-0 z-10 kq-drawer-h"><h2 className="gcard-t">{judul}</h2><Btn onClick={onClose}>Tutup ✕</Btn></div><div className="p-4">{children}</div></aside></div>
 }
-const Pil = ({ on, children, onClick }: { on: boolean; children: ReactNode; onClick: () => void }) => <button onClick={onClick} className={on ? 'on' : ''}>{children}</button>
 const Sel = ({ label, v, set, opts }: { label: string; v: string; set: (s: string) => void; opts: [string, string][] }) => <label className="text-[11px] text-slate-400 flex flex-col gap-0.5">{label}<select className="inp text-xs" value={v} onChange={e => set(e.target.value)}><option value="">Semua</option>{opts.map(([a, b]) => <option key={a} value={a}>{b}</option>)}</select></label>
 const Ring = ({ pct, c }: { pct: number; c: string }) => { const r = 19, L = 2 * Math.PI * r, v = Math.max(0, Math.min(100, pct)); return <svg className="kq-r" viewBox="0 0 46 46"><circle cx="23" cy="23" r={r} fill="none" stroke="rgba(255,255,255,.15)" strokeWidth="5" /><circle cx="23" cy="23" r={r} fill="none" stroke={c} strokeWidth="5" strokeLinecap="round" strokeDasharray={`${L * v / 100} ${L}`} transform="rotate(-90 23 23)" /><text x="23" y="26.5" textAnchor="middle" fontSize="10" fontWeight="700" fill="#fff">{Math.round(v)}%</text></svg> }
 const Kpi = ({ label, value, unit, note, accent = '#0891b2', pct, onClick }: { label: string; value: string; unit?: string; note?: string; accent?: string; pct?: number | null; onClick?: () => void }) => <div className={'kq-tile' + (onClick ? ' klik' : '')} style={{ ['--ac' as any]: accent }} {...(onClick ? { role: 'button', tabIndex: 0, onClick, onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter') onClick() } } : {})}>
@@ -71,7 +71,7 @@ function Grafik({ ships, std }: { ships: Vm[]; std: Std[] }) {
   const area = pts.length > 1 ? `${X(0)},${H - 22} ${line('u')} ${X(pts.length - 1)},${H - 22}` : ''
   const r = pts.length > 120 ? 0 : pts.length > 50 ? 2 : 3.5
   const tick = pts.length ? [0, Math.floor((pts.length - 1) / 2), pts.length - 1].filter((v, i, a) => a.indexOf(v) === i) : []
-  return <Card title="Realisasi Kualitas Batubara dari Sumber Tambang ke PLTU tujuan"><div className="flex flex-wrap gap-2 items-end mb-3"><div className="seg">{Object.keys(PARAM).map(k => <Pil key={k} on={p === k} onClick={() => setP(k)}>{k}</Pil>)}</div>
+  return <Card title="Realisasi Kualitas Batubara dari Sumber Tambang ke PLTU tujuan"><div className="flex flex-wrap gap-2 items-end mb-3">{Object.keys(PARAM).map(k => <button key={k} onClick={() => setP(k)} className={'fchip' + (p === k ? ' on' : '')} style={{ ['--c' as any]: '#e6b457' }}>{k}</button>)}
     <Sel label="Sumber tambang" v={sum} set={s => { setSum(s); setPlt('') }} opts={sums.map(([a, n]) => [a, `${a} (${n})`])} /><Sel label="PLTU tujuan" v={plt} set={setPlt} opts={plts.map(([a, n]) => [a, `${a} (${n})`])} /><span className="text-xs text-slate-400">Σ {pts.length}{!sum ? ' bulan' : ' shipment'}</span></div>
     {!sum && <p className="text-[11px] text-amber-300 mb-1">Semua sumber tambang dicampur, jadi ditampilkan rata-rata per bulan. Pilih satu sumber tambang untuk melihat tiap shipment dan garis batas penolakan.</p>}
     {pts.length ? <svg viewBox={`0 0 ${W} ${H}`} className="w-full"><defs><linearGradient id="kqa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#0ea5c6" stopOpacity=".35" /><stop offset="1" stopColor="#0ea5c6" stopOpacity="0" /></linearGradient></defs>
@@ -113,7 +113,7 @@ export default function Kualitas({ tab }: { tab: TabK }) {
   const alasan = (p: string) => st.rej.filter(s => s.n!.bongkar.some(x => x.p === p))
   return <div className="space-y-4 kq">
     <PageHead title="Monitoring Kualitas Batubara" sub={<>Sumber: sheet ALL Shipment (Monitoring Pasokan DitOperasi PLNBBN 2026) + Standar Rejection · reject = CoA bongkar melewati batas penolakan sumber tambang · CoA bongkar dinilai siap bila terisi, jendela pengisian H-2 s.d. H+7 dari selesai bongkar</>} right={<Btn onClick={reload}>Muat ulang</Btn>} />
-    <div className="seg self-start max-w-full overflow-x-auto">{([['home', 'Home'], ['shipment', 'All Shipment'], ['umpire', 'Umpire and Rejection'], ['evaluasi', 'Evaluasi Mitra (PDF)']] as [TabK, string][]).map(([k, l]) => <Pil key={k} on={tab === k} onClick={() => { location.hash = '#/kualitas/' + k }}>{l}</Pil>)}</div>
+    <div className="vsw" role="tablist" aria-label="Pilih tampilan kualitas">{([['home', 'Home', LayoutDashboard], ['shipment', 'All Shipment', Table2], ['umpire', 'Umpire and Rejection', ShieldAlert], ['evaluasi', 'Evaluasi Mitra (PDF)', FileText]] as [TabK, string, any][]).map(([k, l, I]) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => { location.hash = '#/kualitas/' + k }} className={'vsw-b' + (tab === k ? ' on' : '')}><I size={16} /><span>{l}</span></button>)}</div>
     {err && <Card><p className="text-xs text-amber-300">Gagal memuat data: {err}</p></Card>}{!d && !err && tab !== 'evaluasi' && <Card><p className="text-xs text-slate-400">Memuat data kualitas…</p></Card>}{filt}
     {d && tab === 'home' && <>
       <h3 className="kq-sec">Penilaian mutu (CoA bongkar vs batas penolakan)</h3>
