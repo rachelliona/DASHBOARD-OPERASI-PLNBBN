@@ -43,10 +43,6 @@ export default function Simulasi() {
   const lowN = stats.slice(Math.max(anchor, 0), 9).some(s => s.n < 5)
   return <>
     <PageHead icon={CalendarClock} color="#22d3ee" title="Simulasi ETA Shipment" month={false} sub={<>Isi tanggal yang sudah diketahui atau yang kamu targetkan (mis. TA POL) — tahap sesudahnya diperkirakan maju, tahap sebelumnya (mis. tanggal SI terbit) dihitung mundur, pilih PLTU, jetty muat, dan sumber tambang — perkiraan tanggal tahap berikutnya dihitung dari durasi historis {fmtNum(ships.length)} shipment di sheet ALL Shipment.</>} />
-    <Card title="Info Durasi Pelayaran BBN-BAG (sheet Monitoring Rencana)"><p className="text-[11px] text-slate-400 mb-2">Rata-rata durasi sailing historis per rute POL → POD{plant ? <> untuk <b>{plant}</b></> : ' (semua PLTU, pilih PLTU untuk menyaring)'} · tambahan info, tidak mengubah hitungan simulasi.</p>
-      {!dur.rows && !dur.err && <p className="text-xs text-slate-400">Memuat…</p>}{dur.err && <p className="text-xs text-amber-300">Gagal memuat sheet durasi: {dur.err}</p>}
-      {dur.rows && !rute.length && <p className="text-xs text-slate-400">Belum ada rute yang cocok untuk PLTU ini.</p>}
-      {rute.length > 0 && <div className="overflow-x-auto"><table className="tbl-si w-full text-xs"><thead><tr><th>POL</th><th>POD</th><th>Shipment</th><th>Rata-rata (hari)</th><th>Tercepat</th><th>Terlama</th></tr></thead><tbody>{rute.slice(0, 12).map(r => <tr key={r.pol + r.pod}><td>{r.pol}</td><td>{r.pod}</td><td>{r.n}</td><td><b>{r.avg.toFixed(1)}</b></td><td>{r.min.toFixed(1)}</td><td>{r.max.toFixed(1)}</td></tr>)}</tbody></table></div>}</Card>
     <div className="grid lg:grid-cols-5 gap-3">
       <div className="lg:col-span-2 grid gap-3 content-start">
         <Card title="1 · Rute & sumber">
@@ -91,5 +87,9 @@ export default function Simulasi() {
           <Card title="Dasar perhitungan per tahap"><div className="overflow-x-auto"><table className="w-full text-[11.5px]"><thead><tr className="text-left text-slate-400"><th>Tahap</th><th>Cepat (P25)</th><th>Biasa (median)</th><th>Lambat (P75)</th><th>Sampel</th><th>Cakupan data</th></tr></thead><tbody>{STEPS.map((s, i) => <tr key={s} className={'border-t border-white/5' + (i >= anchor ? '' : ' opacity-50')}><td>{s}</td><td>{stats[i].p25 == null ? '—' : fmtNum(stats[i].p25, 1)}</td><td>{stats[i].med == null ? '—' : fmtNum(stats[i].med, 1)}</td><td>{stats[i].p75 == null ? '—' : fmtNum(stats[i].p75, 1)}</td><td>{stats[i].n}</td><td className="text-slate-400">{stats[i].scope}</td></tr>)}</tbody></table></div>
             <p className="text-[10.5px] text-slate-500 mt-2">Satuan hari. Perkiraan memakai median; rentang memakai sebaran kuartil (tahap dianggap saling bebas). Ini estimasi statistik dari riwayat, bukan jaminan jadwal — cuaca, antrean, dan kendala lain tidak terbaca kecuali kamu menambahkannya di skenario.</p></Card></>}
       </div></div>
+    <div className="mt-4">    <Card title="Info Durasi Pelayaran BBN-BAG (sheet Monitoring Rencana)"><p className="text-[11px] text-slate-400 mb-2">Rata-rata durasi sailing historis per rute POL → POD{plant ? <> untuk <b>{plant}</b></> : ' (semua PLTU, pilih PLTU untuk menyaring)'} · tambahan info, tidak mengubah hitungan simulasi.</p>
+      {!dur.rows && !dur.err && <p className="text-xs text-slate-400">Memuat…</p>}{dur.err && <p className="text-xs text-slate-400">Data durasi belum bisa dimuat ({dur.err}). Coba Muat ulang.</p>}
+      {dur.rows && !rute.length && <p className="text-xs text-slate-400">Belum ada rute yang cocok untuk PLTU ini.</p>}
+      {rute.length > 0 && <div className="overflow-x-auto"><table className="tbl-si w-full text-xs"><thead><tr><th>POL</th><th>POD</th><th>Shipment</th><th>Rata-rata (hari)</th><th>Tercepat</th><th>Terlama</th></tr></thead><tbody>{rute.slice(0, 12).map(r => <tr key={r.pol + r.pod}><td>{r.pol}</td><td>{r.pod}</td><td>{r.n}</td><td><b>{r.avg.toFixed(1)}</b></td><td>{r.min.toFixed(1)}</td><td>{r.max.toFixed(1)}</td></tr>)}</tbody></table></div>}</Card></div>
   </>
 }

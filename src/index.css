@@ -427,7 +427,7 @@ html[data-theme=light] .recharts-cartesian-axis-tick-value{fill:#475569}
 .topgrid{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 16px}
 .top-l{display:flex;align-items:center;gap:8px;min-width:0}
 .top-r{display:flex;align-items:center;gap:8px;justify-content:flex-end}
-@media(min-width:1024px){.topgrid{grid-template-columns:minmax(0,1fr) minmax(300px,520px) minmax(0,1fr)}}
+@media(min-width:1024px){.topgrid{grid-template-columns:minmax(0,1fr) minmax(200px,480px) auto}}
 .top-search{align-items:center;gap:10px;width:100%;height:38px;padding:0 12px;border-radius:12px;border:1px solid rgba(var(--ink),.14);background:rgba(var(--ink),.05);color:var(--text);opacity:.82;font-size:12.5px;text-align:left;transition:border-color .15s,background .15s,opacity .15s,box-shadow .15s}
 .top-search span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .top-search:hover,.top-search:focus-visible{opacity:1;border-color:rgba(230,180,87,.55);background:rgba(var(--ink),.09);box-shadow:0 0 0 3px rgba(230,180,87,.14);outline:none}
@@ -957,3 +957,31 @@ table thead th,table th{text-align:center!important;vertical-align:middle}
 .dt .st-ok,.dt .st-bad,.dt .st-na{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:700;color:#fff}
 .dt .st-ok{background:#059669}.dt .st-bad{background:#dc2626}.dt .st-na{background:#64748b}
 @media(max-width:640px){.dlg-drawer.xl .dlg-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* ===== Tabel: tampilan bersih & mudah dibaca (semua halaman) ===== */
+.tbw{border:1px solid rgba(var(--ink),.1);border-radius:14px;background:color-mix(in srgb,var(--s1) 70%,transparent)}
+@media(min-width:768px){
+  table.rt{font-size:12.5px;border-collapse:separate;border-spacing:0}
+  .thd th{background:color-mix(in srgb,var(--s1) 82%,#60a5fa 18%)!important;border-bottom:1px solid rgba(var(--ink),.2)!important;border-right:0!important;color:var(--text)!important;font-weight:650!important;font-size:10.5px!important;letter-spacing:.07em;padding:12px 12px!important}
+  table.rt td{padding:10px 12px!important;border-right:0!important;border-bottom:1px solid rgba(var(--ink),.07)!important;color:var(--text);vertical-align:middle;line-height:1.4}
+  table.rt tbody tr:nth-child(even) td{background:rgba(var(--ink),.028)}
+  table.rt tbody tr:hover td{background:color-mix(in srgb,#e6b457 11%,transparent)!important}
+  table.rt td:first-child{font-weight:600}
+  table.rt td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  table.rt .cl{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:300px;min-width:140px}
+}
+.rt-pager{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px;font-size:12px}
+.rt-pager button{padding:5px 11px;border-radius:9px;border:1px solid rgba(var(--ink),.16);background:rgba(var(--ink),.04);font-weight:600;transition:.15s}
+.rt-pager button:hover:not(:disabled){border-color:#e6b457;color:#e6b457}.rt-pager button:disabled{opacity:.35}
+.rt-pager span{padding:0 6px;opacity:.85}.rt-pager select{margin-left:auto;font-size:12px;padding:4px 8px}
+/* tabel SI/Kualitas ikut tema */
+.tbl-si{border-collapse:separate;border-spacing:0;font-size:12.5px}
+.tbl-si thead th{background:color-mix(in srgb,var(--s1) 82%,#60a5fa 18%)!important;color:var(--text)!important;font-weight:650;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;padding:12px 10px!important;border-bottom:1px solid rgba(var(--ink),.2)!important}
+.tbl-si tbody td{color:var(--text)!important;border-bottom:1px solid rgba(var(--ink),.07)!important;padding:10px 10px!important}
+.tbl-si tbody tr:nth-child(even) td{background:rgba(var(--ink),.028)}
+.tbl-si tbody tr:hover td{background:color-mix(in srgb,#e6b457 11%,transparent)!important}
+.tbl-si td:first-child{color:var(--text)!important}
+.dt td{color:var(--text)}
+@media(min-width:768px){table.rt .nw{white-space:nowrap}table.rt .cl{min-width:160px}}
+@media(min-width:768px){table.rt td.num,table.rt td.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}}
+@media(max-width:640px){.rt-pager{gap:4px}.rt-pager button[aria-label]{display:none}.rt-pager span{flex:1;text-align:center}.rt-pager select{width:100%;margin:4px 0 0}}
