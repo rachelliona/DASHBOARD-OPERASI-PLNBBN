@@ -19,7 +19,8 @@ function tulisSheet_(b){
   const H=v[h].map(x=>String(x).trim().toLowerCase()), C=n=>H.indexOf(n), cNo=C('nomor si'); let r=-1;
   for(let i=h+1;i<v.length;i++){ if(String(v[i][cNo]).trim()===String(b.nomor)){ r=i; break; } }
   const n=b.nilai||{}; const peta=[['tanggal','tanggal'],['pemohon','pemohon'],['tambang','sumber tambang'],['muat','pelabuhan muat'],['laycan','laycan'],['eta','eta pod'],['bongkar','pelabuhan bongkar'],['kepada','kepada'],['rev','nomor si rev'],['ketRev','keterangan revisi']];
-  if(r<0){ r=v.length; sh.getRange(r+1,cNo+1).setValue(b.nomor); v.push(new Array(H.length).fill('')); }
+  if(r<0){ let at=-1; for(let i=h+1;i<v.length;i++){ const x=parseInt(String(v[i][cNo]).replace(/\\D/g,''),10); if(x>+b.nomor){ at=i; break; } } // sisipkan urut nomor
+    if(at>=0){ sh.insertRowBefore(at+1); r=at; v.splice(at,0,new Array(H.length).fill('')); } else { r=v.length; v.push(new Array(H.length).fill('')); } sh.getRange(r+1,cNo+1).setValue(b.nomor); }
   if(!b.timpa && String(v[r][C('pemohon')]||'').trim() && String(v[r][C('sumber tambang')]||'').trim()) return {ok:true,baris:r+1,dilewati:'sudah terisi'};
   const tglAda = n.tanggal && v.some((x,i)=>i>h && i!==r && String(x[C('tanggal')]).trim()===n.tanggal);
   peta.forEach(([k,kol])=>{ const c=C(kol); if(c<0||!n[k]) return; if(k==='tanggal' && tglAda) return; const cell=sh.getRange(r+1,c+1); if(!b.timpa && String(v[r][c]||'').trim()) return;
@@ -45,6 +46,7 @@ function doPost(e){
     if(a==='import'){ const s=sh_(SHEET), have={}; rows_().forEach(r=>have[r.id]=1); const add=(b.rows||[]).filter(r=>!have[r.id]).map(r=>[r.id,r.tahun,r.nomor||'',JSON.stringify(r)]); if(add.length) s.getRange(s.getLastRow()+1,1,add.length,4).setValues(add); (b.blok||[]).forEach(x=>{ if(!blok_().some(y=>y.tahun===x.tahun&&y.nomor===x.nomor)) sh_(BLOK).appendRow([x.tahun,x.nomor,x.ket||'']); }); return out_({ok:true,n:add.length}); }
     if(a==='sheet'){ return out_(tulisSheet_(b)); }
     if(a==='sheetKosong'){ return out_(kosongSheet_(b)); }
+    if(a==='sheetSlot'){ const hasil=(b.nomor||[]).map(n=>tulisSheet_({nomor:+n,tahun:b.tahun,nilai:{},timpa:false})); return out_({ok:true,versi:2,hasil:hasil}); }
     if(a==='file'){ const it=DriveApp.getFoldersByName('SI Arsip PLN BBN'), fo=it.hasNext()?it.next():DriveApp.createFolder('SI Arsip PLN BBN'); const f=fo.createFile(Utilities.newBlob(Utilities.base64Decode(b.b64),'application/pdf',b.name||'SI.pdf')); return out_({ok:true,id:f.getId(),url:f.getUrl()}); }
     return out_({ok:false,error:'aksi tidak dikenal'});
   } finally { lock.releaseLock(); }

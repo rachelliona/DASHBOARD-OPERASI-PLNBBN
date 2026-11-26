@@ -7,7 +7,7 @@ import { useAuth } from '../auth'
 import { bisaBuatSI, bisaKoreksiBesar, isAdmin } from '../config/nav'
 import { useSI, siActions, getCad, setCad } from '../si/store'
 import { ALASAN, Alasan, SI, kosong } from '../si/types'
-import { STATUS_LABEL, Status, bandingkan, cekKoreksi, fmtNomor, iso, nomorBerikut, periksa, rantai, rentangId, statusOf, supersededIds, tglId, FIELDS, pelabuhanBongkar } from '../si/logic'
+import { STATUS_LABEL, Status, bandingkan, cekKoreksi, fmtNomor, iso, nomorBerikut, periksa, rantai, rentangId, statusOf, supersededIds, tglId, FIELDS, pelabuhanBongkar, isCad } from '../si/logic'
 import { dariDatabas, dariSheet, gabung } from '../si/legacy'
 import { unduhPdf } from '../si/pdf'
 import { getParaf, setParaf, unduhDocx } from '../si/docx'
@@ -162,6 +162,13 @@ function Antrean({ admin, onBuka, info }: { admin: boolean; onBuka: (s: SI) => v
   return <Card title={`Antrean pengajuan (${antre.length})`}>{!antre.length ? <p className="text-xs text-slate-400">Tidak ada pengajuan menunggu. Klik <b>+ Buat SI</b> di kanan atas untuk membuat yang baru.</p> : <div className="space-y-1.5">{antre.map(r => <div key={r.id} className="flex items-center gap-2 text-xs border-t border-white/5 pt-1.5 flex-wrap"><b>{r.pemohon || '—'}</b><span>{r.tambang || r.mitra}</span><span className="text-slate-400">→ {r.pltu}</span><span className="text-slate-400">laycan {rentangId(r.laycanMulai, r.laycanSelesai)}</span><span className="flex-1" />
     <button className="fchip" onClick={() => onBuka(r)}>Buka / edit</button>{admin && <button className="fchip" onClick={() => terbit(r)}>Terbitkan</button>}<button className="fchip" onClick={() => { if (window.confirm('Hapus pengajuan ini?')) siActions.hapusPengajuan(r.id) }}>Hapus</button></div>)}</div>}</Card>
 }
+function SlotSheet({ th }: { th: number }) {
+  const { rows, blok } = useSI(); const [msg, setMsg] = useState(''); const [busy, setBusy] = useState(false)
+  const cad = useMemo(() => { const pakai = new Set(rows.filter(r => r.tahun === th && r.nomor != null).map(r => r.nomor)); return blok.filter(b => b.tahun === th && isCad(b) && !pakai.has(b.nomor)).map(b => b.nomor).sort((a, b) => a - b) }, [rows, blok, th])
+  const go = async () => { setBusy(true); const { slotSheet } = await import('../si/store'); const k = await slotSheet(th, cad, false); setMsg(k.pesan); setBusy(false) }
+  return <Card title="Nomor cadangan di spreadsheet"><div className="flex items-center gap-2 flex-wrap text-[12.5px]"><span className="text-slate-300">{cad.length ? <>Nomor cadangan belum dipakai: <b>{cad.join(', ')}</b></> : 'Tidak ada nomor cadangan yang belum dipakai.'}</span>{cad.length > 0 && <button className="fchip on" disabled={busy} onClick={go}>{busy ? 'Menulis…' : 'Tulis nomor ke sheet'}</button>}{msg && <span className="text-amber-300 text-[11.5px]">{msg}</span>}</div>
+    <p className="text-[11px] text-slate-400 mt-1.5">Saat ganti hari, nomor cadangan backdate otomatis ditulis ke spreadsheet (kolom Nomor SI saja, kolom lain kosong). Tombol ini untuk melengkapi nomor cadangan lama yang belum ada di sheet; baris disisipkan sesuai urutan nomor. Nomor yang sudah ada di sheet tidak diubah.</p></Card>
+}
 function KosongSheet({ th }: { th: number }) {
   const [n, setN] = useState(''); const [msg, setMsg] = useState(''); const [busy, setBusy] = useState(false)
   const go = async () => { const v = parseInt(n, 10); if (!v) return; if (!window.confirm(`Kosongkan isi baris SI ${v}/${th} di spreadsheet monitoring? Kolom nomor tetap, isi lain dihapus.`)) return; setBusy(true); const { kosongkanSheet } = await import('../si/store'); const k = await kosongkanSheet(v, th); setMsg(k.pesan); setBusy(false) }
@@ -175,6 +182,7 @@ function Nomor({ admin }: { admin: boolean }) {
     <Card title="Penomoran" right={<select value={th} onChange={e => setTh(+e.target.value)}>{[...new Set([new Date().getFullYear(), ...rows.map(r => r.tahun)])].sort((a, b) => b - a).map(t => <option key={t}>{t}</option>)}</select>}>
       <div className="text-[12.5px] space-y-1"><div className="flex items-center gap-2 flex-wrap">Slot cadangan backdate per hari baru: <input type="number" min={0} max={10} defaultValue={getCad()} className="!w-16" disabled={!admin} onChange={e => setCad(+e.target.value)} /><span className="text-slate-400 text-[11px]">Tiap hari baru, sistem menyisihkan nomor ini sebelum SI pertama hari itu supaya SI backdate punya tempat. 0 = nonaktif. Pastikan nomor cadangan juga dicatat di surat Dirop lain agar tidak dipakai.</span></div><div>Nomor berikutnya: <b className="font-mono">{fmtNomor(nomorBerikut(rows, blok, th), th)}</b></div><p className="text-slate-400 text-[11.5px]">Format <code>{'{nomor}.SI/EPI.03.01/DIR/{tahun}'}</code>; nomor mulai 1 tiap Januari. Nomor dipakai bersama surat Dirop lain, jadi celah wajar — sistem tidak mengisi celah, hanya selalu naik. Blok nomor yang dipakai surat lain agar tidak terpakai SI.</p></div></Card>
     <Card title={`Nomor tidak urut dengan tanggal (${tm.length})`}>{!tm.length ? <p className="text-xs text-slate-400">Tidak ada.</p> : <ul className="text-xs space-y-1 max-h-60 overflow-auto">{tm.slice(0, 60).map(m => <li key={m.id}>{m.teks}</li>)}</ul>}</Card>
+    {admin && <SlotSheet th={th} />}
     {admin && <KosongSheet th={th} />}
     <Card title={`Blok nomor (surat lain) & celah ${th}`}>
       {admin && <div className="flex gap-2 flex-wrap mb-2"><input value={n} onChange={e => setN(e.target.value)} placeholder="Nomor" className="w-[90px]" /><input value={ket} onChange={e => setKet(e.target.value)} placeholder="Dipakai untuk (mis. Nodin ke Direksi)" className="w-[260px]" /><button className="fchip" onClick={async () => { try { if (!+n) throw new Error('Isi nomor'); await siActions.blokir(th, +n, ket); setN(''); setKet(''); setMsg('') } catch (e: any) { setMsg(e.message) } }}>Blok nomor</button>{msg && <span className="text-red-400 text-xs">{msg}</span>}</div>}

@@ -87,7 +87,7 @@ export const siActions = {
     if (opsi.nomor == null && getCad() > 0) {
       const terakhir = state.rows.reduce((m, r) => r.tahun === tahun && r.nomor != null && r.tahap !== 'pengajuan' && r.tanggal > m && r.tanggal <= iso(new Date(Date.now() + 864e5)) ? r.tanggal : m, '')
       if (terakhir && tanggal > terakhir) { const hari = Math.max(1, Math.min(5, Math.round((Date.parse(tanggal) - Date.parse(terakhir)) / 864e5))); const mx = nomorBerikut(state.rows, state.blok, tahun) - 1
-        await siActions.blokirBanyak(tahun, mx + 1, getCad() * hari, 'Cadangan backdate (sebelum ' + tanggal + ')') }
+        await siActions.blokirBanyak(tahun, mx + 1, getCad() * hari, 'Cadangan backdate (sebelum ' + tanggal + ')'); void slotSheet(tahun, Array.from({ length: getCad() * hari }, (_, i) => mx + 1 + i)) }
     }
     if (state.remote) {
       emit({ sync: 'proses' }); try { const j = await call({ action: 'reserve', tahun, nomor: opsi.nomor ?? null, row: { ...s, tahun, tanggal, tahap: 'terbit' } }); const n: SI = j.row; emit({ rows: state.rows.some(r => r.id === n.id) ? state.rows.map(r => r.id === n.id ? n : r) : [...state.rows, n], sync: 'ok', at: now(), err: '' }); return n } catch (e: any) { emit({ sync: 'gagal', err: String(e?.message || e) }); throw e }
@@ -136,7 +136,22 @@ export const siActions = {
 }
 
 let refJetty: string[][] | null = null
-async function tulisSheet(s: SI, timpa: boolean) {
+/** Antrean tulis spreadsheet: berurutan, supaya baris nomor cadangan masuk sebelum baris SI baru. */
+let antreSheet: Promise<unknown> = Promise.resolve()
+const antre = <T,>(f: () => Promise<T>): Promise<T> => { const p = antreSheet.then(f, f); antreSheet = p.catch(() => undefined); return p }
+/** Tulis baris nomor saja (tanpa isi) untuk nomor cadangan, supaya di sheet kelihatan nomor yang masih kosong. Script baru menyisipkan urut nomor; script lama menambah di bawah. */
+export function slotSheet(tahun: number, nomor: number[], urutOk = true): Promise<{ ok: boolean; pesan: string }> {
+  if (!state.remote || !nomor.length) return Promise.resolve({ ok: false, pesan: 'Server SI belum tersambung.' })
+  return antre(async () => {
+    try { const j = await call({ action: 'sheetSlot', tahun, nomor }); return { ok: true, pesan: `Nomor ${nomor[0]}–${nomor[nomor.length - 1]} sudah ada di spreadsheet (tanpa isi).` + (j.hasil?.some((h: any) => h.dilewati) ? ' Sebagian sudah terisi, tidak diubah.' : '') } }
+    catch (e: any) { if (!/tidak dikenal/i.test(String(e?.message))) return { ok: false, pesan: 'Gagal menulis nomor ke spreadsheet: ' + String(e?.message || e) }
+      if (!urutOk) return { ok: false, pesan: 'Apps Script masih versi lama: nomor di tengah tidak bisa disisipkan urut. Salin ulang kode Apps Script (tab Sinkron & impor) lalu deploy versi baru.' }
+      for (const n of nomor) { try { await call({ action: 'sheet', tahun, nomor: n, nilai: {}, timpa: false }) } catch { /* lanjut */ } }
+      return { ok: true, pesan: `Nomor ${nomor[0]}–${nomor[nomor.length - 1]} ditambahkan di bawah spreadsheet.` } }
+  })
+}
+async function tulisSheet(s: SI, timpa: boolean) { return antre(() => tulisSheet0(s, timpa)) }
+async function tulisSheet0(s: SI, timpa: boolean) {
   if (!state.remote || s.nomor == null || s.sumber !== 'sistem' || s.tahap === 'pengajuan') return
   emit({ sheet: 'proses', sheetMsg: '' })
   try { if (!refJetty) { try { refJetty = (await (await fetch(BASE + 'si/ref.json')).json()).jetty ?? [] } catch { refJetty = [] } }
