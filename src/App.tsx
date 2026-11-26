@@ -2,7 +2,7 @@ import FoldInit from './components/FoldInit'
 import PltuDetail from './pages/PltuDetail'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
-import { Activity, Download, Search, ChevronDown, ChevronsLeft, ChevronsRight, Circle, Database, FileSignature, ClipboardList, Ship, FlaskConical, FileText, LayoutDashboard, LogOut, Map as MapIcon, Menu, Users, X } from 'lucide-react'
+import { Activity, Download, Search, ChevronDown, ChevronsLeft, ChevronsRight, Circle, Database, FileSignature, ClipboardList, Ship, FlaskConical, Wallet, FileText, LayoutDashboard, LogOut, Map as MapIcon, Menu, Users, X } from 'lucide-react'
 import { useStore } from './store'
 import Ringkasan from './pages/Ringkasan'
 import Laporan from './pages/Laporan'
@@ -21,6 +21,7 @@ import KontrakData from './pages/KontrakData'
 import Simulasi from './pages/Simulasi'
 import SIAnalitik from './pages/SIAnalitik'
 import Kualitas from './pages/Kualitas'
+import OdsTransport from './pages/OdsTransport'
 import { MonitoringShipment, MonitoringPltu, SheetPage } from './pages/Monitoring'
 import { RealisasiBulan, RealisasiRingkasan } from './pages/Realisasi'
 import Sumber from './pages/Sumber'
@@ -39,7 +40,7 @@ import { InstallBanner, MobileMenu, PullToRefresh, Splash, usePageTitle } from '
 import { WelcomePopup } from './components/WelcomePopup'
 import { Moon, RefreshCw, Sun } from 'lucide-react'
 const TABS: [string, string, any][] = [['/', 'Ringkasan', LayoutDashboard], ['/peta', 'Peta', MapIcon], ['/laporan/harian', 'Laporan', FileText], ['/kontrak', 'Kontrak', FileSignature]]
-const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: FileText, activity: Activity, users: Users, db: Database, contract: FileSignature, report: ClipboardList, ship: Ship, lab: FlaskConical }
+const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: FileText, activity: Activity, users: Users, db: Database, contract: FileSignature, report: ClipboardList, ship: Ship, lab: FlaskConical, wallet: Wallet }
 const B = import.meta.env.BASE_URL
 const Img = ({ mark, cls }: { mark?: boolean; cls: string }) => <><img src={B + (mark ? 'logo-mark-dark.png' : 'logo-dark.png')} alt="PLN Batubara Niaga" className={cls + ' lg-d'} /><img src={B + (mark ? 'logo-mark-light.png' : 'logo-light.png')} alt="PLN Batubara Niaga" className={cls + ' lg-l'} /></>
 function RefreshBtn() { const { refreshNow, refreshing, lastRefresh, asOf, setAsOf } = useStore(); const [, tick] = useState(0); useEffect(() => { const id = setInterval(() => tick(x => x + 1), 15000); return () => clearInterval(id) }, [])
@@ -93,7 +94,7 @@ export default function App() {
       <div key={'p' + pathname} className="p-3 md:p-4 lg:p-6 page page-in pb-24 lg:pb-8"><Routes>
         <Route path="/" element={<Ringkasan />} /><Route path="/peta" element={<Peta />} />
         <Route path="/laporan" element={<Navigate to="/laporan/harian" replace />} /><Route path="/laporan/harian" element={<Laporan />} />
-        <Route path="/kualitas" element={bisaKualitas(user) ? <Kualitas tab="home" /> : <Navigate to="/" replace />} />{(["home", "shipment", "umpire", "evaluasi"] as const).map(t => <Route key={t} path={"/kualitas/" + t} element={bisaKualitas(user) ? <Kualitas tab={t} /> : <Navigate to="/" replace />} />)}<Route path="/si" element={<SIPage />} />{(["dashboard", "rekap", "plot", "peta"] as const).map(t => <Route key={t} path={"/si/" + t} element={<SIAnalitik tab={t} />} />)}<Route path="/si/baru" element={<SIEditor mode="baru" />} /><Route path="/si/edit/:id" element={<SIEditor mode="edit" />} /><Route path="/si/revisi/:id" element={<SIEditor mode="revisi" />} /><Route path="/si/koreksi/:id" element={<SIEditor mode="koreksi" />} /><Route path="/si/kelola/:id" element={<SIEditor mode="kelola" />} /><Route path="/eta" element={<Eta />} /><Route path="/analisis" element={<Analisis />} /><Route path="/kinerja-mitra" element={<KinerjaMitra />} /><Route path="/kontrak" element={<Kontrak />} /><Route path="/kontrak/banding" element={<KontrakBanding />} /><Route path="/kontrak/data" element={<KontrakData />} /><Route path="/gantt" element={<GanttPage />} /><Route path="/simulasi" element={<Simulasi />} /><Route path="/linimasa" element={<Linimasa />} /><Route path="/dashboard" element={<Dashboard />} /><Route path="/shipment" element={<MonitoringShipment />} /><Route path="/pltu" element={<MonitoringPltu />} /><Route path="/pltu/:nama" element={<PltuDetail />} />
+        <Route path="/kualitas" element={bisaKualitas(user) ? <Kualitas tab="home" /> : <Navigate to="/" replace />} />{(["home", "shipment", "umpire", "evaluasi"] as const).map(t => <Route key={t} path={"/kualitas/" + t} element={bisaKualitas(user) ? <Kualitas tab={t} /> : <Navigate to="/" replace />} />)}<Route path="/ods-transport" element={<OdsTransport />} /><Route path="/si" element={<SIPage />} />{(["dashboard", "rekap", "plot", "peta"] as const).map(t => <Route key={t} path={"/si/" + t} element={<SIAnalitik tab={t} />} />)}<Route path="/si/baru" element={<SIEditor mode="baru" />} /><Route path="/si/edit/:id" element={<SIEditor mode="edit" />} /><Route path="/si/revisi/:id" element={<SIEditor mode="revisi" />} /><Route path="/si/koreksi/:id" element={<SIEditor mode="koreksi" />} /><Route path="/si/kelola/:id" element={<SIEditor mode="kelola" />} /><Route path="/eta" element={<Eta />} /><Route path="/analisis" element={<Analisis />} /><Route path="/kinerja-mitra" element={<KinerjaMitra />} /><Route path="/kontrak" element={<Kontrak />} /><Route path="/kontrak/banding" element={<KontrakBanding />} /><Route path="/kontrak/data" element={<KontrakData />} /><Route path="/gantt" element={<GanttPage />} /><Route path="/simulasi" element={<Simulasi />} /><Route path="/linimasa" element={<Linimasa />} /><Route path="/dashboard" element={<Dashboard />} /><Route path="/shipment" element={<MonitoringShipment />} /><Route path="/pltu" element={<MonitoringPltu />} /><Route path="/pltu/:nama" element={<PltuDetail />} />
         <Route path="/realisasi" element={<RealisasiRingkasan />} /><Route path="/realisasi/:bulan" element={<RealisasiBulan />} />
         <Route path="/sheet/:name" element={<SheetGuard admin={isAdmin(user)} />} /><Route path="/sumber-data" element={isAdmin(user) ? <Sumber /> : <Navigate to="/" replace />} /><Route path="/pengaturan" element={isAdmin(user) ? <Pengaturan /> : <Navigate to="/" replace />} />
       </Routes></div></main>

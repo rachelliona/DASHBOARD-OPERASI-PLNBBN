@@ -1,12 +1,12 @@
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Activity, ChevronRight, Database, Download, FileSignature, ClipboardList, Ship, FlaskConical, FileText, LayoutDashboard, LogOut, Map as MapIcon, Moon, RefreshCw, Share, Sun, Users, X, PlusSquare } from 'lucide-react'
+import { Activity, ChevronRight, Database, Download, FileSignature, ClipboardList, Ship, FlaskConical, Wallet, FileText, LayoutDashboard, LogOut, Map as MapIcon, Moon, RefreshCw, Share, Sun, Users, X, PlusSquare } from 'lucide-react'
 import { NavItem } from '../config/nav'
 import { setTheme, useTheme } from '../theme'
 import { useStore } from '../store'
 
-const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: FileText, activity: Activity, users: Users, db: Database, contract: FileSignature, report: ClipboardList, ship: Ship, lab: FlaskConical }
+const ICON: Record<string, any> = { dash: LayoutDashboard, map: MapIcon, file: FileText, activity: Activity, users: Users, db: Database, contract: FileSignature, report: ClipboardList, ship: Ship, lab: FlaskConical, wallet: Wallet }
 const flat = (n: NavItem, acc: { label: string; to: string }[] = []) => { if (n.to) acc.push({ label: n.label, to: n.to }); n.children?.forEach(c => flat(c, acc)); return acc }
 /** Judul halaman untuk header ponsel (mengambil dari menu). */
 export function usePageTitle(nav: NavItem[]) {
