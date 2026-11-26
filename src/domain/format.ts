@@ -1,7 +1,7 @@
 export const fmtNum = (n: number | null | undefined, d = 0) => n == null || Number.isNaN(n) ? '—' : new Intl.NumberFormat('id-ID', { maximumFractionDigits: d }).format(n)
 export const fmtPct = (n: number | null | undefined) => n == null ? '—' : fmtNum(n, 1) + '%'
 export const fmtDate = (iso?: string | null) => iso ? new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(iso)) : '—'
-export const nowWib = () => new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', dateStyle: 'long', timeStyle: 'short' }) + ' WIB'
+export const nowWib = (t?: number) => new Date(t ?? Date.now()).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', dateStyle: 'long', timeStyle: 'short' }) + ' WIB'
 /** Angka format Indonesia: "1.234,5" -> 1234.5; "12.500" -> 12500 (titik + 3 digit = pemisah ribuan); "-" / kosong -> null (bukan 0). */
 export function parseIdNumber(v: unknown): number | null {
   if (v == null) return null
