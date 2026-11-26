@@ -133,7 +133,12 @@ async function tulisSheet(s: SI, timpa: boolean) {
   siActions.kelola = async (...a: Parameters<typeof g0>) => { const n = await g0(...a); await tulisSheet(n, true); if (a[0].nomor !== n.nomor || a[0].tahun !== n.tahun) void kosongkanSheet(a[0].nomor, a[0].tahun); return n } }
 
 /** Hapus SI dari database -> kosongkan catatannya di spreadsheet monitoring (nomor tetap). */
-export async function kosongkanSheet(nomor: number | null, tahun: number) {
-  if (!state.remote || nomor == null || state.rows.some(r => r.tahun === tahun && r.nomor === nomor)) return
-  try { await call({ action: 'sheetKosong', nomor, tahun }) } catch { /* abaikan */ }
+export async function kosongkanSheet(nomor: number | null, tahun: number): Promise<{ ok: boolean; pesan: string }> {
+  if (!state.remote) return { ok: false, pesan: 'Server SI belum tersambung, baris spreadsheet tidak bisa dikosongkan.' }
+  if (nomor == null) return { ok: false, pesan: 'Nomor kosong.' }
+  // arsip impor dari sheet itu sendiri tidak dihitung; yang menahan hanya SI buatan dashboard yang masih ada
+  if (state.rows.some(r => r.tahun === tahun && r.nomor === nomor && r.sumber === 'sistem' && r.tahap !== 'pengajuan')) return { ok: false, pesan: `SI ${nomor} masih ada di dashboard, baris sheet tidak dikosongkan.` }
+  try { const j = await call({ action: 'sheetKosong', nomor, tahun }); if (j && j.ok === false) return { ok: false, pesan: 'Spreadsheet: ' + (j.error || 'gagal') }
+    for (const r of state.rows.filter(r => r.tahun === tahun && r.nomor === nomor && r.sumber !== 'sistem')) await siActions.hapus(r.id)
+    return { ok: true, pesan: `Baris SI ${nomor} di spreadsheet sudah dikosongkan.` } } catch (e: any) { return { ok: false, pesan: 'Gagal mengosongkan spreadsheet: ' + String(e?.message || e) } }
 }
