@@ -27,12 +27,28 @@ async function bacaLegacy(): Promise<SI[]> {
 const KC = 'pln-si-cad-v1'
 export const getCad = () => { try { const v = localStorage.getItem(KC); return v == null ? 10 : Math.max(0, Math.min(10, +v || 0)) } catch { return 0 } }
 export const setCad = (n: number) => { try { localStorage.setItem(KC, String(Math.max(0, Math.min(10, n)))) } catch { /* abaikan */ } }
+/** Sidik isi SI versi sheet (pemohon, tambang, laycan, bongkar, kepada) untuk mengenali baris arsip sheet yang sebenarnya SI dashboard yang nomornya sudah dipindah. */
+const norm = (x: unknown) => String(x ?? '').toLowerCase().replace(/\s+/g, ' ').trim()
+const sidikSistem = (r: SI) => { const v = nilaiSheet(r, []); return [r.tahun, v.pemohon, v.tambang, v.laycan, v.bongkar, v.kepada].map(norm).join('|') }
+const sidikArsip = (r: SI) => [r.tahun, r.pemohon, r.tambang, r.laycanTeks, r.bongkar || r.pltu, r.transporter].map(norm).join('|')
+/** Arsip sheet/Databas yang isinya sama dengan SI dashboard yang nomornya pernah dipindah DARI nomor arsip itu (riwayat koreksi/kelola mencatat nomor lama). */
+export function arsipYatim(rows: SI[]): SI[] {
+  const sis = rows.filter(r => r.sumber === 'sistem' && r.nomor != null && r.tahap !== 'pengajuan'); const peta = new Map<string, SI[]>()
+  for (const r of sis) { const k = sidikSistem(r); if (k.split('|').filter(Boolean).length >= 5) peta.set(k, [...(peta.get(k) ?? []), r]) }
+  return rows.filter(r => r.sumber !== 'sistem' && r.nomor != null && (peta.get(sidikArsip(r)) ?? []).some(x => x.nomor !== r.nomor && (x.koreksi ?? []).some(k => String(k.oleh).includes(`nomor ${r.nomor} →`) || (k.ubah ?? []).some(u => u.f === 'nomor' && String(u.dari) === String(r.nomor)))))
+}
+async function tandaiArsipHapus(tahun: number, nomor: number) {
+  const id = `sheet-${tahun}-${nomor}`; if (hapusan.has(id)) return; hapusan.add(id); try { localStorage.setItem(KH, JSON.stringify([...hapusan])) } catch { /* abaikan */ }
+  if (state.remote) { try { await call({ action: 'save', row: { ...kosong(), id: 'hapus-' + id, tahap: 'batal', tahun, nomor: null, sumber: 'sistem', dibuat: now(), diubah: now() } }) } catch { /* abaikan */ } }
+}
 export const siActions = {
   /** Muat arsip Databas SI + sheet SI 2026 supaya nomor berikutnya MELANJUTKAN nomor yang sudah ada (tidak mulai dari 0001). Sheet diambil ulang tiap dipanggil. */
   /** Mode server: tarik registri, lalu kirim ke server SI lama (arsip + sheet) yang belum ada di sana, supaya nomor server melanjutkan nomor terakhir. */
   async sinkronLegacy() {
     await siActions.tarik(); if (state.sync === 'gagal') throw new Error(state.err || 'server tidak terjangkau')
-    const all = await bacaLegacy(); const have = new Set(state.rows.map(r => r.id)); const sis = new Set(state.rows.filter(r => r.sumber === 'sistem' && r.nomor != null).map(r => r.tahun + ':' + r.nomor)); const baru = all.filter(r => !have.has(r.id) && !(r.nomor != null && sis.has(r.tahun + ':' + r.nomor)))
+    const all = await bacaLegacy(); const have = new Set(state.rows.map(r => r.id)); const sis = new Set(state.rows.filter(r => r.sumber === 'sistem' && r.nomor != null).map(r => r.tahun + ':' + r.nomor)); const yatim = arsipYatim(state.rows); for (const r of yatim) await siActions.hapus(r.id)
+    const yatimBaru = new Set(arsipYatim([...state.rows, ...all.filter(r => !have.has(r.id))]).map(r => r.id))
+    const baru = all.filter(r => !have.has(r.id) && !yatimBaru.has(r.id) && !(r.nomor != null && sis.has(r.tahun + ':' + r.nomor)))
     for (let i = 0; i < baru.length; i += 800) await call({ action: 'import', rows: baru.slice(i, i + 800), blok: [] })
     if (baru.length) await siActions.tarik()
     if (!state.rows.length) throw new Error('Registri kosong')
@@ -140,5 +156,6 @@ export async function kosongkanSheet(nomor: number | null, tahun: number): Promi
   if (state.rows.some(r => r.tahun === tahun && r.nomor === nomor && r.sumber === 'sistem' && r.tahap !== 'pengajuan')) return { ok: false, pesan: `SI ${nomor} masih ada di dashboard, baris sheet tidak dikosongkan.` }
   try { const j = await call({ action: 'sheetKosong', nomor, tahun }); if (j && j.ok === false) return { ok: false, pesan: 'Spreadsheet: ' + (j.error || 'gagal') }
     for (const r of state.rows.filter(r => r.tahun === tahun && r.nomor === nomor && r.sumber !== 'sistem')) await siActions.hapus(r.id)
+    await tandaiArsipHapus(tahun, nomor)
     return { ok: true, pesan: `Baris SI ${nomor} di spreadsheet sudah dikosongkan.` } } catch (e: any) { return { ok: false, pesan: 'Gagal mengosongkan spreadsheet: ' + String(e?.message || e) } }
 }

@@ -23,3 +23,11 @@ describe('hapus SI ikut kosongkan spreadsheet', () => {
     vi.unstubAllGlobals()
   })
 })
+
+import { arsipYatim } from '../si/store'
+describe('arsip yatim setelah ganti nomor', () => {
+  const sis = { ...kosong(), id: 'si-x', nomor: 3166, tahun: 2026, tahap: 'terbit', sumber: 'sistem', pemohon: 'Billy', tambang: 'PT Barasentosa Lestari', mitra: 'PT Barasentosa Lestari', transporter: 'PT Pelayaran Bahtera Adhiguna', skema: 'FOB', laycanMulai: '2026-11-26', laycanSelesai: '2026-11-28', tanggal: '2026-11-25', pltu: 'PLTU Indramayu. Kab. Indramayu', koreksi: [{ at: 'x', oleh: 'Racel (koreksi besar, nomor 3167 → 3166)', ubah: [] }] } as any
+  const arsip = { ...kosong(), id: 'sheet-2026-3167', nomor: 3167, tahun: 2026, tahap: 'terbit', sumber: 'sheet-2026', pemohon: 'Billy', tambang: 'BSL', laycanTeks: '26-28', pltu: 'PLTU Indramayu. Kab. Indramayu', bongkar: 'PLTU Indramayu. Kab. Indramayu', transporter: 'BSL & BAG' } as any
+  it('dikenali sebagai sisa nomor lama', () => { expect(arsipYatim([sis, arsip]).map(r => r.id)).toEqual(['sheet-2026-3167']) })
+  it('tidak menyentuh arsip lain yang isinya mirip tapi nomornya tidak pernah dipindah', () => { expect(arsipYatim([{ ...sis, koreksi: [] }, arsip])).toEqual([]) })
+})
