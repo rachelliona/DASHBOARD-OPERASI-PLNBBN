@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Wallet } from 'lucide-react'
 import { Btn, Card, Kpi, PageHead } from '../components/ui'
 import { useDetail } from '../components/Detail'
+import { useAuth } from '../auth'
 import { cachedSheet, freshSheet } from '../domain/sheetCache'
 import { ODS_DOC_URL, ODS_ES_URL, ODS_SHEET_LINK, OdsDoc, OdsMitra, PROSES, hitungDok, parseOdsDocs, parseOdsEs, umurN4 } from '../domain/ods'
 
@@ -13,7 +14,7 @@ const SEG: [keyof typeof W, string][] = [['b', 'Siap bayar, belum overdue'], ['o
 type Data = { es: OdsMitra[]; docs: OdsDoc[]; at: number; stale: boolean }
 
 export default function OdsTransport() {
-  const dt = useDetail(); const [d, setD] = useState<Data | null>(null); const [err, setErr] = useState('')
+  const dt = useDetail(); const { user } = useAuth(); const bisaSheet = user?.id?.trim().toLowerCase() === 'racel'; const [d, setD] = useState<Data | null>(null); const [err, setErr] = useState('')
   const muat = async (paksa = false) => {
     const [a, b] = await Promise.all([cachedSheet('ODS-ES'), cachedSheet('ODS-DOC')])
     if (a && !paksa) setD({ es: parseOdsEs(a.t), docs: b ? parseOdsDocs(b.t) : [], at: a.at, stale: true })
@@ -42,7 +43,7 @@ export default function OdsTransport() {
     dt.open({ variant: 'drawer', title, sub: `${rows.length} mitra · ${rpF(rows.reduce((a, x) => a + (x[k] as number), 0))}`, color, bars: [{ title: 'Per mitra (Rp)', items: rows.map(x => ({ l: x.m, v: x[k] as number, c: color })), fmt: (n: number) => rpM(n) }] }) }
   return <div className="space-y-4">
     <PageHead icon={Wallet} color="#14b8c9" title="ODS Transport" sub={<>Outstanding hutang tagihan ke mitra transportasi 2026 · sumber: sheet Executive Summary 2026 &amp; Hutang Transport 2026 · hanya mitra yang masih punya hutang yang ditampilkan</>}
-      right={<div className="flex items-center gap-2 flex-wrap">{d && <span className="text-[11px] text-slate-400">{d.stale ? 'Memperbarui… ' : ''}Data {new Date(d.at).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>}<Btn onClick={() => muat(true)} disabled={d?.stale}>Muat ulang</Btn><a className="pbtn" href={ODS_SHEET_LINK} target="_blank" rel="noreferrer">Buka sheet ↗</a></div>} />
+      right={<div className="flex items-center gap-2 flex-wrap">{d && <span className="text-[11px] text-slate-400">{d.stale ? 'Memperbarui… ' : ''}Data {new Date(d.at).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>}<Btn onClick={() => muat(true)} disabled={d?.stale}>Muat ulang</Btn>{bisaSheet && <a className="pbtn" href={ODS_SHEET_LINK} target="_blank" rel="noreferrer">Buka sheet ↗</a>}</div>} />
     {err && <Card><p className="text-xs text-amber-300">Gagal memuat sheet: {err}</p></Card>}{!d && !err && <Card><p className="text-xs text-slate-400">Memuat data hutang dari Google Sheet…</p></Card>}
     {v && <>
       <section className="ods-hero2">
