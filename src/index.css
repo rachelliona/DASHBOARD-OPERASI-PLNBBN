@@ -1022,3 +1022,4 @@ html[data-theme=light] .tbl-si2 .si-no{color:#b7791f}
 .g-duo button:hover{border-color:#e6b457}.g-duo i{width:9px;height:9px;border-radius:3px}.g-duo b{font-size:18px;font-weight:800;line-height:1}.g-duo span{font-size:11px;opacity:.7}
 .pipe-b .pipe-top span{text-align:left!important}.pipe-b .pipe-main,.pipe-b .pipe-main>div:first-child{text-align:left!important}.pipe-b .pipe-vol{text-align:right!important}
 .gauge-duo .g-num{font-size:clamp(30px,3.4vw,40px)!important}.gauge-duo .g-lbl{font-size:9.5px!important}
+.gauge .g-in{pointer-events:none}.gauge .g-in button{pointer-events:auto}
