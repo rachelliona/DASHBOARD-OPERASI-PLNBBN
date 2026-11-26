@@ -9,6 +9,7 @@ const BATUBARA: OdsCfg = {
   alur: 'Alur: N1 belum ada kontrak → N2 belum tagih → N3 verifikasi BBN → N4 siap bayar → lunas.', mitraJudul: 'Hutang per mitra sumber tambang',
   sumberNote: 'Nilai = kolom HARGA di sheet Hutang Batubara 2026 (sama dengan Executive Summary).', nilaiLabel: 'Harga',
   kolom: [{ h: 'Sumber tambang', v: x => x.tambang || x.mitra }, { h: 'Ship ke', a: 'r', v: x => x.shipKe || '—' }, { h: 'Nama kapal', v: x => x.kapal.slice(0, 42) || '—' }, { h: 'Volume (MT)', a: 'r', v: x => x.volume ? x.volume.toLocaleString('id-ID', { maximumFractionDigits: 3 }) : '—' }, { h: 'Tujuan', v: x => x.tujuan || '—' }],
+  warna: { ac: '#ec4899', b: '#d946ef', o1: '#fb7185', o2: '#e11d48', n2: '#a8a2c8', n3: '#8b5cf6' },
   kolomNilai: [{ h: 'DPP', a: 'r', v: x => rpF(x.dpp) }, { h: 'PPN', a: 'r', v: x => rpF(x.ppn) }, { h: 'PPh 22', a: 'r', v: x => rpF(x.pph) }, { h: 'Realisasi', a: 'r', v: x => rpF(x.realisasi) }],
 }
 export default function OdsBatubara() { return <OdsView cfg={BATUBARA} /> }

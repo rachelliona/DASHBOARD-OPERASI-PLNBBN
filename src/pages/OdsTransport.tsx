@@ -9,10 +9,10 @@ import { ODS_DOC_URL, ODS_ES_URL, ODS_SHEET_LINK, OdsDoc, OdsMitra, PROSES, hitu
 const rpF = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID')
 const rpM = (n: number) => 'Rp ' + (n / 1e9).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' M'
 const pc = (n: number, d: number) => d ? (n / d * 100).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + '%' : '0%'
-const W = { b: '#14b8c9', o1: '#f0b73a', o2: '#f0603a', n2: '#8aa0a8', n3: '#8b7fd1' }
+const W0 = { b: '#14b8c9', o1: '#f0b73a', o2: '#f0603a', n2: '#8aa0a8', n3: '#8b7fd1' }
 export type OdsDocCol = { h: string; a?: 'l' | 'r'; v: (x: OdsDoc) => React.ReactNode }
 export type OdsCfg = { judul: string; sub: React.ReactNode; kunci: [string, string]; url: [string, string]; link: string; parseEs: (es: string, docs: OdsDoc[]) => OdsMitra[]; parseDocs: (t: string) => OdsDoc[]
-  n2L: string; n2S: string; n3L: string; n3S: string; proses: Record<string, string>; alur: string; mitraJudul: string; sumberNote: string; nilaiLabel: string; kolom: OdsDocCol[]; kolomNilai?: OdsDocCol[] }
+  n2L: string; n2S: string; n3L: string; n3S: string; proses: Record<string, string>; alur: string; mitraJudul: string; sumberNote: string; nilaiLabel: string; kolom: OdsDocCol[]; kolomNilai?: OdsDocCol[]; warna?: Partial<typeof W0> & { ac?: string } }
 const stProses = (x: OdsDoc, P: Record<string, string>) => <span className={x.proses === '4' ? (umurN4(x) === 'o2' ? 'st-bad' : umurN4(x) === 'o1' ? 'st-warn' : 'st-ok') : 'st-na'}>{P[x.proses] ?? x.proses}</span>
 export const TRANSPORT: OdsCfg = { judul: 'ODS Transport', sub: <>Outstanding hutang tagihan ke mitra transportasi 2026 · sumber: sheet Executive Summary 2026 &amp; Hutang Transport 2026 · hanya mitra yang masih punya hutang yang ditampilkan</>,
   kunci: ['ODS-ES', 'ODS-DOC'], url: [ODS_ES_URL, ODS_DOC_URL], link: ODS_SHEET_LINK, parseEs: t => parseOdsEs(t), parseDocs: parseOdsDocs,
@@ -22,6 +22,7 @@ type Data = { es: OdsMitra[]; docs: OdsDoc[]; at: number; stale: boolean }
 
 export default function OdsTransport() { return <OdsView cfg={TRANSPORT} /> }
 export function OdsView({ cfg }: { cfg: OdsCfg }) {
+  const { ac: ac0, ...wr } = cfg.warna ?? {}; const AC = ac0 ?? '#14b8c9'; const W = { ...W0, ...wr }
   const SEG: [keyof typeof W, string][] = [['b', 'Siap bayar, belum overdue'], ['o1', 'Overdue < 30 hari'], ['o2', 'Overdue > 30 hari'], ['n2', cfg.n2L], ['n3', cfg.n3L]]; const PROSES = cfg.proses
   const dt = useDetail(); const { user } = useAuth(); const bisaSheet = user?.id?.trim().toLowerCase() === 'racel'; const [d, setD] = useState<Data | null>(null); const [err, setErr] = useState('')
   const muat = async (paksa = false) => {
@@ -40,7 +41,7 @@ export function OdsView({ cfg }: { cfg: OdsCfg }) {
   }, [d])
   const tbl = (rows: OdsDoc[], mitra: boolean) => { const K = [{ h: 'No SI', v: (x: OdsDoc) => x.si || '—' } as OdsDocCol, ...(mitra ? [{ h: 'Mitra', v: (x: OdsDoc) => x.mitra } as OdsDocCol] : []), ...cfg.kolom, { h: 'Proses', v: (x: OdsDoc) => stProses(x, PROSES) }, { h: cfg.nilaiLabel, a: 'r', v: (x: OdsDoc) => rpF(x.nilai) }, ...(cfg.kolomNilai ?? []), { h: 'Due date', v: (x: OdsDoc) => x.due ? x.due.replace(/^[A-Za-z]+,\s*/, '') : '—' }, { h: 'Lama overdue', a: 'r', v: (x: OdsDoc) => x.lamaOd != null && x.proses === '4' ? x.lamaOd + ' hari' : '—' }, { h: 'Keterangan', v: (x: OdsDoc) => x.ket || '—' }]
     return { head: K.map(k => k.h), align: K.map(k => k.a ?? 'l') as ('l' | 'r')[], rows: rows.map(x => K.map(k => k.v(x))) } }
-  const bukaDok = (title: string, rows: OdsDoc[], color = '#14b8c9') => { const s = [...rows].sort((a, b) => (b.lamaOd ?? -1) - (a.lamaOd ?? -1) || b.nilai - a.nilai)
+  const bukaDok = (title: string, rows: OdsDoc[], color = AC) => { const s = [...rows].sort((a, b) => (b.lamaOd ?? -1) - (a.lamaOd ?? -1) || b.nilai - a.nilai)
     dt.open({ variant: 'drawer', wide: true, title, sub: `${rows.length} dokumen · ${rpF(rows.reduce((a, x) => a + x.nilai, 0))}`, color,
       table: tbl(s.slice(0, 150), true),
       note: rows.length > 150 ? `Menampilkan 150 dari ${rows.length} dokumen.` : undefined }) }
@@ -54,7 +55,7 @@ export function OdsView({ cfg }: { cfg: OdsCfg }) {
     dt.open({ variant: 'drawer', title, sub: `${rows.length} mitra · ${rpF(rows.reduce((a, x) => a + (x[k] as number), 0))}`, color, bars: [{ title: 'Per mitra (Rp)', items: rows.map(x => ({ l: x.m, v: x[k] as number, c: color })), fmt: (n: number) => rpM(n) }] }) }
   type SK = keyof typeof W | 'n4' | 't' | 'ov'
   const LBL: Record<SK, string> = { b: 'Siap bayar, belum overdue', o1: 'Overdue < 30 hari', o2: 'Overdue > 30 hari', n2: cfg.n2L, n3: cfg.n3L, n4: 'Siap bayar (N4)', t: 'Hutang keseluruhan', ov: 'Total overdue' }
-  const CLR: Record<SK, string> = { ...W, n4: '#14b8c9', t: '#14b8c9', ov: '#f0603a' }
+  const CLR: Record<SK, string> = { ...W, n4: AC, t: AC, ov: W.o2 }
   const valOf = (x: OdsMitra, k: SK) => k === 'ov' ? x.o1 + x.o2 : (x[k] as number)
   const docsOf = (k: SK, m?: string) => v!.belum.filter(z => (!m || z.mitra === m.toUpperCase()) && (k === 't' ? true : k === 'n2' ? z.proses === '2' : k === 'n3' ? z.proses === '3' : k === 'n4' ? z.proses === '4' : z.proses === '4' && (k === 'ov' ? umurN4(z) !== 'belum' : umurN4(z) === (k === 'b' ? 'belum' : k))))
   const docRows = (rows: OdsDoc[]) => tbl([...rows].sort((a, b) => (b.lamaOd ?? -1) - (a.lamaOd ?? -1) || b.nilai - a.nilai).slice(0, 100), true)
@@ -65,17 +66,17 @@ export function OdsView({ cfg }: { cfg: OdsCfg }) {
       bars: m ? [{ title: `Komposisi hutang ${m.m}`, items: SEG.map(([kk, l]) => ({ l, v: m[kk], c: W[kk] })).filter(z => z.v > 0), fmt: rpM }] : [{ title: 'Per mitra', items: rows.map(x => ({ l: x.m, v: valOf(x, k), c: CLR[k] })), fmt: rpM }],
       table: docs.length ? docRows(docs) : undefined,
       note: (docs.length > 100 ? `Menampilkan 100 dari ${docs.length} dokumen. ` : '') + cfg.sumberNote }) }
-  const totalPopup = () => dt.open({ variant: 'modal', wide: true, title: 'Total hutang keseluruhan', sub: `${rpF(v!.T)} · ${v!.aktif.length} mitra · ${v!.belum.length} dokumen`, color: '#14b8c9',
+  const totalPopup = () => dt.open({ variant: 'modal', wide: true, title: 'Total hutang keseluruhan', sub: `${rpF(v!.T)} · ${v!.aktif.length} mitra · ${v!.belum.length} dokumen`, color: AC,
     stats: [{ l: 'Siap bayar (N4)', v: rpM(v!.N4) }, { l: `${cfg.n2S} + ${cfg.n3S}`, v: rpM(v!.N2 + v!.N3) }, { l: 'Overdue', v: rpM(v!.OV), c: W.o2 }, { l: 'Mitra terbesar', v: v!.aktif[0] ? `${v!.aktif[0].m} (${pc(v!.aktif[0].t, v!.T)})` : '—' }],
-    bars: [{ title: 'Komposisi status', items: SEG.map(([k, l]) => ({ l, v: k === 'b' ? v!.B : k === 'o1' ? v!.O1 : k === 'o2' ? v!.O2 : k === 'n2' ? v!.N2 : v!.N3, c: W[k] })), fmt: rpM }, { title: 'Per mitra', items: v!.aktif.map(x => ({ l: x.m, v: x.t, c: '#14b8c9' })), fmt: rpM }],
+    bars: [{ title: 'Komposisi status', items: SEG.map(([k, l]) => ({ l, v: k === 'b' ? v!.B : k === 'o1' ? v!.O1 : k === 'o2' ? v!.O2 : k === 'n2' ? v!.N2 : v!.N3, c: W[k] })), fmt: rpM }, { title: 'Per mitra', items: v!.aktif.map(x => ({ l: x.m, v: x.t, c: AC })), fmt: rpM }],
     note: `Rumus: hutang keseluruhan = ${cfg.n2S} + ${cfg.n3S} + N4.` + ' N4 dibagi lagi jadi belum overdue, overdue < 30 hari, overdue > 30 hari.' })
   const dokPopup = () => { const g = [[cfg.n2S, v!.dk.n2, W.n2], [cfg.n3S, v!.dk.n3, W.n3], ['N4 belum overdue', Math.max(0, v!.dk.n4 - v!.dk.d1 - v!.dk.d2), W.b], ['N4 overdue < 30', v!.dk.d1, W.o1], ['N4 overdue > 30', v!.dk.d2, W.o2]] as [string, number, string][]
-    dt.open({ variant: 'drawer', wide: true, title: 'Dokumen belum dibayar', sub: `${v!.belum.length} dokumen · ${rpF(v!.belum.reduce((a, x) => a + x.nilai, 0))}`, color: '#8b7fd1',
-      bars: [{ title: 'Per tahap', items: g.map(([l, n, c]) => ({ l, v: n, c })), fmt: (n: number) => n + ' dok' }, { title: 'Per mitra', items: Object.entries(v!.C).map(([m, c]) => ({ l: m, v: c.n2 + c.n3 + c.n4, c: '#8b7fd1' })).filter(z => z.v > 0).sort((a, b) => b.v - a.v), fmt: (n: number) => n + ' dok' }],
+    dt.open({ variant: 'drawer', wide: true, title: 'Dokumen belum dibayar', sub: `${v!.belum.length} dokumen · ${rpF(v!.belum.reduce((a, x) => a + x.nilai, 0))}`, color: W.n3,
+      bars: [{ title: 'Per tahap', items: g.map(([l, n, c]) => ({ l, v: n, c })), fmt: (n: number) => n + ' dok' }, { title: 'Per mitra', items: Object.entries(v!.C).map(([m, c]) => ({ l: m, v: c.n2 + c.n3 + c.n4, c: W.n3 })).filter(z => z.v > 0).sort((a, b) => b.v - a.v), fmt: (n: number) => n + ' dok' }],
       table: docRows(v!.belum), note: v!.belum.length > 100 ? `Menampilkan 100 dari ${v!.belum.length} dokumen.` : undefined }) }
   const lunasPopup = (m: string) => dt.open({ variant: 'modal', title: m, sub: 'Tidak ada hutang aktif', color: '#22c55e', body: <p className="text-sm">Hutang {m} saat ini Rp 0. Mitra ini otomatis muncul lagi di daftar kalau ada tagihan baru di sheet.</p> })
-  return <div className="space-y-4">
-    <PageHead icon={Wallet} color="#14b8c9" title={cfg.judul} sub={cfg.sub}
+  return <div className="space-y-4" style={{ ['--ods-ac' as any]: AC, ['--ods-o1' as any]: W.o1, ['--ods-o2' as any]: W.o2 }}>
+    <PageHead icon={Wallet} color={AC} title={cfg.judul} sub={cfg.sub}
       right={<div className="flex items-center gap-2 flex-wrap">{d && <span className="text-[11px] text-slate-400">{d.stale ? 'Memperbarui… ' : ''}Data {new Date(d.at).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>}<Btn onClick={() => muat(true)} disabled={d?.stale}>Muat ulang</Btn>{bisaSheet && <a className="pbtn" href={cfg.link} target="_blank" rel="noreferrer">Buka sheet ↗</a>}</div>} />
     {err && <Card><p className="text-xs text-amber-300">Gagal memuat sheet: {err}</p></Card>}{!d && !err && <Card><p className="text-xs text-slate-400">Memuat data hutang dari Google Sheet…</p></Card>}
     {v && <>
@@ -105,7 +106,7 @@ export function OdsView({ cfg }: { cfg: OdsCfg }) {
             {x.o1 + x.o2 > 0 && <div className="text-[11px] mt-2" style={{ color: x.o2 ? W.o2 : W.o1 }}>Overdue {rpM(x.o1 + x.o2)}{c ? ` · ${c.d1 + c.d2} dokumen` : ''}</div>}</button> })}</div>
         {v.nol.length > 0 && <p className="text-[11px] text-slate-400 mt-3">Lunas / tanpa hutang (tidak ditampilkan): {v.nol.map((m, i) => <span key={m}>{i ? ', ' : ''}<button type="button" className="underline decoration-dotted" onClick={() => lunasPopup(m)}>{m}</button></span>)}. Mitra otomatis muncul lagi bila di sheet ada hutang baru.</p>}</Card>
       {(() => { const n4 = v.belum.filter(x => x.proses === '4'); const B = [['Belum jatuh tempo', (x: OdsDoc) => (x.lamaOd ?? 0) <= 0], ['1–30 hari', (x: OdsDoc) => (x.lamaOd ?? 0) >= 1 && (x.lamaOd ?? 0) <= 30], ['31–60 hari', (x: OdsDoc) => (x.lamaOd ?? 0) > 30 && (x.lamaOd ?? 0) <= 60], ['61–90 hari', (x: OdsDoc) => (x.lamaOd ?? 0) > 60 && (x.lamaOd ?? 0) <= 90], ['> 90 hari', (x: OdsDoc) => (x.lamaOd ?? 0) > 90]] as [string, (x: OdsDoc) => boolean][]
-        const g = B.map(([l, f]) => { const r = n4.filter(f); return { l, r, v: r.reduce((a, x) => a + x.nilai, 0) } }); const mx = Math.max(...g.map(x => x.v), 1); const col = ['#14b8c9', '#f0b73a', '#f59e0b', '#f0603a', '#dc2626']
+        const g = B.map(([l, f]) => { const r = n4.filter(f); return { l, r, v: r.reduce((a, x) => a + x.nilai, 0) } }); const mx = Math.max(...g.map(x => x.v), 1); const col = [W.b, W.o1, `color-mix(in srgb, ${W.o1}, ${W.o2})`, W.o2, `color-mix(in srgb, ${W.o2}, #000 25%)`]
         return n4.length ? <Card title="Histogram umur dokumen siap bayar (N4)"><div className="grid grid-cols-5 gap-2 items-end h-44">{g.map((x, i) => <button key={x.l} type="button" onClick={() => bukaDok(`N4 · ${x.l}`, x.r, col[i])} className="flex flex-col items-center justify-end h-full gap-1"><span className="text-[11px] font-bold num">{rpM(x.v)}</span><i className="w-full max-w-[64px] rounded-t-lg block" style={{ height: Math.max(3, x.v / mx * 100) + '%', background: col[i] }} /><span className="text-[10.5px] opacity-70 text-center">{x.l}<br />{x.r.length} dok</span></button>)}</div><p className="text-[11px] text-slate-400 mt-2">Dari kolom LAMA OVER DUEDATE di sheet rincian ({cfg.nilaiLabel.toLowerCase()} per dokumen).</p></Card> : null })()}
       <Card title="Daftar hutang prioritas">
         <div className="overflow-x-auto"><table className="tbl-si tbl-grid fz2 w-full text-xs min-w-[1000px]"><thead><tr><th>#</th><th>Mitra</th><th>{cfg.n2L}</th><th>{cfg.n3L}</th><th>Siap bayar (N4)</th><th>Belum overdue</th><th>Overdue &lt; 30 hari</th><th>Overdue &gt; 30 hari</th><th>Hutang keseluruhan</th></tr></thead>
