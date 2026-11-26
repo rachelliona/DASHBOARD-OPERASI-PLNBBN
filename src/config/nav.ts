@@ -30,6 +30,8 @@ export const bisaKoreksiBesar = (u?: { id: string; nama?: string } | null) => !!
 export const isAdmin = (u?: { id: string } | null) => !!u && ADMIN_IDS.includes(u.id.trim().toLowerCase())
 export const DATA_SHEETS = new Set(['Dashboard 1', 'Data Sheet', 'Pivot Table 2', 'MINI DAHSBOARD', 'Sheet13', ...BULAN])
 /** Menu Kualitas hanya untuk akun ini. */
+/** Boleh tombol "Buka sheet" di ODS Transport/Batubara. */
+export const bisaBukaSheetOds = (u?: { id: string; nama?: string } | null) => !!u && ((u.id ?? '') + ' ' + (u.nama ?? '')).toLowerCase().split(/[^a-z]+/).some(t => ['racel', 'andara', 'tsani'].includes(t))
 export const KUALITAS_IDS = ['racel', 'rendi']
 export const bisaKualitas = (u?: { id: string } | null) => !!u && KUALITAS_IDS.includes(u.id.trim().toLowerCase())
 export const navFor = (admin: boolean, kualitas = false) => NAV.filter(n => (admin || n.label !== 'Data') && (kualitas || n.label !== 'Kualitas'))

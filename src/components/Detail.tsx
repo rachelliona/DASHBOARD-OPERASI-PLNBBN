@@ -1,3 +1,4 @@
+import { TabelCari } from './TabelCari'
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
@@ -63,8 +64,7 @@ export function DetailProvider({ children }: { children: ReactNode }) {
           {s.trend && <Trend t={s.trend} c={s.trend.color ?? s.color ?? '#38bdf8'} />}
           {s.bars?.map(b => { const mx = Math.max(1, ...b.items.map(x => x.v)); return <div key={b.title} className="dlg-sec"><h4>{b.title}</h4><div className="dlg-bars">{b.items.map(x => <div key={x.l} className="dlg-bar" data-tip={`${x.l}: ${(b.fmt ?? nf)(x.v)} ${b.unit ?? ''}`}><span className="truncate">{x.l}{x.sub && <em>{x.sub}</em>}</span><div><i style={{ width: `${x.v / mx * 100}%`, background: x.c ?? s.color ?? '#38bdf8' }} /></div><b className="num">{(b.fmt ?? nf)(x.v)}</b></div>)}</div></div> })}
           {s.body}
-          {s.table && <div className="dlg-tw"><table className="dt"><thead><tr>{s.table.head.map((h, i) => <th key={i} className={s.table!.align?.[i] === 'r' ? 'r' : ''}>{h}</th>)}</tr></thead>
-            <tbody>{s.table.rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j} className={s.table!.align?.[j] === 'r' ? 'r num' : ''}>{c}</td>)}</tr>)}</tbody></table></div>}
+          {s.table && <div className="dlg-tw"><TabelCari head={s.table.head} rows={s.table.rows} align={s.table.align} cari={s.table.rows.length > 5} /></div>}
         </div>
         {s.actions && s.actions.length > 0 && <div className="dlg-f">{s.actions.map(a => 'to' in a
           ? <Link key={a.label} to={a.to} onClick={close} className="dlg-a">{a.label}<ArrowRight size={14} /></Link>
