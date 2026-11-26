@@ -1055,3 +1055,6 @@ html[data-theme=light] .tbl-si2 .si-no{color:#b7791f}
 .tbl-grid.fz1,.tbl-grid.fz2{border-collapse:separate;border-spacing:0}
 .tbl-grid.fz2 tr>*:first-child{box-sizing:border-box;padding-left:0!important;padding-right:0!important;text-align:center;overflow:hidden}
 .tbl-grid.fz2 tr>*:nth-child(2){min-width:90px}
+.ods-mini>button{text-align:left;border-radius:12px;padding:10px 12px;background:rgba(var(--ink),.05);border:1px solid rgba(var(--ink),.08);transition:.15s}.ods-mini>button:hover,.ods-dleg>div:hover{background:rgba(var(--ink),.1)}.ods-mini b{display:block;font-size:22px;font-weight:800;line-height:1.1}
+.ods-dleg>div{cursor:pointer;border-radius:8px;padding:2px 4px}.ods-stack i{cursor:pointer}.ods-stack i:hover,.ods-colbar i:hover,.ods-donut circle:hover{filter:brightness(1.25)}.ods-click:hover .ods-hero-v{text-decoration:underline dotted;text-underline-offset:6px}
+.ods-cnt{border-radius:8px;padding:2px 0;cursor:pointer}.ods-cnt:hover{background:rgba(var(--ink),.1)}.ods-td{cursor:pointer}.ods-td:hover{background:rgba(20,184,201,.14)!important}
