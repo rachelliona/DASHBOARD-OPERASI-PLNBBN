@@ -130,7 +130,7 @@ async function tulisSheet(s: SI, timpa: boolean) {
 { const t0 = siActions.terbitkan, k0 = siActions.koreksi, g0 = siActions.kelola
   siActions.terbitkan = async (...a: Parameters<typeof t0>) => { const n = await t0(...a); void tulisSheet(n, false); return n }
   siActions.koreksi = async (...a: Parameters<typeof k0>) => { const n = await k0(...a); void tulisSheet(n, true); if (a[0].nomor !== n.nomor) void kosongkanSheet(a[0].nomor, a[0].tahun); return n }
-  siActions.kelola = async (...a: Parameters<typeof g0>) => { const n = await g0(...a); void tulisSheet(n, true); return n } }
+  siActions.kelola = async (...a: Parameters<typeof g0>) => { const n = await g0(...a); await tulisSheet(n, true); if (a[0].nomor !== n.nomor || a[0].tahun !== n.tahun) void kosongkanSheet(a[0].nomor, a[0].tahun); return n } }
 
 /** Hapus SI dari database -> kosongkan catatannya di spreadsheet monitoring (nomor tetap). */
 export async function kosongkanSheet(nomor: number | null, tahun: number) {
