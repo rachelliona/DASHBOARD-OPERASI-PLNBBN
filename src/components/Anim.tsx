@@ -14,15 +14,17 @@ export function useCountUp(to: number | null | undefined, ms = 1100) {
 /** true setelah render pertama, supaya lebar batang bisa beranimasi dari 0. */
 export function useMounted() { const [m, setM] = useState(false); useEffect(() => { const id = setTimeout(() => setM(true), 30); return () => clearTimeout(id) }, []); return m }
 /** Alat ukur melingkar besar untuk persentase pemenuhan. */
-export function Gauge({ value, color, label }: { value: number | null; color: string; label: string }) {
-  const m = useMounted(), shown = useCountUp(value), R = 78, C = 2 * Math.PI * R, pct = Math.max(0, Math.min(100, value ?? 0))
+export function Gauge({ value, color, label, value2, label2, color2 = '#a78bfa', onMain, onSecond }: { value: number | null; color: string; label: string; value2?: number | null; label2?: string; color2?: string; onMain?: () => void; onSecond?: () => void }) {
+  const m = useMounted(), shown = useCountUp(value), shown2 = useCountUp(value2 ?? null), R = 78, C = 2 * Math.PI * R, pct = Math.max(0, Math.min(100, value ?? 0)), R2 = 58, C2 = 2 * Math.PI * R2, pct2 = Math.max(0, Math.min(100, value2 ?? 0))
   return <div className="gauge" role="img" aria-label={`${label} ${value == null ? 'tidak tersedia' : value.toFixed(1) + ' persen'}`}>
     <svg viewBox="0 0 200 200"><defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#60a5fa" /><stop offset="1" stopColor={color} /></linearGradient><filter id="gl" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4" /></filter></defs>
       <circle className="g-spin" cx="100" cy="100" r="94" fill="none" style={{ stroke: 'rgba(var(--ink),.14)' }} strokeWidth="1" strokeDasharray="2 7" />
       <circle cx="100" cy="100" r={R} fill="none" style={{ stroke: 'rgba(var(--ink),.07)' }} strokeWidth="14" />
       <circle cx="100" cy="100" r={R} fill="none" stroke="url(#gg)" strokeWidth="14" strokeLinecap="round" transform="rotate(-90 100 100)" strokeDasharray={C} strokeDashoffset={m ? C * (1 - pct / 100) : C} style={{ transition: 'stroke-dashoffset 1.4s cubic-bezier(.2,.8,.2,1)', filter: 'drop-shadow(0 0 8px ' + color + ')' }} />
-      {[0, 25, 50, 75].map(t => { const a = (t / 100) * 2 * Math.PI - Math.PI / 2; return <line key={t} x1={100 + 62 * Math.cos(a)} y1={100 + 62 * Math.sin(a)} x2={100 + 66 * Math.cos(a)} y2={100 + 66 * Math.sin(a)} style={{ stroke: 'rgba(var(--ink),.25)' }} /> })}</svg>
-    <div className="g-in"><div className="g-num num" style={{ color }}>{value == null ? '—' : shown.toFixed(1).replace('.', ',')}<span>%</span></div><div className="g-lbl">{label}</div></div></div>
+      {value2 !== undefined && <><circle cx="100" cy="100" r={R2} fill="none" style={{ stroke: 'rgba(var(--ink),.06)' }} strokeWidth="9" /><circle cx="100" cy="100" r={R2} fill="none" stroke={color2} strokeWidth="9" strokeLinecap="round" transform="rotate(-90 100 100)" strokeDasharray={C2} strokeDashoffset={m ? C2 * (1 - pct2 / 100) : C2} style={{ transition: 'stroke-dashoffset 1.6s cubic-bezier(.2,.8,.2,1)', filter: 'drop-shadow(0 0 6px ' + color2 + ')', cursor: onSecond ? 'pointer' : undefined }} onClick={onSecond} /></>}
+      {value2 === undefined && [0, 25, 50, 75].map(t => { const a = (t / 100) * 2 * Math.PI - Math.PI / 2; return <line key={t} x1={100 + 62 * Math.cos(a)} y1={100 + 62 * Math.sin(a)} x2={100 + 66 * Math.cos(a)} y2={100 + 66 * Math.sin(a)} style={{ stroke: 'rgba(var(--ink),.25)' }} /> })}</svg>
+    <div className="g-in"><button type="button" className="g-num num" style={{ color, cursor: onMain ? 'pointer' : 'default' }} onClick={onMain} title={onMain ? 'Klik: persentase dari apa?' : undefined}>{value == null ? '—' : shown.toFixed(1).replace('.', ',')}<span>%</span></button><div className="g-lbl">{label}</div>
+      {value2 !== undefined && label2 && <button type="button" className="g-sub num" style={{ color: color2 }} onClick={onSecond} title="Klik: persentase dari apa?">{value2 == null ? '—' : shown2.toFixed(1).replace('.', ',')}% <em>{label2}</em></button>}</div></div>
 }
 /** Batang tumpuk: lintasan = kebutuhan, arsir = sudah muat (B/L), isi = sudah bongkar (D/S). */
 export function Layer({ keb, bl, ds, scale, color, dim }: { keb: number; bl: number; ds: number; scale: number; color: string; dim?: boolean }) {

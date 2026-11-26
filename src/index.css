@@ -216,7 +216,7 @@ body::after{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;
 .lrow:hover{background:rgba(var(--ink),.05)}.lrow.on{background:rgba(var(--ink),.08);border-color:rgba(var(--ink),.25)}
 .lrow-n{font-size:12px;display:flex;align-items:center;gap:7px}.lrow-n i{width:8px;height:8px;border-radius:99px;flex:none}
 .lrow-b{display:block}.lrow-v{display:flex;flex-direction:column;align-items:flex-end;font-size:13px;line-height:1.1}.lrow-v small{font-size:10px;color:#8b95a7;font-weight:400}
-.pipe{display:grid;grid-template-columns:repeat(6,1fr);gap:0}.pipe-cell{position:relative;padding-left:0}
+.pipe{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0}.pipe-cell{position:relative;padding-left:0}
 .pipe-ar{position:absolute;left:-9px;top:50%;margin-top:-7px;color:#8b95a7;z-index:2;animation:nudge 1.6s ease-in-out infinite}@keyframes nudge{50%{transform:translateX(3px)}}
 .pipe-cell{padding:0 5px}.pipe-b{width:100%;height:100%;border-radius:14px;padding:10px 11px;border:1px solid rgba(var(--ink),.1);background:linear-gradient(160deg,color-mix(in srgb,var(--c) 16%,var(--s1)),var(--s1));border-top:3px solid var(--c);transition:transform .2s,box-shadow .2s}
 .pipe-b:hover{transform:translateY(-2px);box-shadow:0 10px 26px -12px var(--c)}
@@ -999,3 +999,25 @@ html[data-theme=light] .tbl-si2 .si-no{color:#b7791f}
 .tbl-si2 tbody tr:hover>td:last-child{background:color-mix(in srgb,var(--s1) 88%,#e6b457 12%)!important}
 .tbl-si2 td:nth-child(3){max-width:260px;min-width:180px}.tbl-si2 .si-chip-sm,.tbl-si2 td:nth-child(6) span{font-size:10.5px}
 .tbl-si2 thead th{white-space:normal!important}
+.pct-row{display:flex;flex-wrap:wrap;gap:8px}
+.pct-chip{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:12px;border:1px solid rgba(var(--ink),.14);background:rgba(var(--ink),.04);transition:.15s;font-size:12px}
+.pct-chip:hover{border-color:#e6b457;transform:translateY(-1px)}.pct-chip b{font-size:18px;font-weight:800;line-height:1}.pct-chip span{opacity:.75}
+.g-sub{display:block;margin:6px auto 0;font-size:15px;font-weight:800;line-height:1}.g-sub em{font-style:normal;font-size:10px;font-weight:500;opacity:.75;text-transform:uppercase;letter-spacing:.06em}
+.g-num{background:none;border:0;padding:0}
+.pipe-b{text-align:left!important;display:flex!important;flex-direction:column;gap:8px;padding:14px 16px!important;min-height:132px;justify-content:space-between}
+.pipe-top{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;color:rgba(var(--ink),.72)}
+.pipe-top i{width:9px;height:9px;border-radius:3px;flex:none;box-shadow:0 0 8px currentColor}
+.pipe-top span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pipe-top em{font-style:normal;font-size:10px;width:20px;height:20px;border-radius:999px;display:grid;place-items:center;background:rgba(var(--ink),.08);color:rgba(var(--ink),.6)}
+.pipe-main{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.pipe-main b{display:block;font-size:34px;font-weight:800;line-height:1;letter-spacing:-.02em}
+.pipe-main small{display:block;font-size:10.5px;opacity:.6;margin-top:3px;text-transform:uppercase;letter-spacing:.06em}
+.pipe-vol{text-align:right}.pipe-vol b{font-size:17px!important;font-weight:700!important}
+.pipe-warn{font-size:10.5px;line-height:1.3}
+.pipe-b .pipe-bar{margin-top:0}
+@media (min-width:901px) and (max-width:1500px){.pipe{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 0}.pipe-cell:nth-child(4) .pipe-ar{display:none}}
+.pipe-main{flex-wrap:wrap}
+.g-duo{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+.g-duo button{display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:12px;border:1px solid rgba(var(--ink),.14);background:rgba(var(--ink),.04);transition:.15s}
+.g-duo button:hover{border-color:#e6b457}.g-duo i{width:9px;height:9px;border-radius:3px}.g-duo b{font-size:18px;font-weight:800;line-height:1}.g-duo span{font-size:11px;opacity:.7}
+.pipe-b .pipe-top span{text-align:left!important}.pipe-b .pipe-main,.pipe-b .pipe-main>div:first-child{text-align:left!important}.pipe-b .pipe-vol{text-align:right!important}
