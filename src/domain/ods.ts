@@ -5,7 +5,8 @@ export const ODS_ES_URL = ODS_BASE + '?gid=1890455633&single=true&output=csv'
 export const ODS_DOC_URL = ODS_BASE + '?gid=1490351299&single=true&output=csv'
 export const ODS_SHEET_LINK = ODS_BASE + 'html'
 export type OdsMitra = { m: string; n2: number; n3: number; n4: number; b: number; o1: number; o2: number; t: number; dokN4: number; dokN3: number }
-export type OdsDoc = { si: string; jenis: string; termin: string; kapal: string; tujuan: string; invoice: string; tglInv: string; mitra: string; proses: string; nilai: number; due: string; lamaOd: number | null; ket: string; umur: string }
+export type OdsDoc = { si: string; jenis: string; termin: string; kapal: string; tujuan: string; invoice: string; tglInv: string; mitra: string; proses: string; nilai: number; due: string; lamaOd: number | null; ket: string; umur: string
+  prosesAsli?: string; tambang?: string; shipKe?: string; volume?: number; bulan?: string; harga?: number; dpp?: number; ppn?: number; pph?: number; realisasi?: number }
 const rp = (s: unknown) => { const v = String(s ?? '').replace(/[^0-9-]/g, ''); return v ? parseInt(v, 10) : 0 }
 const c = (s: unknown) => String(s ?? '').replace(/\s+/g, ' ').trim()
 /** Executive Summary: baris mulai setelah judul kolom "Mitra", berhenti di TOTAL. Kolom: Mitra, N2, N3, N4, belum overdue, <30, >30, total, dok N4, dok N3. */
