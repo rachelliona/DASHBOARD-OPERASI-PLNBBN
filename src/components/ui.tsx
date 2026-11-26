@@ -1,6 +1,8 @@
 import { ReactNode, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useStore } from '../store'
+import { useAuth } from '../auth'
+import { isAdmin } from '../config/nav'
 import { fmtNum, parseIdNumber } from '../domain/format'
 export const Card = ({ title, children, right }: { title?: string; children: ReactNode; right?: ReactNode }) => (
   <section className="gcard">{(title || right) && <div className="gcard-h flex justify-between items-center mb-3 gap-2"><h2 className="gcard-t">{title}</h2>{right}</div>}{children}</section>)
@@ -9,11 +11,11 @@ export const PageHead = ({ title, sub, right, month }: { icon?: any; title: stri
   return <header className="rhead"><div className="min-w-0"><h1 className="rhead-t">{title}</h1>{m && <p className="rhead-m">{m}</p>}{sub && <p className="rhead-s">{sub}</p>}</div>{right && <div className="phead-r">{right}</div>}</header>
 }
 export const Empty = ({ text = 'Data Belum Tersedia', hint }: { text?: string; hint?: string }) => {
-  const { status, bulanAktif, asOf, snapState } = useStore(); const s = asOf ? snapState : status[bulanAktif]?.state; const dflt = text === 'Data Belum Tersedia'
+  const { status, bulanAktif, asOf, snapState } = useStore(); const { user } = useAuth(); const adm = isAdmin(user); const s = asOf ? snapState : status[bulanAktif]?.state; const dflt = text === 'Data Belum Tersedia'
   const loading = dflt && (asOf ? s.startsWith('Memuat') : (!s || s.startsWith('Memuat'))); const failed = dflt && (asOf ? s.startsWith('Gagal') : s === 'Gagal Diakses')
   if (loading) return <div role="status"><p className="sr-only">Memuat Data…</p><Skeleton /></div>
   return <Card><div className="text-center py-8"><p className="text-sm font-semibold text-[#e6b457]">{failed ? 'Gagal Mengambil Data' : text}</p>
-    {!loading && <p className="text-xs text-slate-400 mt-1">{hint ?? 'Muat ulang halaman atau impor CSV di'} <Link className="text-[#e6b457] underline" to="/sumber-data">Sumber Data dan Kualitas Data</Link>.</p>}</div></Card>
+    {!loading && <p className="text-xs text-slate-400 mt-1">{hint ?? (adm ? 'Muat ulang halaman atau impor CSV di' : 'Muat ulang halaman.')}{adm && <> <Link className="text-[#e6b457] underline" to="/sumber-data">Sumber Data dan Kualitas Data</Link>.</>}</p>}</div></Card>
 }
 /** Angka KPI berhitung naik saat tampil; teks non-angka ditampilkan apa adanya. */
 function Anim({ v }: { v: string }) {
