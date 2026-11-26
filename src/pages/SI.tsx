@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FileText } from 'lucide-react'
 import { Card, Kpi, PageHead } from '../components/ui'
+import { useDetail } from '../components/Detail'
 import { useAuth } from '../auth'
 import { bisaBuatSI, bisaKoreksiBesar, isAdmin } from '../config/nav'
 import { useSI, siActions, getCad, setCad } from '../si/store'
@@ -26,15 +27,43 @@ export default function SIPage() {
   const today = iso(new Date()); const sup = useMemo(() => supersededIds(st.rows), [st.rows]); const cek = useMemo(() => periksa(st.rows, st.blok), [st.rows, st.blok])
   const tahunIni = new Date().getFullYear(); const thn = st.rows.filter(r => r.sumber === 'sistem' && r.tahun === tahunIni && r.tahap !== 'pengajuan')
   const lewat = thn.filter(r => statusOf(r, today, sup) === 'lewat').length, rev = thn.filter(r => r.revisiKe > 0).length, revArmada = thn.filter(r => r.alasan === 'armada').length, antre = st.rows.filter(r => r.tahap === 'pengajuan').length
+  const dt = useDetail()
+  const kpiPop = (k: 'terbit' | 'lewat' | 'revisi' | 'antre') => {
+    const BLN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+    const hitung = (xs: SI[], f: (r: SI) => string) => { const m = new Map<string, number>(); xs.forEach(r => { const key = f(r) || '—'; m.set(key, (m.get(key) ?? 0) + 1) }); return [...m].sort((a, b) => b[1] - a[1]) }
+    const baris = (xs: SI[], ekstra?: (r: SI) => React.ReactNode) => [...xs].sort((a, b) => (b.nomor ?? 0) - (a.nomor ?? 0)).slice(0, 60).map(r => [<b>{r.nomor ?? '—'}</b>, r.tanggal ? tglId(r.tanggal) : '—', r.pemohon || '—', r.tambang || r.mitra || '—', r.bongkar || r.pltu || '—', rentangId(r.laycanMulai, r.laycanSelesai) || r.laycanTeks || '—', ekstra ? ekstra(r) : <Chip s={statusOf(r, today, sup)} />])
+    const head = (h = 'Status') => ['No', 'Terbit', 'Pemohon', 'Tambang', 'Bongkar', 'Laycan', h]
+    if (k === 'terbit') { const nb = nomorBerikut(st.rows, st.blok, tahunIni); const used = st.rows.filter(r => r.tahun === tahunIni && r.nomor != null).reduce((m, r) => Math.max(m, r.nomor!), 0); const cad = st.blok.filter(b => b.tahun === tahunIni && b.nomor >= nb - 20 && b.nomor < nb)
+      dt.open({ variant: 'modal', wide: true, title: `SI terbit ${tahunIni}`, sub: `${thn.length} SI dibuat lewat dashboard`, color: '#e6b457',
+        stats: [{ l: 'SI terbit', v: String(thn.length) }, { l: 'Nomor berikut', v: String(nb) }, { l: 'Nomor terakhir dipakai', v: String(used || '—') }, { l: 'Bulan ini', v: String(thn.filter(r => r.tanggal.slice(0, 7) === today.slice(0, 7)).length) }],
+        bars: [{ title: 'Per pemohon', items: hitung(thn, r => r.pemohon).map(([l, v]) => ({ l, v, c: '#e6b457' })), fmt: (n: number) => n + ' SI' }, { title: 'Per bulan', items: BLN.map((b, i) => ({ l: b, v: thn.filter(r => +r.tanggal.slice(5, 7) === i + 1).length, c: '#14b8c9' })).filter(x => x.v > 0), fmt: (n: number) => n + ' SI' }].filter(b => b.items.length),
+        body: <p className="text-[12px] text-slate-300">Nomor berikut = nomor terbesar yang sudah dipakai atau diblok tahun ini + 1. Celah di bawahnya tidak diisi otomatis (bisa nomor surat Dirop lain).{cad.length ? ` Ada ${cad.length} nomor blok/cadangan di dekat ujung, jadi nomor berikut bisa lebih besar dari nomor terakhir dipakai + 1.` : ''}</p>,
+        table: thn.length ? { head: head(), rows: baris(thn) } : undefined, note: thn.length > 60 ? `Menampilkan 60 dari ${thn.length} SI terbaru.` : undefined }) }
+    if (k === 'lewat') { const xs = thn.filter(r => statusOf(r, today, sup) === 'lewat')
+      dt.open({ variant: 'modal', wide: true, title: 'Lewat laycan', sub: `${xs.length} SI · laycan selesai sudah lewat ≤30 hari dan belum direvisi`, color: '#f87171',
+        stats: [{ l: 'Lewat laycan', v: String(xs.length), c: '#f87171' }, { l: 'Dari SI terbit', v: thn.length ? Math.round(xs.length / thn.length * 100) + '%' : '0%' }],
+        bars: [{ title: 'Per pemohon', items: hitung(xs, r => r.pemohon).map(([l, v]) => ({ l, v, c: '#f87171' })), fmt: (n: number) => n + ' SI' }],
+        body: <p className="text-[12px] text-slate-300">Tindak lanjut: revisi SI (laycan/ETA baru) atau tandai selesai bila kapal sudah muat. Lewat lebih dari 30 hari pindah ke Arsip.</p>,
+        table: xs.length ? { head: head('Lewat'), rows: baris(xs, r => { const d = Math.round((Date.parse(today) - Date.parse(r.laycanSelesai || r.laycanMulai)) / 864e5); return <span className="st-bad">{isNaN(d) ? '—' : d + ' hari'}</span> }) } : undefined }) }
+    if (k === 'revisi') { const xs = thn.filter(r => r.revisiKe > 0)
+      dt.open({ variant: 'modal', wide: true, title: 'SI revisi', sub: `${xs.length} SI revisi tahun ${tahunIni}`, color: '#a78bfa',
+        stats: [{ l: 'Revisi', v: String(xs.length), c: '#a78bfa' }, { l: 'Armada diganti', v: String(revArmada) }, { l: 'Porsi dari SI terbit', v: thn.length ? Math.round(xs.length / thn.length * 100) + '%' : '0%' }],
+        bars: [{ title: 'Alasan revisi', items: hitung(xs, r => r.alasan ? ALASAN[r.alasan] : 'Tanpa alasan').map(([l, v]) => ({ l, v, c: '#a78bfa' })), fmt: (n: number) => n + ' SI' }],
+        table: xs.length ? { head: ['No', 'Terbit', 'Pemohon', 'Tambang', 'Bongkar', 'Revisi dari', 'Alasan'], rows: [...xs].sort((a, b) => (b.nomor ?? 0) - (a.nomor ?? 0)).map(r => [<b>{r.nomor}</b>, tglId(r.tanggal), r.pemohon || '—', r.tambang || r.mitra || '—', r.bongkar || r.pltu || '—', r.sebelumnyaNomor ?? '—', `Rev-${r.revisiKe}${r.alasan ? ' · ' + ALASAN[r.alasan] : ''}`]) } : undefined }) }
+    if (k === 'antre') { const xs = st.rows.filter(r => r.tahap === 'pengajuan')
+      dt.open({ variant: 'modal', wide: true, title: 'Antrean pengajuan', sub: xs.length ? `${xs.length} pengajuan menunggu diterbitkan Racel` : 'Tidak ada pengajuan menunggu', color: '#8aa0b8',
+        body: <p className="text-[12px] text-slate-300">Pengajuan belum punya nomor. Nomor baru keluar saat diterbitkan, lewat tab <b>Antrean pengajuan</b>.</p>,
+        table: xs.length ? { head: ['Dibuat', 'Pemohon', 'Tambang', 'Bongkar', 'Kapal', 'Laycan'], rows: xs.map(r => [r.dibuat ? new Date(r.dibuat).toLocaleDateString('id-ID') : '—', r.pemohon || r.dibuatOleh || '—', r.tambang || r.mitra || '—', r.bongkar || r.pltu || '—', r.kapal || '—', rentangId(r.laycanMulai, r.laycanSelesai) || r.laycanTeks || '—']) } : undefined }) }
+  }
   return <>
     <PageHead icon={FileText} title="Shipping Instruction" month={false} sub="Penomoran SI otomatis, monitoring laycan & revisi, dan cetak dokumen." right={bisa ? <button className="fchip on !text-[16px] !font-bold !px-6 !py-3 !rounded-2xl" onClick={() => nav('/si/baru')} aria-label="Buat SI baru">+ Buat SI</button> : undefined} />
     {info && <div className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-[12px] mb-3 flex justify-between gap-2"><span>{info}</span><button onClick={() => setInfo('')} aria-label="Tutup">×</button></div>}
     {!st.rows.length && <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-[12px] mb-3">Registri SI masih kosong. Buka tab <b>Sinkron &amp; impor</b> untuk memuat riwayat SI (Databas SI + sheet 2026) agar nomor berikutnya tepat.</div>}
     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
-      <Kpi label={`SI terbit ${tahunIni}`} value={String(thn.length)} note={`nomor berikut ${nomorBerikut(st.rows, st.blok, tahunIni)}`} />
-      <Kpi label="Lewat laycan" value={String(lewat)} accent="#f87171" note="≤30 hari, belum direvisi" />
-      <Kpi label="Revisi" value={String(rev)} accent="#a78bfa" note={`${revArmada} karena armada diganti`} />
-      <Kpi label="Antrean pengajuan" value={String(antre)} accent="#8aa0b8" note="menunggu Racel" />
+      <Kpi label={`SI terbit ${tahunIni}`} value={String(thn.length)} note={`nomor berikut ${nomorBerikut(st.rows, st.blok, tahunIni)}`} onClick={() => kpiPop('terbit')} />
+      <Kpi label="Lewat laycan" value={String(lewat)} accent="#f87171" note="≤30 hari, belum direvisi" onClick={() => kpiPop('lewat')} />
+      <Kpi label="Revisi" value={String(rev)} accent="#a78bfa" note={`${revArmada} karena armada diganti`} onClick={() => kpiPop('revisi')} />
+      <Kpi label="Antrean pengajuan" value={String(antre)} accent="#8aa0b8" note="menunggu Racel" onClick={() => kpiPop('antre')} />
     </div>
     <div className="vsw mb-3" role="tablist" aria-label="Modul SI">{([['monitor', 'Monitoring SI'], ['antrean', 'Antrean pengajuan'], ['nomor', 'Nomor & celah'], ['sinkron', 'Sinkron & impor'], ...(admin ? [['unggah', 'Unggah SI luar']] : [])] as [Tab, string][]).map(([v, l]) => <button key={v} role="tab" aria-selected={tab === v} className={'vsw-b' + (tab === v ? ' on' : '')} onClick={() => setTab(v)}>{l}{v === 'antrean' && antre ? ` (${antre})` : ''}</button>)}</div>
     {tab === 'monitor' && <Monitor today={today} sup={sup} onAksi={(mode, si) => nav(`/si/${mode}/${si.id}`)} admin={admin} bisa={bisa} />}
